@@ -12,6 +12,8 @@ a transparent color.
 The model used for background detection is SINet: https://arxiv.org/abs/1911.09099
 The pre-trained model weights were taken from: https://github.com/anilsathyan7/Portrait-Segmentation/tree/master/SINet
 
+Some more information about how I built it: https://www.morethantechnical.com/2021/04/15/obs-plugin-for-portrait-background-removal-with-onnx-sinet-model/
+
 ## Building
 
 The plugin was built and tested on Mac OSX. Building for Windows is outstanding, and help is appreciated.
