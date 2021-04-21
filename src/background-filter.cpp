@@ -25,6 +25,7 @@ struct background_removal_filter {
 	float threshold = 0.5;
 	cv::Scalar backgroundColor{0, 0, 0};
 	float contourFilter = 0.05;
+	float smoothContour = 0.5;
 };
 
 static const char *filter_getname(void *unused)
@@ -108,6 +109,14 @@ static obs_properties_t *filter_properties(void *data)
 		1.0,
 		0.025);
 
+	obs_property_t *p_smooth_contour = obs_properties_add_float_slider(
+		props,
+		"smooth_contour",
+		obs_module_text("Smooth silhouette"),
+		0.0,
+		1.0,
+		0.05);
+
 	obs_property_t *p_color = obs_properties_add_color(
 		props,
 		"replaceColor",
@@ -121,6 +130,7 @@ static obs_properties_t *filter_properties(void *data)
 static void filter_defaults(obs_data_t *settings) {
 	obs_data_set_default_double(settings, "threshold", 0.5);
 	obs_data_set_default_double(settings, "contour_filter", 0.05);
+	obs_data_set_default_double(settings, "smooth_contour", 0.5);
 	obs_data_set_default_int(settings, "replaceColor", 0x000000);
 }
 
@@ -135,6 +145,7 @@ static void filter_update(void *data, obs_data_t *settings)
 	tf->backgroundColor.val[2] = (color >> 16) & 0x0000ff;
 
 	tf->contourFilter = obs_data_get_double(settings, "contour_filter");
+	tf->smoothContour = obs_data_get_double(settings, "smooth_contour");
 }
 
 
@@ -229,6 +240,7 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 
 	cv::Mat mask = outputImageReized > tf->threshold;
 
+	// Contour processing
 	if (tf->contourFilter > 0.0 && tf->contourFilter < 1.0) {
 		std::vector<std::vector<cv::Point> > contours;
 		findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
@@ -241,6 +253,13 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 		}
 		mask.setTo(0);
 		drawContours(mask, filteredContours, -1, cv::Scalar(255), -1);
+	}
+
+	// Smooth mask with a fast filter (box)
+	if (tf->smoothContour > 0.0) {
+		int k_size = 100 * tf->smoothContour;
+		cv::boxFilter(mask, mask, mask.depth(), cv::Size(k_size, k_size));
+		mask = mask > 128;
 	}
 
 	// Mask the input
