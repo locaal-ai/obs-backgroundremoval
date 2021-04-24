@@ -53,12 +53,19 @@ void hwc_to_chw(cv::InputArray src, cv::OutputArray dst) {
     cv::hconcat( channels, dst );
 }
 
-void rgb_to_yuv422_uyvy(const cv::Mat& rgb, cv::Mat& yuv) {
-	assert(rgb.size() == yuv.size() &&
-		   rgb.depth() == CV_8U &&
+enum YUV_TYPE {
+	YUV_TYPE_UYVY = 0,
+	YUV_TYPE_YVYU = 1,
+	YUV_TYPE_YUYV = 2,
+};
+
+void rgb_to_yuv(const cv::Mat& rgb, cv::Mat& yuv, YUV_TYPE yuvType = YUV_TYPE_UYVY) {
+	assert(rgb.depth() == CV_8U &&
 		   rgb.channels() == 3 &&
 		   yuv.depth() == CV_8U &&
-		   yuv.channels() == 2);
+		   yuv.channels() == 2 &&
+		   rgb.size() == yuv.size());
+
 	for (int ih = 0; ih < rgb.rows; ih++) {
 		const uint8_t* rgbRowPtr = rgb.ptr<uint8_t>(ih);
 		uint8_t* yuvRowPtr = yuv.ptr<uint8_t>(ih);
@@ -79,10 +86,24 @@ void rgb_to_yuv422_uyvy(const cv::Mat& rgb, cv::Mat& yuv) {
 			const int V  =  (0.439f * R1) - (0.368f * G1) - (0.071f * B1) + 128.0f;
 			const int Y2 =  (0.257f * R2) + (0.504f * G2) + (0.098f * B2) + 16.0f ;
 
-			yuvRowPtr[yuvColIdxBytes + 0] = cv::saturate_cast<uint8_t>(U );
-			yuvRowPtr[yuvColIdxBytes + 1] = cv::saturate_cast<uint8_t>(Y );
-			yuvRowPtr[yuvColIdxBytes + 2] = cv::saturate_cast<uint8_t>(V );
-			yuvRowPtr[yuvColIdxBytes + 3] = cv::saturate_cast<uint8_t>(Y2);
+			if (yuvType == YUV_TYPE_UYVY) {
+				yuvRowPtr[yuvColIdxBytes + 0] = cv::saturate_cast<uint8_t>(U );
+				yuvRowPtr[yuvColIdxBytes + 1] = cv::saturate_cast<uint8_t>(Y );
+				yuvRowPtr[yuvColIdxBytes + 2] = cv::saturate_cast<uint8_t>(V );
+				yuvRowPtr[yuvColIdxBytes + 3] = cv::saturate_cast<uint8_t>(Y2);
+			}
+			if (yuvType == YUV_TYPE_YVYU) {
+				yuvRowPtr[yuvColIdxBytes + 0] = cv::saturate_cast<uint8_t>(Y );
+				yuvRowPtr[yuvColIdxBytes + 1] = cv::saturate_cast<uint8_t>(V );
+				yuvRowPtr[yuvColIdxBytes + 2] = cv::saturate_cast<uint8_t>(Y2);
+				yuvRowPtr[yuvColIdxBytes + 3] = cv::saturate_cast<uint8_t>(U );
+			}
+			if (yuvType == YUV_TYPE_YUYV) {
+				yuvRowPtr[yuvColIdxBytes + 0] = cv::saturate_cast<uint8_t>(Y );
+				yuvRowPtr[yuvColIdxBytes + 1] = cv::saturate_cast<uint8_t>(U );
+				yuvRowPtr[yuvColIdxBytes + 2] = cv::saturate_cast<uint8_t>(Y2);
+				yuvRowPtr[yuvColIdxBytes + 3] = cv::saturate_cast<uint8_t>(V );
+			}
 		}
 	}
 }
@@ -204,14 +225,92 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
 	return tf;
 }
 
+cv::Mat convertFrameToRGB(struct obs_source_frame *frame) {
+	cv::Mat imageRGB;
+	if (frame->format == VIDEO_FORMAT_UYVY) {
+		cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
+		cv::cvtColor(imageYUV, imageRGB, cv::ColorConversionCodes::COLOR_YUV2RGB_UYVY);
+	}
+	if (frame->format == VIDEO_FORMAT_YVYU) {
+		cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
+		cv::cvtColor(imageYUV, imageRGB, cv::ColorConversionCodes::COLOR_YUV2RGB_YVYU);
+	}
+	if (frame->format == VIDEO_FORMAT_YUY2) {
+		cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
+		cv::cvtColor(imageYUV, imageRGB, cv::ColorConversionCodes::COLOR_YUV2RGB_YUY2);
+	}
+	if (frame->format == VIDEO_FORMAT_NV12) {
+		cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
+		cv::cvtColor(imageYUV, imageRGB, cv::ColorConversionCodes::COLOR_YUV2RGB_NV12);
+	}
+	if (frame->format == VIDEO_FORMAT_I420) {
+		cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
+		cv::cvtColor(imageYUV, imageRGB, cv::ColorConversionCodes::COLOR_YUV2RGB_I420);
+	}
+	if (frame->format == VIDEO_FORMAT_I444) {
+		cv::Mat imageYUV(frame->height, frame->width, CV_8UC3, frame->data[0]);
+		cv::cvtColor(imageYUV, imageRGB, cv::ColorConversionCodes::COLOR_YUV2RGB);
+	}
+	if (frame->format == VIDEO_FORMAT_RGBA) {
+		cv::Mat imageRGBA(frame->height, frame->width, CV_8UC4, frame->data[0]);
+		cv::cvtColor(imageRGBA, imageRGB, cv::ColorConversionCodes::COLOR_RGBA2RGB);
+	}
+	if (frame->format == VIDEO_FORMAT_BGRA) {
+		cv::Mat imageBGRA(frame->height, frame->width, CV_8UC4, frame->data[0]);
+		cv::cvtColor(imageBGRA, imageRGB, cv::ColorConversionCodes::COLOR_BGRA2RGB);
+	}
+	if (frame->format == VIDEO_FORMAT_Y800) {
+		cv::Mat imageGray(frame->height, frame->width, CV_8UC1, frame->data[0]);
+		cv::cvtColor(imageGray, imageRGB, cv::ColorConversionCodes::COLOR_GRAY2RGB);
+	}
+	return imageRGB;
+}
+
+void convertRGBToFrame(cv::Mat imageRGB, struct obs_source_frame *frame) {
+	if (frame->format == VIDEO_FORMAT_UYVY) {
+		cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
+		rgb_to_yuv(imageRGB, imageYUV, YUV_TYPE_UYVY);
+	}
+	if (frame->format == VIDEO_FORMAT_YVYU) {
+		cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
+		rgb_to_yuv(imageRGB, imageYUV, YUV_TYPE_YVYU);
+	}
+	if (frame->format == VIDEO_FORMAT_YUY2) {
+		cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
+		rgb_to_yuv(imageRGB, imageYUV, YUV_TYPE_YUYV);
+	}
+	if (frame->format == VIDEO_FORMAT_NV12) {
+		cv::Mat imageYUV(frame->height, frame->width * 3 / 2, CV_8UC1, frame->data[0]);
+		cv::cvtColor(imageRGB, imageYUV, cv::ColorConversionCodes::COLOR_RGB2YUV_YV12);
+	}
+	if (frame->format == VIDEO_FORMAT_I420) {
+		cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
+		cv::cvtColor(imageRGB, imageYUV, cv::ColorConversionCodes::COLOR_RGB2YUV_I420);
+	}
+	if (frame->format == VIDEO_FORMAT_I444) {
+		cv::Mat imageYUV(frame->height, frame->width, CV_8UC3, frame->data[0]);
+		cv::cvtColor(imageRGB, imageYUV, cv::ColorConversionCodes::COLOR_RGB2YUV);
+	}
+	if (frame->format == VIDEO_FORMAT_RGBA) {
+		cv::Mat imageRGBA(frame->height, frame->width, CV_8UC4, frame->data[0]);
+		cv::cvtColor(imageRGB, imageRGBA, cv::ColorConversionCodes::COLOR_RGB2RGBA);
+	}
+	if (frame->format == VIDEO_FORMAT_BGRA) {
+		cv::Mat imageBGRA(frame->height, frame->width, CV_8UC4, frame->data[0]);
+		cv::cvtColor(imageRGB, imageBGRA, cv::ColorConversionCodes::COLOR_RGB2BGRA);
+	}
+	if (frame->format == VIDEO_FORMAT_Y800) {
+		cv::Mat imageGray(frame->height, frame->width, CV_8UC1, frame->data[0]);
+		cv::cvtColor(imageRGB, imageGray, cv::ColorConversionCodes::COLOR_RGB2GRAY);
+	}
+}
+
 static struct obs_source_frame * filter_render(void *data, struct obs_source_frame *frame)
 {
 	struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
 	// Convert to RGB
-	cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
-	cv::Mat imageRGB;
-	cv::cvtColor(imageYUV, imageRGB, cv::ColorConversionCodes::COLOR_YUV2RGB_UYVY);
+	cv::Mat imageRGB = convertFrameToRGB(frame);
 
 	// Prepare input to nework
     cv::Mat resizedImageRGB, resizedImage, preprocessedImage;
@@ -266,7 +365,7 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 	imageRGB.setTo(tf->backgroundColor, mask);
 
 	// Put masked image back on frame
-	rgb_to_yuv422_uyvy(imageRGB, imageYUV);
+	convertRGBToFrame(imageRGB, frame);
 
 	return frame;
 }
