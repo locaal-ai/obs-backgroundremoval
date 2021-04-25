@@ -31,7 +31,9 @@ include(external/FindLibObs.cmake)
 endif()
 
 find_package(LibObs REQUIRED)
-find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
+
+# Qt is not required for this plugin, at the moment.
+# find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
 
 configure_file(
     src/plugin-macros.h.in
@@ -69,7 +71,7 @@ add_library(${CMAKE_PROJECT_NAME} MODULE ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
 find_library(libonnxruntime onnxruntime REQUIRED)
 message(STATUS "libonnxruntime ${libonnxruntime}")
 
-find_package(OpenCV 4.5 REQUIRED)
+find_package(OpenCV 4.2 REQUIRED)
 
 include_directories(
 	"${LIBOBS_INCLUDE_DIR}/../UI/obs-frontend-api"
@@ -189,6 +191,9 @@ if(UNIX AND NOT APPLE)
 
 	install(FILES ${locale_files}
 		DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/obs/obs-plugins/${CMAKE_PROJECT_NAME}/locale")
+
+	install(FILES "data/SINet_Softmax.onnx"
+		DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/obs/obs-plugins/${CMAKE_PROJECT_NAME}/")
 endif()
 # --- End of section ---
 

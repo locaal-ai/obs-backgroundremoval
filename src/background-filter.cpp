@@ -1,7 +1,12 @@
 #include <obs-module.h>
 
+#if defined(__APPLE__)
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
 #include <onnxruntime/core/providers/cpu/cpu_provider_factory.h>
+#elif defined(__linux__)
+#include <onnxruntime_cxx_api.h>
+#include <cpu_provider_factory.h>
+#endif
 
 #include <opencv2/imgproc.hpp>
 
@@ -14,9 +19,9 @@ struct background_removal_filter {
 	std::unique_ptr<Ort::Session> session;
 	std::unique_ptr<Ort::Env> env;
 	std::vector<const char*> inputNames;
-    std::vector<const char*> outputNames;
-    Ort::Value inputTensor;
-    Ort::Value outputTensor;
+	std::vector<const char*> outputNames;
+	Ort::Value inputTensor;
+	Ort::Value outputTensor;
 	std::vector<int64_t> inputDims;
 	std::vector<int64_t> outputDims;
 	std::vector<float> outputTensorValues;
