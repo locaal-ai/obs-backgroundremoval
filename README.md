@@ -1,11 +1,10 @@
 # OBS Plugin: Background Removal
 
-- [Introduction](#intro)
-- [Building](#Building)
-  - [MacOSX](#osx)
-  - [Linux / Ubuntu](#ubuntu)
+- [Introduction](#introduction)
+- [Building](#building)
+  - [MacOSX](#mac-osx)
+  - [Linux / Ubuntu](#linux-ubuntu)
 
-<a href="#intro"></a>
 ## Introduction
 
 This plugin is meant to make it easy to replace the background in portrait images and video.
@@ -20,7 +19,6 @@ The pre-trained model weights were taken from: https://github.com/anilsathyan7/P
 
 Some more information about how I built it: https://www.morethantechnical.com/2021/04/15/obs-plugin-for-portrait-background-removal-with-onnx-sinet-model/
 
-<a href="#build"></a>
 ## Building
 
 The plugin was built and tested on Mac OSX. Building for Windows is outstanding, and help is appreciated.
@@ -29,7 +27,6 @@ The plugin was built and tested on Mac OSX. Building for Windows is outstanding,
 - OpenCV v4.5+: https://github.com/opencv/opencv/
 - ONNXRuntime: https://github.com/microsoft/onnxruntime
 
-<a href="#osx"></a>
 ### Mac OSX
 
 Install dependencies:
@@ -86,7 +83,6 @@ $ mkdir -p /Applications/OBS.app/Contents/Resources/data/obs-plugins/obs-backgro
 $ cp ../data/SINet_Softmax.onnx /Applications/OBS.app/Contents/Resources/data/obs-plugins/obs-backgroundremoval/
 ```
 
-<a href="#unubtu"></a>
 ### Linux / Ubuntu
 
 Install dependencies:
