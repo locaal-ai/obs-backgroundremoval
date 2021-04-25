@@ -387,9 +387,9 @@ struct obs_source_info test_filter = {
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_ASYNC,
 	.get_name = filter_getname,
 	.create = filter_create,
-	.update = filter_update,
 	.destroy = filter_destroy,
-	.filter_video = filter_render,
-	.get_properties = filter_properties,
 	.get_defaults = filter_defaults,
+	.get_properties = filter_properties,
+	.update = filter_update,
+	.filter_video = filter_render,
 };
