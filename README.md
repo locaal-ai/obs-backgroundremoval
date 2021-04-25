@@ -3,7 +3,7 @@
 - [Introduction](#introduction)
 - [Building](#building)
   - [MacOSX](#mac-osx)
-  - [Linux / Ubuntu](#linux-ubuntu)
+  - [Linux / Ubuntu](#linux--ubuntu)
 
 ## Introduction
 
