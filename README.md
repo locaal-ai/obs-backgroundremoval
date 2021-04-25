@@ -31,10 +31,10 @@ $ brew install opencv onnxruntime
 
 #### Finding libobs
 
-If you install OBS app you already have the binaries for libobs (e.g. `/Applications/OBS.app/Contents/Frameworks/libobs.0.dylib`)
+If you install the desktop OBS app (https://obsproject.com/download) you already have the binaries for libobs (e.g. `/Applications/OBS.app/Contents/Frameworks/libobs.0.dylib`)
 But you don't have the headers - so clone the main obs repo e.g. `git clone git@github.com:obsproject/obs-studio.git`
 
-Then you'd need to point `FindLibObs.cmake` to find the lib and headers:
+Then you'd need to point `FindLibObs.cmake` to find the lib and headers, for me (user `roy_shilkrot`) this was:
 ```
 find_path(LIBOBS_INCLUDE_DIR
 	NAMES obs.h
@@ -68,11 +68,12 @@ Build:
 ```
 $ mkdir build && cd build
 $ cmake ..
-$ cmake --build ..
+$ cmake --build .
 ```
 
 Add it to your OBS install, e.g.
 ```
 $ cp obs-backgroundremoval.so /Applications/OBS.app/Contents/PlugIns
+$ mkdir -p /Applications/OBS.app/Contents/Resources/data/obs-plugins/obs-backgroundremoval/
 $ cp ../data/SINet_Softmax.onnx /Applications/OBS.app/Contents/Resources/data/obs-plugins/obs-backgroundremoval/
 ```
