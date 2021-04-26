@@ -184,9 +184,12 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(bzalloc(sizeof(struct background_removal_filter)));
 
-	std::string instanceName{"background-removal-inference"};
 	char* modelFilepath_rawPtr = obs_module_file("SINet_Softmax.onnx");
+	blog(LOG_INFO, "model location %s", modelFilepath_rawPtr);
+
 	std::string modelFilepath_s(modelFilepath_rawPtr);
+    bfree(modelFilepath_rawPtr);
+
 #if _WIN32
     std::wstring modelFilepath_ws(modelFilepath_s.size(), L' ');
     std::copy(modelFilepath_s.begin(), modelFilepath_s.end(), modelFilepath_ws.begin());
@@ -194,9 +197,8 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
 #else
     const char* modelFilepath = modelFilepath_s.c_str();
 #endif
-	bfree(modelFilepath_rawPtr);
-	blog(LOG_INFO, "model location %s", modelFilepath);
 
+	std::string instanceName{"background-removal-inference"};
     tf->env.reset(new Ort::Env(OrtLoggingLevel::ORT_LOGGING_LEVEL_ERROR, instanceName.c_str()));
     Ort::SessionOptions sessionOptions;
     sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
@@ -256,11 +258,11 @@ cv::Mat convertFrameToRGB(struct obs_source_frame *frame) {
 		cv::cvtColor(imageYUV, imageRGB, cv::ColorConversionCodes::COLOR_YUV2RGB_YUY2);
 	}
 	if (frame->format == VIDEO_FORMAT_NV12) {
-		cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
+		cv::Mat imageYUV(frame->height, frame->width * 3 / 2, CV_8UC1, frame->data[0]);
 		cv::cvtColor(imageYUV, imageRGB, cv::ColorConversionCodes::COLOR_YUV2RGB_NV12);
 	}
 	if (frame->format == VIDEO_FORMAT_I420) {
-		cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
+		cv::Mat imageYUV(frame->height, frame->width * 3 / 2, CV_8UC1, frame->data[0]);
 		cv::cvtColor(imageYUV, imageRGB, cv::ColorConversionCodes::COLOR_YUV2RGB_I420);
 	}
 	if (frame->format == VIDEO_FORMAT_I444) {
@@ -300,7 +302,7 @@ void convertRGBToFrame(cv::Mat imageRGB, struct obs_source_frame *frame) {
 		cv::cvtColor(imageRGB, imageYUV, cv::ColorConversionCodes::COLOR_RGB2YUV_YV12);
 	}
 	if (frame->format == VIDEO_FORMAT_I420) {
-		cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
+		cv::Mat imageYUV(frame->height, frame->width * 3 / 2, CV_8UC1, frame->data[0]);
 		cv::cvtColor(imageRGB, imageYUV, cv::ColorConversionCodes::COLOR_RGB2YUV_I420);
 	}
 	if (frame->format == VIDEO_FORMAT_I444) {
@@ -327,7 +329,6 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 
 	// Convert to RGB
 	cv::Mat imageRGB = convertFrameToRGB(frame);
-
 	// Prepare input to nework
     cv::Mat resizedImageRGB, resizedImage, preprocessedImage;
     cv::resize(imageRGB, resizedImageRGB,
@@ -382,7 +383,6 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 
 	// Put masked image back on frame
 	convertRGBToFrame(imageRGB, frame);
-
 	return frame;
 }
 
@@ -398,7 +398,7 @@ static void filter_destroy(void *data)
 
 
 struct obs_source_info background_removal_filter_info = {
-	.id = "background_removal_filter",
+	.id = "background_removal",
 	.type = OBS_SOURCE_TYPE_FILTER,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_ASYNC,
 	.get_name = filter_getname,

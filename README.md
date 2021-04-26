@@ -73,17 +73,24 @@ $ cmake .. && cmake --build . && cmake --install .
 
 We will use static linking (as much as possible) to aviod having to lug around .DLLs with the plugin.
 
-Install dependencies via `vcpkg`:
+Install OpenCV via `vcpkg`:
 ```
 $ mkdir build
 $ cd build
 $ git clone https://github.com/microsoft/vcpkg
 $ cd vcpkg
 $ .\bootstrap-vcpkg.bat
-$ .\vcpkg.exe install opencv[core]:x64-windows-static onnxruntime-gpu:x64-windows
+$ .\vcpkg.exe install opencv[core]:x64-windows-static
 ```
 
-Build:
+Unzip an ONNX runtime release: https://github.com/microsoft/onnxruntime/releases to e.g. Downloads.
+You should have a directory like `<Downloads>\Microsoft.AI.MachineLearning.1.7.2\`.
+
+Clone the OBS repo, `Downloads\ $ git clone git@github.com:obsproject/obs-studio.git`, to e.g. Downloads.
+Checkout tag 26.1.1: `Downloads\obs-studio\ $ git checkout 26.1.1`
+
+Build the plugin:
 ```
-$ cmake .. && cmake --build . --config Release
+$ cmake .. -DobsPath="<Downloads>\obs-studio\" -DOnnxruntime_INCLUDE_HINT=<Downloads>\Microsoft.AI.MachineLearning.1.7.2\build\native\include -DOnnxruntime_DIR=<Downloads>\Microsoft.AI.MachineLearning.1.7.2\runtimes\win-x64\_native\static
+$ cmake --build . --config Release
 ```

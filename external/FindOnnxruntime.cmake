@@ -6,7 +6,7 @@
 
 find_library(Onnxruntime_LIBRARY onnxruntime
     PATHS
-        ${onnxruntime_DIR}
+        ${Onnxruntime_DIR}
     DOC "Onnxruntime library")
 
 find_path(Onnxruntime_INCLUDE_DIR

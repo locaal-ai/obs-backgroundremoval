@@ -25,9 +25,6 @@ if(WIN32 OR MSVC)
     set(LibLZMA_DIR ${VCPKG_INSTALLED_DIR}/share/liblzma)
     set(quirc_DIR ${VCPKG_INSTALLED_DIR}/share/quirc)
 
-    set(Onnxruntime_DIR ${VCPKG_DIR}/installed/x64-windows/lib)
-    set(Onnxruntime_INCLUDE_HINT ${VCPKG_DIR}/installed/x64-windows/include)
-
     # Find lib TIFF
     find_library(TIFF_LIBRARY tiff PATHS ${VCPKG_INSTALLED_DIR}/lib)
     find_path(TIFF_INCLUDE_DIR tiff.h PATHS ${VCPKG_INSTALLED_DIR}/include)
