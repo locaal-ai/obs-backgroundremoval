@@ -31,6 +31,7 @@ find_path(LIBOBS_INCLUDE_DIR
 		ENV obsPath${_lib_suffix}
 		ENV obsPath
 		${obsPath}
+		${obsIncludePath}
 		${obsPath}/libobs
 	PATHS
 		/usr/include /usr/local/include /opt/local/include /sw/include
@@ -52,6 +53,7 @@ function(find_obs_lib base_name repo_build_path lib_name)
 			ENV obsPath${_lib_suffix}
 			ENV obsPath
 			${obsPath}
+			${obsLibPath}
 			${_${base_name_u}_LIBRARY_DIRS}
 		PATHS
 			/usr/lib /usr/local/lib /opt/local/lib /sw/lib

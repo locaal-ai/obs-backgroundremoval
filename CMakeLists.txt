@@ -25,8 +25,8 @@ if(WIN32 OR MSVC)
     set(LibLZMA_DIR ${VCPKG_INSTALLED_DIR}/share/liblzma)
     set(quirc_DIR ${VCPKG_INSTALLED_DIR}/share/quirc)
 
-    set(onnxruntime_DIR ${VCPKG_DIR}/installed/x64-windows/lib)
-    set(onnxruntime_INCLUDE_HINT ${VCPKG_DIR}/installed/x64-windows/include)
+    set(Onnxruntime_DIR ${VCPKG_DIR}/installed/x64-windows/lib)
+    set(Onnxruntime_INCLUDE_HINT ${VCPKG_DIR}/installed/x64-windows/include)
 
     # Find lib TIFF
     find_library(TIFF_LIBRARY tiff PATHS ${VCPKG_INSTALLED_DIR}/lib)
@@ -35,10 +35,12 @@ if(WIN32 OR MSVC)
     find_file(Protobuf_PROTOC_EXECUTABLE protoc.exe PATHS ${VCPKG_INSTALLED_DIR}/tools)
 endif()
 
+if (UNIX)
+    set(Onnxruntime_INCLUDE_HINT /usr/local/include/)
+endif()
+
 set(CMAKE_PREFIX_PATH "${QTDIR}")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTOUIC ON)
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/external")
 
 # In case you need C++
@@ -52,6 +54,8 @@ else()
 endif()
 
 # Qt is not required for this plugin, at the moment.
+# set(CMAKE_AUTOMOC ON)
+# set(CMAKE_AUTOUIC ON)
 # find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
 
 configure_file(
@@ -88,6 +92,7 @@ set(PLUGIN_HEADERS
 add_library(${CMAKE_PROJECT_NAME} MODULE ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
 
 find_package(Onnxruntime REQUIRED)
+message(STATUS "Onnxruntime_INCLUDE_DIRS ${Onnxruntime_INCLUDE_DIRS}")
 
 find_package(OpenCV 4.2 REQUIRED COMPONENTS core imgproc)
 
@@ -95,7 +100,7 @@ include_directories(
 	${LIBOBS_INCLUDE_DIR}/../UI/obs-frontend-api
     ${LIBOBS_INCLUDE_DIR}
     ${LIBOBS_INCLUDE_DIRS}
-    ${onnxruntime_INCLUDE_DIRS}
+    ${Onnxruntime_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
 )
 

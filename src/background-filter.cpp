@@ -186,13 +186,13 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
 
 	std::string instanceName{"background-removal-inference"};
 	char* modelFilepath_rawPtr = obs_module_file("SINet_Softmax.onnx");
-#if _WIN32
 	std::string modelFilepath_s(modelFilepath_rawPtr);
+#if _WIN32
     std::wstring modelFilepath_ws(modelFilepath_s.size(), L' ');
     std::copy(modelFilepath_s.begin(), modelFilepath_s.end(), modelFilepath_ws.begin());
     const wchar_t* modelFilepath = modelFilepath_ws.c_str();
 #else
-    const char* modelFilepath = std::string(modelFilepath_rawPtr).c_str();
+    const char* modelFilepath = modelFilepath_s.c_str();
 #endif
 	bfree(modelFilepath_rawPtr);
 	blog(LOG_INFO, "model location %s", modelFilepath);

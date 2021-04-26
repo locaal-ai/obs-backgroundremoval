@@ -36,43 +36,14 @@ $ brew install opencv onnxruntime
 
 #### Finding libobs
 
-If you install the desktop OBS app (https://obsproject.com/download) you already have the binaries for libobs (e.g. `/Applications/OBS.app/Contents/Frameworks/libobs.0.dylib`)
+If you install the desktop OBS app (https://obsproject.com/download) you already have the binaries
+for libobs (e.g. `/Applications/OBS.app/Contents/Frameworks/libobs.0.dylib`)
 But you don't have the headers - so clone the main obs repo e.g. `git clone git@github.com:obsproject/obs-studio.git`
-
-Then you'd need to point `FindLibObs.cmake` to find the lib and headers, for me (user `roy_shilkrot`) this was:
-```
-find_path(LIBOBS_INCLUDE_DIR
-	NAMES obs.h
-	HINTS
-		ENV obsPath${_lib_suffix}
-		ENV obsPath
-		${obsPath}
-	PATHS
-		/Users/roy_shilkrot/Downloads/obs-studio/libobs/
-		/usr/include /usr/local/include /opt/local/include /sw/include
-	PATH_SUFFIXES
-		libobs
-	)
-```
-and
-```
-	find_library(${base_name_u}_LIB
-		NAMES ${_${base_name_u}_LIBRARIES} ${lib_name} lib${lib_name} ${lib_name}.0
-		HINTS
-			ENV obsPath${_lib_suffix}
-			ENV obsPath
-			${obsPath}
-			${_${base_name_u}_LIBRARY_DIRS}
-		PATHS
-			/Applications/OBS.app/Contents/Frameworks
-			/usr/lib /usr/local/lib /opt/local/lib /sw/lib
-# ...
-```
 
 Build:
 ```
 $ mkdir build && cd build
-$ cmake ..
+$ cmake .. -DobsLibPath=/Applications/OBS.app/Contents/Frameworks -DobsIncludePath=/Users/roy_shilkrot/Downloads/obs-studio/libobs
 $ cmake --build .
 ```
 
