@@ -15,22 +15,41 @@ set(MACOS_BUNDLEID "com.example.obs-backgroundremoval")
 # Replace `me@contoso.com` with the maintainer email address you want to put in Linux packages
 set(LINUX_MAINTAINER_EMAIL "roy.shil@gmail.com")
 
-# TAKE NOTE: No need to edit things past this point
+if(WIN32 OR MSVC)
+    set(VCPKG_DIR ${CMAKE_BINARY_DIR}/vcpkg)
+    set(VCPKG_INSTALLED_DIR ${VCPKG_DIR}/installed/x64-windows-static)
+    set(CMAKE_TOOLCHAIN_FILE ${VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake)
+
+    set(OpenCV_DIR ${VCPKG_INSTALLED_DIR}/share/opencv)
+    set(protobuf_DIR ${VCPKG_INSTALLED_DIR}/share/protobuf)
+    set(LibLZMA_DIR ${VCPKG_INSTALLED_DIR}/share/liblzma)
+    set(quirc_DIR ${VCPKG_INSTALLED_DIR}/share/quirc)
+
+    set(onnxruntime_DIR ${VCPKG_DIR}/installed/x64-windows/lib)
+    set(onnxruntime_INCLUDE_HINT ${VCPKG_DIR}/installed/x64-windows/include)
+
+    # Find lib TIFF
+    find_library(TIFF_LIBRARY tiff PATHS ${VCPKG_INSTALLED_DIR}/lib)
+    find_path(TIFF_INCLUDE_DIR tiff.h PATHS ${VCPKG_INSTALLED_DIR}/include)
+
+    find_file(Protobuf_PROTOC_EXECUTABLE protoc.exe PATHS ${VCPKG_INSTALLED_DIR}/tools)
+endif()
 
 set(CMAKE_PREFIX_PATH "${QTDIR}")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/external")
 
 # In case you need C++
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if (WIN32 OR APPLE)
-include(external/FindLibObs.cmake)
+if (APPLE)
+    include(external/FindLibObs.cmake)
+else()
+    find_package(LibObs REQUIRED)
 endif()
-
-find_package(LibObs REQUIRED)
 
 # Qt is not required for this plugin, at the moment.
 # find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
@@ -59,7 +78,7 @@ configure_file(
 
 set(PLUGIN_SOURCES
     src/background-filter.cpp
-    src/plugin-main.c
+    src/plugin-main.cpp
     )
 
 set(PLUGIN_HEADERS
@@ -68,29 +87,30 @@ set(PLUGIN_HEADERS
 # --- Platform-independent build settings ---
 add_library(${CMAKE_PROJECT_NAME} MODULE ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
 
-find_library(libonnxruntime onnxruntime REQUIRED)
-message(STATUS "libonnxruntime ${libonnxruntime}")
+find_package(Onnxruntime REQUIRED)
 
-find_package(OpenCV 4.2 REQUIRED)
+find_package(OpenCV 4.2 REQUIRED COMPONENTS core imgproc)
 
 include_directories(
-	"${LIBOBS_INCLUDE_DIR}/../UI/obs-frontend-api"
-    /usr/local/include/
-    /usr/local/include/onnxruntime
-    /usr/local/include/onnxruntime/core/session
-    /usr/local/include/onnxruntime/core/common
+	${LIBOBS_INCLUDE_DIR}/../UI/obs-frontend-api
+    ${LIBOBS_INCLUDE_DIR}
+    ${LIBOBS_INCLUDE_DIRS}
+    ${onnxruntime_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
 )
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
-	libobs
-    ${libonnxruntime} ${OpenCV_LIBRARIES}
+	${LIBOBS_LIBRARIES}
+    ${Onnxruntime_LIBRARIES}
+    ${OpenCV_LIBRARIES}
 )
 
 # --- End of section ---
 
 # --- Windows-specific build settings and tasks ---
 if(WIN32)
+    find_library(OBS_FRONTEND_LIB obs-frontend-api PATHS ${obsPath}/build/UI/obs-frontend-api/Release)
+
 	if(NOT DEFINED OBS_FRONTEND_LIB)
 		set(OBS_FRONTEND_LIB "OBS_FRONTEND_LIB-NOTFOUND" CACHE FILEPATH "OBS frontend library")
 		message(FATAL_ERROR "Could not find OBS Frontend API\'s library !")
@@ -98,7 +118,7 @@ if(WIN32)
 
     # Enable Multicore Builds and disable FH4 (to not depend on VCRUNTIME140_1.DLL when building with VS2019)
     if (MSVC)
-        add_definitions(/MP /d2FH4-)
+        add_definitions(/MP /d2FH4- /std:c++latest /MT)
     endif()
 
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)

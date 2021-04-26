@@ -28,11 +28,11 @@ MODULE_EXPORT const char *obs_module_description(void)
 	return "Portrait background filter plugin";
 }
 
-extern struct obs_source_info test_filter;
+extern struct obs_source_info background_removal_filter_info;
 
 bool obs_module_load(void)
 {
-    obs_register_source(&test_filter);
+    obs_register_source(&background_removal_filter_info);
     blog(LOG_INFO, "plugin loaded successfully (version %s)", PLUGIN_VERSION);
     return true;
 }

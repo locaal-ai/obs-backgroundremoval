@@ -24,7 +24,7 @@ Some more information about how I built it: https://www.morethantechnical.com/20
 The plugin was built and tested on Mac OSX. Building for Windows is outstanding, and help is appreciated.
 
 ### Prerequisites for building
-- OpenCV v4.5+: https://github.com/opencv/opencv/
+- OpenCV v4.2+: https://github.com/opencv/opencv/
 - ONNXRuntime: https://github.com/microsoft/onnxruntime
 
 ### Mac OSX
@@ -96,4 +96,23 @@ Build and install:
 ```
 $ mkdir build && cd build
 $ cmake .. && cmake --build . && cmake --install .
+```
+
+### Windows
+
+We will use static linking (as much as possible) to aviod having to lug around .DLLs with the plugin.
+
+Install dependencies via `vcpkg`:
+```
+$ mkdir build
+$ cd build
+$ git clone https://github.com/microsoft/vcpkg
+$ cd vcpkg
+$ .\bootstrap-vcpkg.bat
+$ .\vcpkg.exe install opencv[core]:x64-windows-static onnxruntime-gpu:x64-windows
+```
+
+Build:
+```
+$ cmake .. && cmake --build . --config Release
 ```

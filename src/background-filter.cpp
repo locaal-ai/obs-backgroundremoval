@@ -3,9 +3,12 @@
 #if defined(__APPLE__)
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
 #include <onnxruntime/core/providers/cpu/cpu_provider_factory.h>
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(_WIN32)
 #include <onnxruntime_cxx_api.h>
 #include <cpu_provider_factory.h>
+#endif
+#if defined(_WIN32)
+#include <wchar.h>
 #endif
 
 #include <opencv2/imgproc.hpp>
@@ -182,7 +185,16 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
 	struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(bzalloc(sizeof(struct background_removal_filter)));
 
 	std::string instanceName{"background-removal-inference"};
-	char* modelFilepath = obs_module_file("SINet_Softmax.onnx");
+	char* modelFilepath_rawPtr = obs_module_file("SINet_Softmax.onnx");
+#if _WIN32
+	std::string modelFilepath_s(modelFilepath_rawPtr);
+    std::wstring modelFilepath_ws(modelFilepath_s.size(), L' ');
+    std::copy(modelFilepath_s.begin(), modelFilepath_s.end(), modelFilepath_ws.begin());
+    const wchar_t* modelFilepath = modelFilepath_ws.c_str();
+#else
+    const char* modelFilepath = std::string(modelFilepath_rawPtr).c_str();
+#endif
+	bfree(modelFilepath_rawPtr);
 	blog(LOG_INFO, "model location %s", modelFilepath);
 
     tf->env.reset(new Ort::Env(OrtLoggingLevel::ORT_LOGGING_LEVEL_ERROR, instanceName.c_str()));
@@ -190,7 +202,6 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
     sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
 
     tf->session.reset(new Ort::Session(*tf->env, modelFilepath, sessionOptions));
-	bfree(modelFilepath);
 
     Ort::AllocatorWithDefaultOptions allocator;
 
@@ -386,7 +397,7 @@ static void filter_destroy(void *data)
 
 
 
-struct obs_source_info test_filter = {
+struct obs_source_info background_removal_filter_info = {
 	.id = "background_removal_filter",
 	.type = OBS_SOURCE_TYPE_FILTER,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_ASYNC,

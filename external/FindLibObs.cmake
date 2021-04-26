@@ -31,6 +31,7 @@ find_path(LIBOBS_INCLUDE_DIR
 		ENV obsPath${_lib_suffix}
 		ENV obsPath
 		${obsPath}
+		${obsPath}/libobs
 	PATHS
 		/usr/include /usr/local/include /opt/local/include /sw/include
 	PATH_SUFFIXES
@@ -46,7 +47,7 @@ function(find_obs_lib base_name repo_build_path lib_name)
 	endif()
 
 	find_library(${base_name_u}_LIB
-		NAMES ${_${base_name_u}_LIBRARIES} ${lib_name} lib${lib_name}
+		NAMES ${_${base_name_u}_LIBRARIES} ${lib_name} lib${lib_name} ${lib_name}.0
 		HINTS
 			ENV obsPath${_lib_suffix}
 			ENV obsPath
@@ -68,8 +69,10 @@ function(find_obs_lib base_name repo_build_path lib_name)
 			build${_lib_suffix}/${repo_build_path}
 			# base repo msvc-specific search paths on windows
 			build${_lib_suffix}/${repo_build_path}/Debug
+			build${_lib_suffix}/${repo_build_path}/Release
 			build${_lib_suffix}/${repo_build_path}/RelWithDebInfo
 			build/${repo_build_path}/Debug
+			build/${repo_build_path}/Release
 			build/${repo_build_path}/RelWithDebInfo
 		)
 endfunction()
