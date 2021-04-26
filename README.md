@@ -4,6 +4,7 @@
 - [Building](#building)
   - [MacOSX](#mac-osx)
   - [Linux / Ubuntu](#linux--ubuntu)
+  - [Windows](#windows)
 
 ## Introduction
 
