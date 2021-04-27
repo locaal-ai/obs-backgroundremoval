@@ -6,6 +6,9 @@
   - [Linux / Ubuntu](#linux--ubuntu)
   - [Windows](#windows)
 
+## Download
+Check out the (latest releases)[https://github.com/royshil/obs-backgroundremoval/releases] for downloads and install instructions.
+
 ## Introduction
 
 This plugin is meant to make it easy to replace the background in portrait images and video.
