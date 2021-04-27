@@ -25,7 +25,7 @@ Some more information about how I built it: https://www.morethantechnical.com/20
 
 ## Building
 
-The plugin was built and tested on Mac OSX. Building for Windows is outstanding, and help is appreciated.
+The plugin was built and tested on Mac OSX, Windows and Ubuntu Linux. Help is appreciated in building on other OSs and formalizing the one-click installers.
 
 ### Prerequisites for building
 - OpenCV v4.2+: https://github.com/opencv/opencv/
