@@ -7,7 +7,7 @@
   - [Windows](#windows)
 
 ## Download
-Check out the (latest releases)[https://github.com/royshil/obs-backgroundremoval/releases] for downloads and install instructions.
+Check out the [latest releases](https://github.com/royshil/obs-backgroundremoval/releases) for downloads and install instructions.
 
 ## Introduction
 
