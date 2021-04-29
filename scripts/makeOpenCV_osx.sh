@@ -2,9 +2,10 @@
 
 WORK_DIR=$(git rev-parse --show-toplevel)/build
 CURRENT_DIR=$(pwd)
+OUTPUT_DIR=$WORK_DIR/opencv
 
-if [[ -d $WORK_DIR/opencv ]]; then
-    rm -rf $WORK_DIR/opencv
+if [[ -d $OUTPUT_DIR ]]; then
+    rm -rf $OUTPUT_DIR
 fi
 
 if [[ ! -d $WORK_DIR ]]; then
@@ -84,7 +85,7 @@ cmake .. \
     -DWITH_FFMPEG=OFF \
     -DWITH_GSTREAMER=OFF \
     -DWITH_1394=OFF \
-    -DCMAKE_INSTALL_PREFIX=$WORK_DIR/opencv \
+    -DCMAKE_INSTALL_PREFIX=$OUTPUT_DIR \
     -DWITH_PROTOBUF=OFF \
     -DBUILD_PROTOBUF=OFF \
     -DWITH_CAROTENE=OFF \
