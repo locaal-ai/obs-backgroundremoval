@@ -33,7 +33,7 @@ The plugin was built and tested on Mac OSX, Windows and Ubuntu Linux. Help is ap
 
 ### Mac OSX
 
-Install dependencies:
+#### Install dependencies
 ```
 $ brew install opencv onnxruntime
 ```
@@ -50,13 +50,14 @@ If you install the desktop OBS app (https://obsproject.com/download) you already
 for libobs (e.g. `/Applications/OBS.app/Contents/Frameworks/libobs.0.dylib`)
 But you don't have the headers - so clone the main obs repo e.g. `git clone git@github.com:obsproject/obs-studio.git`
 
-Build:
+#### Build
 ```
 $ mkdir build && cd build
 $ cmake .. -DobsLibPath=/Applications/OBS.app/Contents/Frameworks -DobsIncludePath=/Users/roy_shilkrot/Downloads/obs-studio/libobs
 $ cmake --build .
 ```
 
+#### Install
 Add it to your OBS install, e.g.
 ```
 $ cp obs-backgroundremoval.so /Applications/OBS.app/Contents/PlugIns
@@ -66,14 +67,14 @@ $ cp ../data/SINet_Softmax.onnx /Applications/OBS.app/Contents/Resources/data/ob
 
 ### Linux / Ubuntu
 
-Install dependencies:
+#### Install dependencies
 ```
 $ apt install -y libobs-dev libopencv-dev language-pack-en wget git build-essential cmake
 $ wget https://github.com/microsoft/onnxruntime/releases/download/v1.7.0/onnxruntime-linux-x64-1.7.0.tgz
 $ tar xzvf onnxruntime-linux-x64-1.7.0.tgz --strip-components=1 -C /usr/local/ --wildcards "*/include/*" "*/lib*/"
 ```
 
-Build and install:
+#### Build and install
 ```
 $ mkdir build && cd build
 $ cmake .. && cmake --build . && cmake --install .
