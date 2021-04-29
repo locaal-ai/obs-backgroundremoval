@@ -91,6 +91,9 @@ add_library(${CMAKE_PROJECT_NAME} MODULE ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
 find_package(Onnxruntime REQUIRED)
 message(STATUS "Onnxruntime_INCLUDE_DIRS ${Onnxruntime_INCLUDE_DIRS}")
 
+if (APPLE)
+    set(OpenCV_DIR ${CMAKE_BINARY_DIR}/opencv/lib/cmake/opencv4)
+endif()
 find_package(OpenCV 4.2 REQUIRED COMPONENTS core imgproc)
 
 include_directories(

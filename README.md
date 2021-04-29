@@ -35,6 +35,12 @@ Install dependencies:
 $ brew install opencv onnxruntime
 ```
 
+You may also build a static-linking (very minimal) version of OpenCV, instead of the homebrew one:
+```
+<root>/build/ $ ../scripts/makeOpenCV_osx.sh
+```
+This should be more robust across versions of OSX, as well as building for 10.13.
+
 #### Finding libobs
 
 If you install the desktop OBS app (https://obsproject.com/download) you already have the binaries
