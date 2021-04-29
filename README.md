@@ -33,27 +33,30 @@ The plugin was built and tested on Mac OSX, Windows and Ubuntu Linux. Help is ap
 
 ### Mac OSX
 
-Install dependencies:
+#### Install dependencies
+
+You may use homebrew:
 ```
 $ brew install opencv onnxruntime
 ```
 
-You may also build a static-linking (very minimal) version of OpenCV, instead of the homebrew one:
+Or - you may also build a (very minimal) version of OpenCV and ONNX Runtime for static-linking, instead of the homebrew ones:
 ```
 <root>/build/ $ ../scripts/makeOpenCV_osx.sh
+<root>/build/ $ ../scripts/makeOnnxruntime_osx.sh
 ```
-This should be more robust across versions of OSX, as well as building for 10.13.
+Static linking should be more robust across versions of OSX, as well as building for 10.13.
 
 #### Finding libobs
 
 If you install the desktop OBS app (https://obsproject.com/download) you already have the binaries
 for libobs (e.g. `/Applications/OBS.app/Contents/Frameworks/libobs.0.dylib`)
-But you don't have the headers - so clone the main obs repo e.g. `git clone git@github.com:obsproject/obs-studio.git`
+But you don't have the headers - so clone the main obs repo e.g. `git clone --single-branch -b 26.1.2 git@github.com:obsproject/obs-studio.git` (match the version number to your OBS install. Right now on OSX it's 26.1.2)
 
 Build:
 ```
 $ mkdir build && cd build
-$ cmake .. -DobsLibPath=/Applications/OBS.app/Contents/Frameworks -DobsIncludePath=/Users/roy_shilkrot/Downloads/obs-studio/libobs
+$ cmake .. -DobsLibPath=/Applications/OBS.app/Contents/Frameworks -DobsIncludePath=~/Downloads/obs-studio/libobs
 $ cmake --build .
 ```
 
