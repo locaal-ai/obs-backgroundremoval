@@ -14,8 +14,12 @@ fi
 
 cd $WORK_DIR
 
-# download opencv
+# download opencv if not already downloaded
 if [[ ! -d opencv-4.5.2 ]]; then
+    if [[ ! $( which wget ) ]]; then
+        echo "wget is not available, please install it e.g. `$ brew install wget`"
+        exit 1
+    fi
     wget https://github.com/opencv/opencv/archive/refs/tags/4.5.2.tar.gz
     tar xzf 4.5.2.tar.gz
     rm 4.5.2.tar.gz
@@ -31,7 +35,7 @@ fi
 
 cd build
 
-# build opencv minimal
+# build opencv minimal (just core and imgproc)
 cmake .. \
     -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 \
     -DBUILD_SHARED_LIBS=OFF \
@@ -96,6 +100,7 @@ cmake .. \
     -DWITH_VA=OFF \
     -DWITH_LAPACK=OFF \
     -DWITH_QUIRC=OFF \
+    -DWITH_ADE=OFF \
     && \
     cmake --build . --target install -- -j8
 
