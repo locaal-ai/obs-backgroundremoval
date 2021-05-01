@@ -86,7 +86,7 @@ if(MSVC)
 endif()
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Libobs DEFAULT_MSG LIBOBS_LIB LIBOBS_INCLUDE_DIR)
+find_package_handle_standard_args(LibObs DEFAULT_MSG LIBOBS_LIB LIBOBS_INCLUDE_DIR)
 mark_as_advanced(LIBOBS_INCLUDE_DIR LIBOBS_LIB)
 
 if(LIBOBS_FOUND)
