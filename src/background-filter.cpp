@@ -35,6 +35,8 @@ struct background_removal_filter {
 	cv::Scalar backgroundColor{0, 0, 0};
 	float contourFilter = 0.05;
 	float smoothContour = 0.5;
+
+	// Use the media-io converter to both scale and convert the colorspace
 	video_scaler_t* scalerToRGB;
 	video_scaler_t* scalerFromRGB;
 };
@@ -192,32 +194,44 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
 	return tf;
 }
 
-cv::Mat convertFrameToRGB(struct obs_source_frame *frame,
-						  cv::Size outputSize,
-						  struct background_removal_filter *tf) {
-	cv::Mat imageRGB(outputSize, CV_8UC3);
 
-	// Use the media-io frame converter to both scale and convert the colorspace
+void initializeScalers(cv::Size rgbSize,
+					   cv::Size frameSize,
+					   enum video_format frameFormat,
+					   struct background_removal_filter *tf) {
+	struct video_scale_info dst{
+		VIDEO_FORMAT_BGR3,
+		(uint32_t)rgbSize.width,
+		(uint32_t)rgbSize.height,
+		VIDEO_RANGE_DEFAULT,
+		VIDEO_CS_DEFAULT
+	};
+	struct video_scale_info src{
+		frameFormat,
+		(uint32_t)frameSize.width,
+		(uint32_t)frameSize.height,
+		VIDEO_RANGE_DEFAULT,
+		VIDEO_CS_DEFAULT
+	};
 	if (tf->scalerToRGB == nullptr) {
-		// Lazy initialize the frame scale & color converter
-		struct video_scale_info dst{
-			VIDEO_FORMAT_BGR3,
-			(uint32_t)outputSize.width,
-			(uint32_t)outputSize.height,
-			VIDEO_RANGE_DEFAULT,
-			VIDEO_CS_DEFAULT
-		};
-		struct video_scale_info src{
-			frame->format,
-			frame->width,
-			frame->height,
-			VIDEO_RANGE_DEFAULT,
-			VIDEO_CS_DEFAULT
-		};
 		video_scaler_create(&tf->scalerToRGB, &dst, &src, VIDEO_SCALE_DEFAULT);
+	}
+	if (tf->scalerFromRGB == nullptr) {
 		video_scaler_create(&tf->scalerFromRGB, &src, &dst, VIDEO_SCALE_DEFAULT);
 	}
+}
 
+
+cv::Mat convertFrameToRGB(struct obs_source_frame *frame,
+						  cv::Size rgbSize,
+						  struct background_removal_filter *tf) {
+
+	if (tf->scalerToRGB == nullptr) {
+		// Lazy initialize the frame scale & color converter
+		initializeScalers(rgbSize, cv::Size(frame->width, frame->height), frame->format, tf);
+	}
+
+	cv::Mat imageRGB(rgbSize, CV_8UC3);
 	const uint32_t rgbLinesize = imageRGB.cols * imageRGB.elemSize();
 	video_scaler_scale(tf->scalerToRGB,
 		&(imageRGB.data), &(rgbLinesize),
@@ -226,12 +240,19 @@ cv::Mat convertFrameToRGB(struct obs_source_frame *frame,
 	return imageRGB;
 }
 
+
 void convertRGBToFrame(cv::Mat imageRGB, struct obs_source_frame *frame, struct background_removal_filter *tf) {
+	if (tf->scalerFromRGB == nullptr) {
+		// Lazy initialize the frame scale & color converter
+		initializeScalers(imageRGB.size(), cv::Size(frame->width, frame->height), frame->format, tf);
+	}
+
 	const uint32_t rgbLinesize = imageRGB.cols * imageRGB.elemSize();
 	video_scaler_scale(tf->scalerFromRGB,
 		frame->data, frame->linesize,
 		&(imageRGB.data), &(rgbLinesize));
 }
+
 
 static struct obs_source_frame * filter_render(void *data, struct obs_source_frame *frame)
 {
@@ -291,11 +312,14 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 	return frame;
 }
 
+
 static void filter_destroy(void *data)
 {
 	struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
 	if (tf) {
+		video_scaler_destroy(tf->scalerToRGB);
+		video_scaler_destroy(tf->scalerFromRGB);
 		bfree(tf);
 	}
 }
