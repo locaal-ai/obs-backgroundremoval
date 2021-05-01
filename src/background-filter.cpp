@@ -1,4 +1,5 @@
 #include <obs-module.h>
+#include <media-io/video-scaler.h>
 
 #if defined(__APPLE__)
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
@@ -34,6 +35,8 @@ struct background_removal_filter {
 	cv::Scalar backgroundColor{0, 0, 0};
 	float contourFilter = 0.05;
 	float smoothContour = 0.5;
+	video_scaler_t* scalerToRGB;
+	video_scaler_t* scalerFromRGB;
 };
 
 static const char *filter_getname(void *unused)
@@ -61,60 +64,6 @@ void hwc_to_chw(cv::InputArray src, cv::OutputArray dst) {
     cv::hconcat( channels, dst );
 }
 
-enum YUV_TYPE {
-	YUV_TYPE_UYVY = 0,
-	YUV_TYPE_YVYU = 1,
-	YUV_TYPE_YUYV = 2,
-};
-
-void rgb_to_yuv(const cv::Mat& rgb, cv::Mat& yuv, YUV_TYPE yuvType = YUV_TYPE_UYVY) {
-	assert(rgb.depth() == CV_8U &&
-		   rgb.channels() == 3 &&
-		   yuv.depth() == CV_8U &&
-		   yuv.channels() == 2 &&
-		   rgb.size() == yuv.size());
-
-	for (int ih = 0; ih < rgb.rows; ih++) {
-		const uint8_t* rgbRowPtr = rgb.ptr<uint8_t>(ih);
-		uint8_t* yuvRowPtr = yuv.ptr<uint8_t>(ih);
-
-		for (int iw = 0; iw < rgb.cols; iw = iw + 2) {
-			const int rgbColIdxBytes = iw * rgb.elemSize();
-			const int yuvColIdxBytes = iw * yuv.elemSize();
-
-			const uint8_t R1 = rgbRowPtr[rgbColIdxBytes + 0];
-			const uint8_t G1 = rgbRowPtr[rgbColIdxBytes + 1];
-			const uint8_t B1 = rgbRowPtr[rgbColIdxBytes + 2];
-			const uint8_t R2 = rgbRowPtr[rgbColIdxBytes + 3];
-			const uint8_t G2 = rgbRowPtr[rgbColIdxBytes + 4];
-			const uint8_t B2 = rgbRowPtr[rgbColIdxBytes + 5];
-
-			const int Y  =  (0.257f * R1) + (0.504f * G1) + (0.098f * B1) + 16.0f ;
-			const int U  = -(0.148f * R1) - (0.291f * G1) + (0.439f * B1) + 128.0f;
-			const int V  =  (0.439f * R1) - (0.368f * G1) - (0.071f * B1) + 128.0f;
-			const int Y2 =  (0.257f * R2) + (0.504f * G2) + (0.098f * B2) + 16.0f ;
-
-			if (yuvType == YUV_TYPE_UYVY) {
-				yuvRowPtr[yuvColIdxBytes + 0] = cv::saturate_cast<uint8_t>(U );
-				yuvRowPtr[yuvColIdxBytes + 1] = cv::saturate_cast<uint8_t>(Y );
-				yuvRowPtr[yuvColIdxBytes + 2] = cv::saturate_cast<uint8_t>(V );
-				yuvRowPtr[yuvColIdxBytes + 3] = cv::saturate_cast<uint8_t>(Y2);
-			}
-			if (yuvType == YUV_TYPE_YVYU) {
-				yuvRowPtr[yuvColIdxBytes + 0] = cv::saturate_cast<uint8_t>(Y );
-				yuvRowPtr[yuvColIdxBytes + 1] = cv::saturate_cast<uint8_t>(V );
-				yuvRowPtr[yuvColIdxBytes + 2] = cv::saturate_cast<uint8_t>(Y2);
-				yuvRowPtr[yuvColIdxBytes + 3] = cv::saturate_cast<uint8_t>(U );
-			}
-			if (yuvType == YUV_TYPE_YUYV) {
-				yuvRowPtr[yuvColIdxBytes + 0] = cv::saturate_cast<uint8_t>(Y );
-				yuvRowPtr[yuvColIdxBytes + 1] = cv::saturate_cast<uint8_t>(U );
-				yuvRowPtr[yuvColIdxBytes + 2] = cv::saturate_cast<uint8_t>(Y2);
-				yuvRowPtr[yuvColIdxBytes + 3] = cv::saturate_cast<uint8_t>(V );
-			}
-		}
-	}
-}
 
 /**                   PROPERTIES                     */
 
@@ -243,84 +192,45 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
 	return tf;
 }
 
-cv::Mat convertFrameToRGB(struct obs_source_frame *frame) {
-	cv::Mat imageRGB;
-	if (frame->format == VIDEO_FORMAT_UYVY) {
-		cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
-		cv::cvtColor(imageYUV, imageRGB, cv::ColorConversionCodes::COLOR_YUV2RGB_UYVY);
+cv::Mat convertFrameToRGB(struct obs_source_frame *frame,
+						  cv::Size outputSize,
+						  struct background_removal_filter *tf) {
+	cv::Mat imageRGB(outputSize, CV_8UC3);
+
+	// Use the media-io frame converter to both scale and convert the colorspace
+	if (tf->scalerToRGB == nullptr) {
+		// Lazy initialize the frame scale & color converter
+		struct video_scale_info dst{
+			VIDEO_FORMAT_BGR3,
+			(uint32_t)outputSize.width,
+			(uint32_t)outputSize.height,
+			VIDEO_RANGE_DEFAULT,
+			VIDEO_CS_DEFAULT
+		};
+		struct video_scale_info src{
+			frame->format,
+			frame->width,
+			frame->height,
+			VIDEO_RANGE_DEFAULT,
+			VIDEO_CS_DEFAULT
+		};
+		video_scaler_create(&tf->scalerToRGB, &dst, &src, VIDEO_SCALE_DEFAULT);
+		video_scaler_create(&tf->scalerFromRGB, &src, &dst, VIDEO_SCALE_DEFAULT);
 	}
-	if (frame->format == VIDEO_FORMAT_YVYU) {
-		cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
-		cv::cvtColor(imageYUV, imageRGB, cv::ColorConversionCodes::COLOR_YUV2RGB_YVYU);
-	}
-	if (frame->format == VIDEO_FORMAT_YUY2) {
-		cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
-		cv::cvtColor(imageYUV, imageRGB, cv::ColorConversionCodes::COLOR_YUV2RGB_YUY2);
-	}
-	if (frame->format == VIDEO_FORMAT_NV12) {
-		cv::Mat imageYUV(frame->height, frame->width * 3 / 2, CV_8UC1, frame->data[0]);
-		cv::cvtColor(imageYUV, imageRGB, cv::ColorConversionCodes::COLOR_YUV2RGB_NV12);
-	}
-	if (frame->format == VIDEO_FORMAT_I420) {
-		cv::Mat imageYUV(frame->height, frame->width * 3 / 2, CV_8UC1, frame->data[0]);
-		cv::cvtColor(imageYUV, imageRGB, cv::ColorConversionCodes::COLOR_YUV2RGB_I420);
-	}
-	if (frame->format == VIDEO_FORMAT_I444) {
-		cv::Mat imageYUV(frame->height, frame->width, CV_8UC3, frame->data[0]);
-		cv::cvtColor(imageYUV, imageRGB, cv::ColorConversionCodes::COLOR_YUV2RGB);
-	}
-	if (frame->format == VIDEO_FORMAT_RGBA) {
-		cv::Mat imageRGBA(frame->height, frame->width, CV_8UC4, frame->data[0]);
-		cv::cvtColor(imageRGBA, imageRGB, cv::ColorConversionCodes::COLOR_RGBA2RGB);
-	}
-	if (frame->format == VIDEO_FORMAT_BGRA) {
-		cv::Mat imageBGRA(frame->height, frame->width, CV_8UC4, frame->data[0]);
-		cv::cvtColor(imageBGRA, imageRGB, cv::ColorConversionCodes::COLOR_BGRA2RGB);
-	}
-	if (frame->format == VIDEO_FORMAT_Y800) {
-		cv::Mat imageGray(frame->height, frame->width, CV_8UC1, frame->data[0]);
-		cv::cvtColor(imageGray, imageRGB, cv::ColorConversionCodes::COLOR_GRAY2RGB);
-	}
+
+	const uint32_t rgbLinesize = imageRGB.cols * imageRGB.elemSize();
+	video_scaler_scale(tf->scalerToRGB,
+		&(imageRGB.data), &(rgbLinesize),
+		frame->data, frame->linesize);
+
 	return imageRGB;
 }
 
-void convertRGBToFrame(cv::Mat imageRGB, struct obs_source_frame *frame) {
-	if (frame->format == VIDEO_FORMAT_UYVY) {
-		cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
-		rgb_to_yuv(imageRGB, imageYUV, YUV_TYPE_UYVY);
-	}
-	if (frame->format == VIDEO_FORMAT_YVYU) {
-		cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
-		rgb_to_yuv(imageRGB, imageYUV, YUV_TYPE_YVYU);
-	}
-	if (frame->format == VIDEO_FORMAT_YUY2) {
-		cv::Mat imageYUV(frame->height, frame->width, CV_8UC2, frame->data[0]);
-		rgb_to_yuv(imageRGB, imageYUV, YUV_TYPE_YUYV);
-	}
-	if (frame->format == VIDEO_FORMAT_NV12) {
-		cv::Mat imageYUV(frame->height, frame->width * 3 / 2, CV_8UC1, frame->data[0]);
-		cv::cvtColor(imageRGB, imageYUV, cv::ColorConversionCodes::COLOR_RGB2YUV_YV12);
-	}
-	if (frame->format == VIDEO_FORMAT_I420) {
-		cv::Mat imageYUV(frame->height, frame->width * 3 / 2, CV_8UC1, frame->data[0]);
-		cv::cvtColor(imageRGB, imageYUV, cv::ColorConversionCodes::COLOR_RGB2YUV_I420);
-	}
-	if (frame->format == VIDEO_FORMAT_I444) {
-		cv::Mat imageYUV(frame->height, frame->width, CV_8UC3, frame->data[0]);
-		cv::cvtColor(imageRGB, imageYUV, cv::ColorConversionCodes::COLOR_RGB2YUV);
-	}
-	if (frame->format == VIDEO_FORMAT_RGBA) {
-		cv::Mat imageRGBA(frame->height, frame->width, CV_8UC4, frame->data[0]);
-		cv::cvtColor(imageRGB, imageRGBA, cv::ColorConversionCodes::COLOR_RGB2RGBA);
-	}
-	if (frame->format == VIDEO_FORMAT_BGRA) {
-		cv::Mat imageBGRA(frame->height, frame->width, CV_8UC4, frame->data[0]);
-		cv::cvtColor(imageRGB, imageBGRA, cv::ColorConversionCodes::COLOR_RGB2BGRA);
-	}
-	if (frame->format == VIDEO_FORMAT_Y800) {
-		cv::Mat imageGray(frame->height, frame->width, CV_8UC1, frame->data[0]);
-		cv::cvtColor(imageRGB, imageGray, cv::ColorConversionCodes::COLOR_RGB2GRAY);
-	}
+void convertRGBToFrame(cv::Mat imageRGB, struct obs_source_frame *frame, struct background_removal_filter *tf) {
+	const uint32_t rgbLinesize = imageRGB.cols * imageRGB.elemSize();
+	video_scaler_scale(tf->scalerFromRGB,
+		frame->data, frame->linesize,
+		&(imageRGB.data), &(rgbLinesize));
 }
 
 static struct obs_source_frame * filter_render(void *data, struct obs_source_frame *frame)
@@ -328,12 +238,9 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 	struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
 	// Convert to RGB
-	cv::Mat imageRGB = convertFrameToRGB(frame);
+	cv::Mat resizedImageRGB = convertFrameToRGB(frame, cv::Size(tf->inputDims.at(2), tf->inputDims.at(3)), tf);
 	// Prepare input to nework
-    cv::Mat resizedImageRGB, resizedImage, preprocessedImage;
-    cv::resize(imageRGB, resizedImageRGB,
-               cv::Size(tf->inputDims.at(2), tf->inputDims.at(3)),
-               cv::InterpolationFlags::INTER_CUBIC);
+    cv::Mat resizedImage, preprocessedImage;
     resizedImageRGB.convertTo(resizedImage, CV_32F);
 	cv::subtract(resizedImage, cv::Scalar(102.890434, 111.25247, 126.91212), resizedImage);
 	cv::multiply(resizedImage, cv::Scalar(1.0 / 62.93292,  1.0 / 62.82138, 1.0 / 66.355705) / 255.0, resizedImage);
@@ -351,10 +258,8 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 
 	// Convert network output mask to input size
     cv::Mat outputImage(tf->outputDims.at(2), tf->outputDims.at(3), CV_32FC1, &(tf->outputTensorValues[0]));
-	cv::Mat outputImageReized;
-	cv::resize(outputImage, outputImageReized, imageRGB.size(), cv::InterpolationFlags::INTER_CUBIC);
 
-	cv::Mat mask = outputImageReized > tf->threshold;
+	cv::Mat mask = outputImage > tf->threshold;
 
 	// Contour processing
 	if (tf->contourFilter > 0.0 && tf->contourFilter < 1.0) {
@@ -379,10 +284,10 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 	}
 
 	// Mask the input
-	imageRGB.setTo(tf->backgroundColor, mask);
+	resizedImageRGB.setTo(tf->backgroundColor, mask);
 
 	// Put masked image back on frame
-	convertRGBToFrame(imageRGB, frame);
+	convertRGBToFrame(resizedImageRGB, frame, tf);
 	return frame;
 }
 
