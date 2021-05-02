@@ -3,7 +3,7 @@
 - [Introduction](#introduction)
 - [Building](#building)
   - [MacOSX](#mac-osx)
-  - [Linux / Ubuntu](#linux--ubuntu)
+  - [Linux (Ubuntu, Arch)](#linux)
   - [Windows](#windows)
 
 ## Download
@@ -68,19 +68,26 @@ $ mkdir -p /Applications/OBS.app/Contents/Resources/data/obs-plugins/obs-backgro
 $ cp ../data/SINet_Softmax.onnx /Applications/OBS.app/Contents/Resources/data/obs-plugins/obs-backgroundremoval/
 ```
 
-### Linux / Ubuntu
+### Linux
 
-#### Install dependencies
+#### Ubuntu
 ```
 $ apt install -y libobs-dev libopencv-dev language-pack-en wget git build-essential cmake
 $ wget https://github.com/microsoft/onnxruntime/releases/download/v1.7.0/onnxruntime-linux-x64-1.7.0.tgz
 $ tar xzvf onnxruntime-linux-x64-1.7.0.tgz --strip-components=1 -C /usr/local/ --wildcards "*/include/*" "*/lib*/"
 ```
 
-#### Build and install
+Then build and install:
 ```
 $ mkdir build && cd build
 $ cmake .. && cmake --build . && cmake --install .
+```
+
+#### Archlinux
+A `PKGBUILD` file is provided for making the plugin package
+```
+$ cd scripts
+$ makepkg -s
 ```
 
 ### Windows
