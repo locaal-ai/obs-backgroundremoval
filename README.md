@@ -100,11 +100,11 @@ $ .\vcpkg.exe install opencv[core]:x64-windows-static
 Unzip an ONNX runtime release: https://github.com/microsoft/onnxruntime/releases to e.g. Downloads.
 You should have a directory like `<Downloads>\Microsoft.AI.MachineLearning.1.7.2\`.
 
-Clone the OBS repo, `Downloads\ $ git clone git@github.com:obsproject/obs-studio.git`, to e.g. Downloads.
-Checkout tag 26.1.1: `Downloads\obs-studio\ $ git checkout 26.1.1`
+Clone the OBS repo, `Downloads\ $ git clone --single-branch -b 26.1.2 git@github.com:obsproject/obs-studio.git`, to e.g. Downloads.
 
 Build the plugin:
 ```
 $ cmake .. -DobsPath="<Downloads>\obs-studio\" -DOnnxruntime_INCLUDE_HINT=<Downloads>\Microsoft.AI.MachineLearning.1.7.2\build\native\include -DOnnxruntime_DIR=<Downloads>\Microsoft.AI.MachineLearning.1.7.2\runtimes\win-x64\_native\static
 $ cmake --build . --config Release
 ```
+(replace `<downloads>` with the actuals downloads directory path)

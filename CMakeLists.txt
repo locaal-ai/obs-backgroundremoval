@@ -89,7 +89,6 @@ set(PLUGIN_HEADERS
 add_library(${CMAKE_PROJECT_NAME} MODULE ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
 
 find_package(Onnxruntime REQUIRED)
-message(STATUS "Onnxruntime_INCLUDE_DIRS ${Onnxruntime_INCLUDE_DIRS}")
 
 if (APPLE)
     set(OpenCV_DIR ${CMAKE_BINARY_DIR}/opencv/lib/cmake/opencv4)
