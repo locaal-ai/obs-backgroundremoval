@@ -1,8 +1,9 @@
 # Try to find onnxruntime library
 # Once done this will define
-#  Onnxruntime_FOUND - if system found Part4 library
-#  Onnxruntime_INCLUDE_DIRS - The Part4 include directories
-#  Onnxruntime_LIBRARIES - The libraries needed to use Part4
+#  Onnxruntime_FOUND - if system found onnruntime library
+#  Onnxruntime_INCLUDE_DIRS - The onnruntime include directories
+#  Onnxruntime_LIBRARIES - The libraries needed to use onnxruntime
+#  Onnxruntime_LIBRARY_DIR - The directory of onnxruntime libraries
 
 set(Onnxruntime_DIR_BUILD ${CMAKE_BINARY_DIR}/onnxruntime/)
 if(APPLE AND EXISTS ${Onnxruntime_DIR_BUILD})
@@ -37,6 +38,7 @@ if (Onnxruntime_FOUND)
     if (APPLE)
         set(Onnxruntime_INCLUDE_DIRS ${Onnxruntime_INCLUDE_DIRS} ${Onnxruntime_INCLUDE_DIR}/onnxruntime/core/session)
     endif()
+    get_filename_component(Onnxruntime_LIBRARY_DIR ${Onnxruntime_LIBRARY} DIRECTORY)
 endif()
 
 # Tell cmake GUIs to ignore the "local" variables.

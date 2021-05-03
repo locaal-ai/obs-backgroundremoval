@@ -120,6 +120,11 @@ if(WIN32)
 		message(FATAL_ERROR "Could not find OBS Frontend API\'s library !")
 	endif()
 
+    # find the onnxruntime DLL for packaging with the plugin DLL
+    if (WIN32)
+        set(Onnxruntime_DLL "${Onnxruntime_LIBRARY_DIR}/onnxruntime.dll")
+    endif()
+
     # Enable Multicore Builds and disable FH4 (to not depend on VCRUNTIME140_1.DLL when building with VS2019)
     if (MSVC)
         add_definitions(/MP /d2FH4- /std:c++latest /MT)
@@ -165,6 +170,12 @@ if(WIN32)
                 "${RELEASE_DIR}/obs-plugins/${ARCH_NAME}"
         )
 
+        COMMAND if $<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>==1 (
+            "${CMAKE_COMMAND}" -E copy
+                "${Onnxruntime_DLL}"
+                "${RELEASE_DIR}/obs-plugins/${ARCH_NAME}"
+        )
+
         # If config is RelWithDebInfo, copy the pdb file
         COMMAND if $<CONFIG:RelWithDebInfo>==1 (
             "${CMAKE_COMMAND}" -E copy
@@ -198,6 +209,18 @@ if(WIN32)
     )
 	# --- End of sub-section ---
 
+    install(DIRECTORY "${RELEASE_DIR}/"
+        DESTINATION .
+    )
+    # Tell CPack to create a zip file.
+    set(CPACK_GENERATOR "ZIP")
+    # Tell CPack what to name the zip file. It will append `.zip`.
+    set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-win64")
+    # Tell CPack not to put everything inside an enclosing directory.
+    set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
+    # Apparently this should be always on but isn't for backwards compatibility.
+    set(CPACK_VERBATIM_VARIABLES YES)
+    include(CPack)
 endif()
 # --- End of section ---
 
