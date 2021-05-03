@@ -36,6 +36,8 @@ if (UNIX)
     set(Onnxruntime_INCLUDE_HINT /usr/local/include/)
 endif()
 
+set(RELEASE_DIR "${PROJECT_SOURCE_DIR}/release" CACHE STRING "Directory for building release packages")
+
 set(CMAKE_PREFIX_PATH "${QTDIR}")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/external")
@@ -121,9 +123,7 @@ if(WIN32)
 	endif()
 
     # find the onnxruntime DLL for packaging with the plugin DLL
-    if (WIN32)
-        set(Onnxruntime_DLL "${Onnxruntime_LIBRARY_DIR}/onnxruntime.dll")
-    endif()
+    set(Onnxruntime_DLL "${Onnxruntime_LIBRARY_DIR}/onnxruntime.dll")
 
     # Enable Multicore Builds and disable FH4 (to not depend on VCRUNTIME140_1.DLL when building with VS2019)
     if (MSVC)
@@ -148,8 +148,6 @@ if(WIN32)
 
 	# --- Release package helper ---
 	# The "release" folder has a structure similar OBS' one on Windows
-	set(RELEASE_DIR "${PROJECT_SOURCE_DIR}/release")
-
     add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
         # If config is Release or RelWithDebInfo, package release files
         COMMAND if $<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>==1 (
@@ -209,9 +207,7 @@ if(WIN32)
     )
 	# --- End of sub-section ---
 
-    install(DIRECTORY "${RELEASE_DIR}/"
-        DESTINATION .
-    )
+    install(DIRECTORY "${RELEASE_DIR}/" DESTINATION .)
     # Tell CPack to create a zip file.
     set(CPACK_GENERATOR "ZIP")
     # Tell CPack what to name the zip file. It will append `.zip`.
@@ -251,5 +247,38 @@ if(APPLE)
 
 	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES PREFIX "")
 	target_link_libraries(${CMAKE_PROJECT_NAME} "${OBS_FRONTEND_LIB}")
+
+    add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+        # If config is Release or RelWithDebInfo, package release files
+        COMMAND
+            "${CMAKE_COMMAND}" ARGS -E make_directory
+                "${RELEASE_DIR}/Resources/data/obs-plugins/${CMAKE_PROJECT_NAME}"
+                "${RELEASE_DIR}/Plugins"
+
+
+        COMMAND
+            "${CMAKE_COMMAND}" ARGS -E copy_directory
+                "${PROJECT_SOURCE_DIR}/data"
+                "${RELEASE_DIR}/Resources/data/obs-plugins/${CMAKE_PROJECT_NAME}"
+
+
+        COMMAND
+            "${CMAKE_COMMAND}" ARGS -E copy
+                "$<TARGET_FILE:${CMAKE_PROJECT_NAME}>"
+                "${RELEASE_DIR}/Plugins/"
+
+    )
+
+    install(DIRECTORY "${RELEASE_DIR}/" DESTINATION .)
+
+    # Tell CPack to create a zip file.
+    set(CPACK_GENERATOR "ZIP")
+    # Tell CPack what to name the zip file. It will append `.zip`.
+    set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-macosx")
+    # Tell CPack not to put everything inside an enclosing directory.
+    set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
+    # Apparently this should be always on but isn't for backwards compatibility.
+    set(CPACK_VERBATIM_VARIABLES YES)
+    include(CPack)
 endif()
 # -- End of section --

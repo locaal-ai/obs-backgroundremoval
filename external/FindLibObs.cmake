@@ -37,7 +37,13 @@ find_path(LIBOBS_INCLUDE_DIR
 		/usr/include /usr/local/include /opt/local/include /sw/include
 	PATH_SUFFIXES
 		libobs
+	DOC "Lib OBS include directory"
 	)
+
+if(APPLE)
+	# Hopeful hint at libobs in the /Applications folder
+	set(obsLibPath_osx "/Applications/OBS.app/Contents/Frameworks/")
+endif()
 
 function(find_obs_lib base_name repo_build_path lib_name)
 	string(TOUPPER "${base_name}" base_name_u)
@@ -55,6 +61,7 @@ function(find_obs_lib base_name repo_build_path lib_name)
 			${obsPath}
 			${obsLibPath}
 			${_${base_name_u}_LIBRARY_DIRS}
+			${obsLibPath_osx}
 		PATHS
 			/usr/lib /usr/local/lib /opt/local/lib /sw/lib
 		PATH_SUFFIXES
@@ -76,6 +83,7 @@ function(find_obs_lib base_name repo_build_path lib_name)
 			build/${repo_build_path}/Debug
 			build/${repo_build_path}/Release
 			build/${repo_build_path}/RelWithDebInfo
+		DOC "Lib OBS library"
 		)
 endfunction()
 
@@ -98,8 +106,8 @@ if(LIBOBS_FOUND)
 		set(W32_PTHREADS_INCLUDE_DIR ${LIBOBS_INCLUDE_DIR}/../deps/w32-pthreads)
 	endif()
 
-	set(LIBOBS_INCLUDE_DIRS ${LIBOBS_INCLUDE_DIR} ${W32_PTHREADS_INCLUDE_DIR})
-	set(LIBOBS_LIBRARIES ${LIBOBS_LIB} ${W32_PTHREADS_LIB})
+	set(LIBOBS_INCLUDE_DIRS ${LIBOBS_INCLUDE_DIR} ${W32_PTHREADS_INCLUDE_DIR} CACHE STRING "Lib OBS include directories")
+	set(LIBOBS_LIBRARIES ${LIBOBS_LIB} ${W32_PTHREADS_LIB} CACHE STRING "Lib OBS libraries")
 
 	if (EXISTS ${LIBOBS_INCLUDE_DIR}/../cmake/external/ObsPluginHelpers.cmake)
 		include(${LIBOBS_INCLUDE_DIR}/../cmake/external/ObsPluginHelpers.cmake)
