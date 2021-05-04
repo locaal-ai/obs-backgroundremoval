@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.10)
 
+include(external/MunkeiVersionFromGit.cmake)
+version_from_git()
+
 # Change obs-plugintemplate to your plugin's name in a machine-readable format
 # (e.g.: obs-myawesomeplugin) and set
-project(obs-backgroundremoval VERSION 1.0.0)
+project(obs-backgroundremoval VERSION ${VERSION})
 
 # Replace `Your Name Here` with the name (yours or your organization's) you want
 # to see as the author of the plugin (in the plugin's metadata itself and in the installers)

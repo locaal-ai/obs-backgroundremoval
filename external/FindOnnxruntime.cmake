@@ -16,6 +16,7 @@ else()
             onnxruntime
         PATHS
             ${Onnxruntime_DIR}
+            ${CMAKE_BINARY_DIR}/nuget/Microsoft.ML.OnnxRuntime.DirectML.1.7.0/runtimes/win-x64/native
         DOC "Onnxruntime library")
 
     find_path(Onnxruntime_INCLUDE_DIR
@@ -24,6 +25,7 @@ else()
             "onnxruntime/core/session/onnxruntime_cxx_api.h"
         PATHS
             ${Onnxruntime_INCLUDE_HINT}
+            ${CMAKE_BINARY_DIR}/nuget/Microsoft.ML.OnnxRuntime.DirectML.1.7.0/build/native/include
         DOC "Onnxruntime include directory")
 endif()
 
