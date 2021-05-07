@@ -127,6 +127,7 @@ if(WIN32)
 
     # find the onnxruntime DLL for packaging with the plugin DLL
     set(Onnxruntime_DLL "${Onnxruntime_LIBRARY_DIR}/onnxruntime.dll")
+    set(DirectML_DLL "${CMAKE_BINARY_DIR}/nuget/Microsoft.AI.DirectML.1.4.2/bin/x64-win/DirectML.dll")
 
     # Enable Multicore Builds and disable FH4 (to not depend on VCRUNTIME140_1.DLL when building with VS2019)
     if (MSVC)
@@ -173,7 +174,7 @@ if(WIN32)
 
         COMMAND if $<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>==1 (
             "${CMAKE_COMMAND}" -E copy
-                "${Onnxruntime_DLL}"
+                "${Onnxruntime_DLL}" "${DirectML_DLL}"
                 "${RELEASE_DIR}/obs-plugins/${ARCH_NAME}"
         )
 
