@@ -17,6 +17,7 @@ It's easily composable with other OBS plugins to replace the background with e.g
 a transparent color.
 
 ![](demo.gif)
+![](montage.jpg)
 
 The models used for background detection are SINet: https://arxiv.org/abs/1911.09099 and MODNet: https://arxiv.org/pdf/2011.11961.pdf
 The pre-trained model weights were taken from:
