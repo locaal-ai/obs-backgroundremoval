@@ -252,24 +252,29 @@ if(APPLE)
 	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES PREFIX "")
 	target_link_libraries(${CMAKE_PROJECT_NAME} "${OBS_FRONTEND_LIB}")
 
-    add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-        # If config is Release or RelWithDebInfo, package release files
+    # add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+    add_custom_target(dist DEPENDS ${CMAKE_PROJECT_NAME}
         COMMAND
-            "${CMAKE_COMMAND}" ARGS -E make_directory
+            "${CMAKE_COMMAND}" -E rm -rf "${RELEASE_DIR}"
+
+        COMMAND
+            "${CMAKE_COMMAND}" -E make_directory
                 "${RELEASE_DIR}/Resources/data/obs-plugins/${CMAKE_PROJECT_NAME}"
                 "${RELEASE_DIR}/Plugins"
 
-
         COMMAND
-            "${CMAKE_COMMAND}" ARGS -E copy_directory
+            "${CMAKE_COMMAND}" -E copy_directory
                 "${PROJECT_SOURCE_DIR}/data"
                 "${RELEASE_DIR}/Resources/data/obs-plugins/${CMAKE_PROJECT_NAME}"
 
-
         COMMAND
-            "${CMAKE_COMMAND}" ARGS -E copy
+            "${CMAKE_COMMAND}" -E copy
                 "$<TARGET_FILE:${CMAKE_PROJECT_NAME}>"
                 "${RELEASE_DIR}/Plugins/"
+
+        COMMAND
+            "${CMAKE_COMMAND}" -E rm -f
+                "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}-macosx.zip"
 
     )
 

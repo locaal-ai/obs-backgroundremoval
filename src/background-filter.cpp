@@ -38,6 +38,7 @@ struct background_removal_filter {
 	float contourFilter = 0.05f;
 	float smoothContour = 0.5f;
     bool useGPU = false;
+	const char* modelSelection;
 
 	// Use the media-io converter to both scale and convert the colorspace
 	video_scaler_t* scalerToBGR;
@@ -49,6 +50,9 @@ struct background_removal_filter {
     const char* modelFilepath = nullptr;
 #endif
 };
+
+const char* MODEL_SINET = "SINet_Softmax_simple.onnx";
+const char* MODEL_MODNET = "modnet_simple.onnx";
 
 static const char *filter_getname(void *unused)
 {
@@ -62,7 +66,7 @@ T vectorProduct(const std::vector<T>& v)
     return accumulate(v.begin(), v.end(), (T)1, std::multiplies<T>());
 }
 
-void hwc_to_chw(cv::InputArray src, cv::OutputArray dst) {
+static void hwc_to_chw(cv::InputArray src, cv::OutputArray dst) {
     std::vector<cv::Mat> channels;
     cv::split(src, channels);
 
@@ -114,7 +118,17 @@ static obs_properties_t *filter_properties(void *data)
 	obs_property_t *p_use_gpu = obs_properties_add_bool(
 		props,
 		"useGPU",
-		obs_module_text("Use GPU for inference"));
+		obs_module_text("Use GPU for inference (Windows only)"));
+
+	obs_property_t *p_model_select = obs_properties_add_list(
+		props,
+		"model_select",
+		obs_module_text("Segmentation model"),
+		OBS_COMBO_TYPE_LIST,
+		OBS_COMBO_FORMAT_STRING
+	);
+	obs_property_list_add_string(p_model_select, obs_module_text("SINet"), MODEL_SINET);
+	obs_property_list_add_string(p_model_select, obs_module_text("MODNet"), MODEL_MODNET);
 
 #ifndef _WIN32
     obs_property_set_enabled(p_use_gpu, false);
@@ -130,6 +144,7 @@ static void filter_defaults(obs_data_t *settings) {
 	obs_data_set_default_double(settings, "smooth_contour", 0.5);
 	obs_data_set_default_int(settings, "replaceColor", 0x000000);
 	obs_data_set_default_bool(settings, "useGPU", false);
+	obs_data_set_default_string(settings, "model_select", MODEL_SINET);
 }
 
 static void createOrtSession(struct background_removal_filter *tf) {
@@ -141,6 +156,25 @@ static void createOrtSession(struct background_removal_filter *tf) {
         sessionOptions.DisableMemPattern();
         sessionOptions.SetExecutionMode(ExecutionMode::ORT_SEQUENTIAL);
     }
+
+	char* modelFilepath_rawPtr = obs_module_file(tf->modelSelection);
+	blog(LOG_INFO, "Model location %s", modelFilepath_rawPtr);
+
+	if (modelFilepath_rawPtr == nullptr) {
+		blog(LOG_ERROR, "Unable to get model filename from plugin.");
+		return;
+	}
+
+	std::string modelFilepath_s(modelFilepath_rawPtr);
+    bfree(modelFilepath_rawPtr);
+
+#if _WIN32
+    std::wstring modelFilepath_ws(modelFilepath_s.size(), L' ');
+    std::copy(modelFilepath_s.begin(), modelFilepath_s.end(), modelFilepath_ws.begin());
+    tf->modelFilepath = modelFilepath_ws.c_str();
+#else
+    tf->modelFilepath = modelFilepath_s.c_str();
+#endif
 
     try {
 #ifdef _WIN32
@@ -174,6 +208,10 @@ static void createOrtSession(struct background_removal_filter *tf) {
     tf->inputDims = inputTensorInfo.GetShape();
     tf->inputTensorValues.resize(vectorProduct(tf->inputDims));
 
+	blog(LOG_INFO, "Model input shape %d x %d x %d, output shape %d x %d x %d",
+		(int)tf->inputDims[1], (int)tf->inputDims[2], (int)tf->inputDims[3],
+		(int)tf->outputDims[1], (int)tf->outputDims[2], (int)tf->outputDims[3]);
+
 	// Build input and output tensors
     tf->memoryInfo = Ort::MemoryInfo::CreateCpu(
         OrtAllocatorType::OrtDeviceAllocator, OrtMemType::OrtMemTypeDefault);
@@ -192,6 +230,19 @@ static void createOrtSession(struct background_removal_filter *tf) {
 }
 
 
+static void destroyScalers(struct background_removal_filter *tf) {
+	blog(LOG_INFO, "Destroy scalers.");
+	if (tf->scalerToBGR != nullptr) {
+		video_scaler_destroy(tf->scalerToBGR);
+		tf->scalerToBGR = nullptr;
+	}
+	if (tf->scalerFromBGR != nullptr) {
+		video_scaler_destroy(tf->scalerFromBGR);
+		tf->scalerFromBGR = nullptr;
+	}
+}
+
+
 static void filter_update(void *data, obs_data_t *settings)
 {
 	struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
@@ -207,6 +258,10 @@ static void filter_update(void *data, obs_data_t *settings)
 
     tf->useGPU = (bool)obs_data_get_bool(settings, "useGPU");
 
+	tf->modelSelection = obs_data_get_string(settings, "model_select");
+
+	destroyScalers(tf);
+
     createOrtSession(tf);
 }
 
@@ -217,20 +272,6 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(bzalloc(sizeof(struct background_removal_filter)));
 
-	char* modelFilepath_rawPtr = obs_module_file("SINet_Softmax.onnx");
-	blog(LOG_INFO, "model location %s", modelFilepath_rawPtr);
-
-	std::string modelFilepath_s(modelFilepath_rawPtr);
-    bfree(modelFilepath_rawPtr);
-
-#if _WIN32
-    std::wstring modelFilepath_ws(modelFilepath_s.size(), L' ');
-    std::copy(modelFilepath_s.begin(), modelFilepath_s.end(), modelFilepath_ws.begin());
-    tf->modelFilepath = modelFilepath_ws.c_str();
-#else
-    tf->modelFilepath = modelFilepath_s.c_str();
-#endif
-
 	std::string instanceName{"background-removal-inference"};
     tf->env.reset(new Ort::Env(OrtLoggingLevel::ORT_LOGGING_LEVEL_ERROR, instanceName.c_str()));
 
@@ -240,9 +281,10 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
 }
 
 
-void initializeScalers(cv::Size frameSize,
-					   enum video_format frameFormat,
-					   struct background_removal_filter *tf) {
+static void initializeScalers(cv::Size frameSize,
+							  enum video_format frameFormat,
+							  struct background_removal_filter *tf) {
+
 	struct video_scale_info dst{
 		VIDEO_FORMAT_BGR3,
 		(uint32_t)frameSize.width,
@@ -257,17 +299,21 @@ void initializeScalers(cv::Size frameSize,
 		VIDEO_RANGE_DEFAULT,
 		VIDEO_CS_DEFAULT
 	};
-	if (tf->scalerToBGR == nullptr) {
-		video_scaler_create(&tf->scalerToBGR, &dst, &src, VIDEO_SCALE_DEFAULT);
-	}
-	if (tf->scalerFromBGR == nullptr) {
-		video_scaler_create(&tf->scalerFromBGR, &src, &dst, VIDEO_SCALE_DEFAULT);
-	}
+
+	// Check if scalers already defined and release them
+	destroyScalers(tf);
+
+	blog(LOG_INFO, "Initialize scalers. Size %d x %d",
+		frameSize.width, frameSize.height);
+
+	// Create new scalers
+	video_scaler_create(&tf->scalerToBGR, &dst, &src, VIDEO_SCALE_DEFAULT);
+	video_scaler_create(&tf->scalerFromBGR, &src, &dst, VIDEO_SCALE_DEFAULT);
 }
 
 
-cv::Mat convertFrameToBGR(struct obs_source_frame *frame,
-						  struct background_removal_filter *tf) {
+static cv::Mat convertFrameToBGR(struct obs_source_frame *frame,
+								 struct background_removal_filter *tf) {
 	const cv::Size frameSize(frame->width, frame->height);
 
 	if (tf->scalerToBGR == nullptr) {
@@ -285,7 +331,9 @@ cv::Mat convertFrameToBGR(struct obs_source_frame *frame,
 }
 
 
-void convertBGRToFrame(const cv::Mat& imageBGR, struct obs_source_frame *frame, struct background_removal_filter *tf) {
+static void convertBGRToFrame(const cv::Mat& imageBGR,
+							  struct obs_source_frame *frame,
+							  struct background_removal_filter *tf) {
 	if (tf->scalerFromBGR == nullptr) {
 		// Lazy initialize the frame scale & color converter
 		initializeScalers(cv::Size(frame->width, frame->height), frame->format, tf);
@@ -316,8 +364,15 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 	// Prepare input to nework
     cv::Mat resizedImage, preprocessedImage;
     resizedImageRGB.convertTo(resizedImage, CV_32F);
-	cv::subtract(resizedImage, cv::Scalar(102.890434, 111.25247, 126.91212), resizedImage);
-	cv::multiply(resizedImage, cv::Scalar(1.0 / 62.93292,  1.0 / 62.82138, 1.0 / 66.355705) / 255.0, resizedImage);
+
+	if (std::strcmp(tf->modelSelection, MODEL_SINET) == 0) {
+		cv::subtract(resizedImage, cv::Scalar(102.890434, 111.25247, 126.91212), resizedImage);
+		cv::multiply(resizedImage, cv::Scalar(1.0 / 62.93292,  1.0 / 62.82138, 1.0 / 66.355705) / 255.0, resizedImage);
+	} else {
+		cv::subtract(resizedImage, cv::Scalar::all(127.5), resizedImage);
+		resizedImage = resizedImage / 127.5;
+	}
+
     hwc_to_chw(resizedImage, preprocessedImage);
 
     tf->inputTensorValues.assign(preprocessedImage.begin<float>(),
@@ -330,35 +385,44 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 		tf->outputNames.data(), &(tf->outputTensor), 1);
 
 	// Convert network output mask to input size
-    cv::Mat outputImage((int)tf->outputDims.at(2), (int)tf->outputDims.at(3), CV_32FC1, &(tf->outputTensorValues[0]));
+    cv::Mat outputImage((int)tf->outputDims.at(2),
+						(int)tf->outputDims.at(3),
+						CV_32FC1,
+						&(tf->outputTensorValues[0]));
 
-	cv::Mat mask = outputImage > tf->threshold;
+	cv::Mat backgroundMask;
+	if (std::strcmp(tf->modelSelection, MODEL_SINET) == 0) {
+		backgroundMask = outputImage > tf->threshold;
+	} else {
+		backgroundMask = outputImage < tf->threshold;
+	}
 
 	// Contour processing
 	if (tf->contourFilter > 0.0 && tf->contourFilter < 1.0) {
 		std::vector<std::vector<cv::Point> > contours;
-		findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+		findContours(backgroundMask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 		std::vector<std::vector<cv::Point> > filteredContours;
-		const int64_t contourSizeThreshold = (int64_t)(mask.total() * tf->contourFilter);
+		const int64_t contourSizeThreshold = (int64_t)(backgroundMask.total() * tf->contourFilter);
 		for (auto& contour : contours) {
 			if (cv::contourArea(contour) > contourSizeThreshold) {
 				filteredContours.push_back(contour);
 			}
 		}
-		mask.setTo(0);
-		drawContours(mask, filteredContours, -1, cv::Scalar(255), -1);
+		backgroundMask.setTo(0);
+		drawContours(backgroundMask, filteredContours, -1, cv::Scalar(255), -1);
 	}
+
+	// Mask the input
+	cv::resize(backgroundMask, backgroundMask, imageBGR.size());
 
 	// Smooth mask with a fast filter (box)
 	if (tf->smoothContour > 0.0) {
 		int k_size = (int)(100 * tf->smoothContour);
-		cv::boxFilter(mask, mask, mask.depth(), cv::Size(k_size, k_size));
-		mask = mask > 128;
+		cv::boxFilter(backgroundMask, backgroundMask, backgroundMask.depth(), cv::Size(k_size, k_size));
+		backgroundMask = backgroundMask > 128;
 	}
 
-	// Mask the input
-	cv::resize(mask, mask, imageBGR.size());
-	imageBGR.setTo(tf->backgroundColor, mask);
+	imageBGR.setTo(tf->backgroundColor, backgroundMask);
 
 	// Put masked image back on frame
 	convertBGRToFrame(imageBGR, frame, tf);
@@ -371,8 +435,7 @@ static void filter_destroy(void *data)
 	struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
 	if (tf) {
-		video_scaler_destroy(tf->scalerToBGR);
-		video_scaler_destroy(tf->scalerFromBGR);
+		destroyScalers(tf);
 		bfree(tf);
 	}
 }
