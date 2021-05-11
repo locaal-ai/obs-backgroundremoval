@@ -18,8 +18,10 @@ a transparent color.
 
 ![](demo.gif)
 
-The model used for background detection is SINet: https://arxiv.org/abs/1911.09099
-The pre-trained model weights were taken from: https://github.com/anilsathyan7/Portrait-Segmentation/tree/master/SINet
+The models used for background detection are SINet: https://arxiv.org/abs/1911.09099 and MODNet: https://arxiv.org/pdf/2011.11961.pdf
+The pre-trained model weights were taken from:
+- https://github.com/anilsathyan7/Portrait-Segmentation/tree/master/SINet
+- https://github.com/ZHKKKe/MODNet
 
 Some more information about how I built it: https://www.morethantechnical.com/2021/04/15/obs-plugin-for-portrait-background-removal-with-onnx-sinet-model/
 
@@ -57,15 +59,14 @@ But you don't have the headers - so clone the main obs repo e.g. `git clone --si
 ```
 $ mkdir build && cd build
 $ cmake .. -DobsLibPath=/Applications/OBS.app/Contents/Frameworks -DobsIncludePath=~/Downloads/obs-studio/libobs
-$ cmake --build .
+$ cmake --build . --target dist
+$ cpack
 ```
 
 #### Install
-Add it to your OBS install, e.g.
+Unpack the package directly to your OBS install directory, e.g.
 ```
-$ cp obs-backgroundremoval.so /Applications/OBS.app/Contents/PlugIns
-$ mkdir -p /Applications/OBS.app/Contents/Resources/data/obs-plugins/obs-backgroundremoval/
-$ cp ../data/SINet_Softmax.onnx /Applications/OBS.app/Contents/Resources/data/obs-plugins/obs-backgroundremoval/
+$ unzip -o obs-backgroundremoval-macosx.zip -d /Applications/OBS.app/Contents/
 ```
 
 ### Linux
@@ -94,6 +95,7 @@ $ makepkg -s
 
 We will use static linking (as much as possible) to aviod having to lug around .DLLs with the plugin.
 
+#### Install Prerequisites
 Install OpenCV via `vcpkg`:
 ```
 $ mkdir build
@@ -114,7 +116,7 @@ $ nuget.exe install Microsoft.ML.OnnxRuntime.DirectML
 
 Clone the OBS repo, `Downloads\ $ git clone --single-branch -b 26.1.2 git@github.com:obsproject/obs-studio.git`, to e.g. Downloads.
 
-Build and install the plugin:
+#### Build and install the plugin
 ```
 $ cmake .. -DobsPath="$HOME\Downloads\obs-studio\"
 $ cmake --build . --config Release
