@@ -1,5 +1,5 @@
 pkgname=obs-backgroundremoval
-pkgver_hyphen=$(git describe --exact-match --tags $(git log -n1 --pretty='%h'))
+pkgver_hyphen=$(git describe --exact-match --tags $(git rev-list --tags --max-count=1))
 pkgver=$(echo $pkgver_hyphen | sed 's/-//')
 pkgrel=1
 arch=(x86_64)
