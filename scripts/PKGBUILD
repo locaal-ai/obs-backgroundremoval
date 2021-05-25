@@ -1,5 +1,5 @@
 pkgname=obs-backgroundremoval
-pkgver=0.2.4_beta
+pkgver=0.2.5_beta
 _ONNXRUNTIME_FILE=onnxruntime-linux-x64-1.7.0.tgz
 _onnxdir=onnxruntime-linux-x64-1.7.0
 _bgdir=$pkgname-${pkgver//_/-}
@@ -18,10 +18,6 @@ sha256sums=('5e66cfc45827581bc8da50a775d3e8601beb4aec72d42f0efc4d3e403161ddc1'
 prepare() {
   # build from archive, not git. Version set during build()
   sed -i "s/^version_from_git/#&/" $_bgdir/CMakeLists.txt
-    # fix models listed in cmake
-  sed -i '/^.*file(GLOB/i file(GLOB onnxmodels data/*.onnx)' $_bgdir/CMakeLists.txt
-  sed -i 's/"data\/SINet_Softmax.onnx"/${onnxmodels}/' $_bgdir/CMakeLists.txt
-
 }
 
 build() {
