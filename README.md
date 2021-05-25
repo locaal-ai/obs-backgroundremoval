@@ -100,8 +100,8 @@ $ makepkg -s
 
 Building for Arch in Docker (host OS e.g. MacOSX):
 ```
-$ docker pull
-$ docker run
+$ docker pull archlinux:latest
+$ docker run -it -v $(pwd):/src archlinux:latest /bin/bash
 # pacman -Sy --needed --noconfirm sudo fakeroot binutils gcc make
 # useradd builduser -m
 # passwd -d builduser
