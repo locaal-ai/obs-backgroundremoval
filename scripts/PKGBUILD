@@ -1,32 +1,48 @@
 pkgname=obs-backgroundremoval
-pkgver_hyphen=$(git describe --exact-match --tags $(git log -n1 --pretty='%h'))
-pkgver=$(echo $pkgver_hyphen | sed 's/-//')
+pkgver=0.2.4_beta
+_ONNXRUNTIME_FILE=onnxruntime-linux-x64-1.7.0.tgz
+_onnxdir=onnxruntime-linux-x64-1.7.0
+_bgdir=$pkgname-${pkgver//_/-}
 pkgrel=1
 arch=(x86_64)
 url='https://github.com/royshil/obs-backgroundremoval'
-pkgdesc="Background removal plugin for OBS studio"
-license=(MIT)
+pkgdesc="Background removal plugin for OBS studio (precomopiled onnxruntime)"
+license=(MIT custom)
 depends=(obs-studio opencv)
-makedepends=(cmake wget git)
-source=("https://github.com/royshil/$pkgname/archive/refs/tags/$pkgver_hyphen.tar.gz")
-sha256sums=('SKIP')
+makedepends=(cmake)
+source=("${_bgdir}.tar.gz::https://github.com/royshil/$pkgname/archive/refs/tags/v${pkgver//_/-}.tar.gz"
+        "https://github.com/microsoft/onnxruntime/releases/download/v1.7.0/$_ONNXRUNTIME_FILE")
+sha256sums=('5e66cfc45827581bc8da50a775d3e8601beb4aec72d42f0efc4d3e403161ddc1'
+            '0345f45f222208344406d79a6db3280ed2ccc884dc1e064ce6e6951ed4c70606')
 
 prepare() {
-  mkdir -p $(git rev-parse --show-toplevel)/build_archlinux
+  # build from archive, not git. Version set during build()
+  sed -i "s/^version_from_git/#&/" $_bgdir/CMakeLists.txt
+    # fix models listed in cmake
+  sed -i '/^.*file(GLOB/i file(GLOB onnxmodels data/*.onnx)' $_bgdir/CMakeLists.txt
+  sed -i 's/"data\/SINet_Softmax.onnx"/${onnxmodels}/' $_bgdir/CMakeLists.txt
 
-  ONNXRUNTIME_FILE=onnxruntime-linux-x64-1.7.0.tgz
-  wget https://github.com/microsoft/onnxruntime/releases/download/v1.7.0/$ONNXRUNTIME_FILE
-  sudo tar xzvf $ONNXRUNTIME_FILE --strip-components=1 -C /usr/local/ --wildcards "*/include/*" "*/lib*/"
-  rm $ONNXRUNTIME_FILE
 }
 
 build() {
-  cd $(git rev-parse --show-toplevel)/build_archlinux
-  cmake .. -DobsIncludePath=/usr/include/obs/
-  cmake --build .
+  cd "$_bgdir"
+  # set rpath to avoid installing onnxruntime globally
+  cmake -B build -DVERSION="${pkgver//_*/.0}" -DobsIncludePath=/usr/include/obs/ \
+           -DCMAKE_INSTALL_PREFIX:PATH=/usr \
+           -DOnnxruntime_INCLUDE_DIRS="$srcdir/$_onnxdir/include/" -DOnnxruntime_LIBRARIES="$srcdir/$_onnxdir/lib/libonnxruntime.so" \
+           -DOnnxruntime_INCLUDE_DIR="$srcdir/$_onnxdir/include/" \
+           -DCMAKE_INSTALL_RPATH="/usr/lib/obs-backgroundremoval"
+  cd build
+  make
 }
 
 package() {
-  cd $(git rev-parse --show-toplevel)/build_archlinux
-  sudo cmake --install .
+  make -C "$_bgdir/build" DESTDIR="$pkgdir" install
+  install -Dt "$pkgdir/usr/share/licenses/obs-backgroundremoval" "$_bgdir/LICENSE"
+
+  # install onnxruntime
+  cd "$_onnxdir"
+  install -Dt "$pkgdir/usr/share/licenses/obs-backgroundremoval/onnxruntime" \
+          LICENSE  Privacy.md  README.md  ThirdPartyNotices.txt
+  install -Dt "$pkgdir/usr/lib/obs-backgroundremoval" lib/*
 }

@@ -91,6 +91,17 @@ $ cd scripts
 $ makepkg -s
 ```
 
+Building for Arch in Docker (host OS e.g. MacOSX):
+```
+$ docker pull
+$ docker run
+# pacman -Sy --needed --noconfirm sudo fakeroot binutils gcc make
+# useradd builduser -m
+# passwd -d builduser
+# printf 'builduser ALL=(ALL) ALL\n' | tee -a /etc/sudoers
+# sudo -u builduser bash -c 'cd /src/scripts && makepkg -s'
+```
+
 ### Windows
 
 We will use static linking (as much as possible) to aviod having to lug around .DLLs with the plugin.

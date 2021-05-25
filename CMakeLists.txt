@@ -232,6 +232,7 @@ if(UNIX AND NOT APPLE)
 	target_link_libraries(${CMAKE_PROJECT_NAME} obs-frontend-api)
 
 	file(GLOB locale_files data/locale/*.ini)
+	file(GLOB onnxmodels data/*.onnx)
 
 	install(TARGETS ${CMAKE_PROJECT_NAME}
 		LIBRARY DESTINATION "${CMAKE_INSTALL_FULL_LIBDIR}/obs-plugins")
@@ -239,7 +240,7 @@ if(UNIX AND NOT APPLE)
 	install(FILES ${locale_files}
 		DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/obs/obs-plugins/${CMAKE_PROJECT_NAME}/locale")
 
-	install(FILES "data/SINet_Softmax.onnx"
+	install(FILES ${onnxmodels}
 		DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/obs/obs-plugins/${CMAKE_PROJECT_NAME}/")
 endif()
 # --- End of section ---
