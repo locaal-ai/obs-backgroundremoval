@@ -64,10 +64,17 @@ $ cpack
 ```
 
 #### Install
-Unpack the package directly to your OBS install directory, e.g.
+Unpack the package to the plugins directory of the system's Library folder (which is Apple's preffered way)
+```
+$ unzip -o obs-backgroundremoval-macosx.zip -d /Library/Application Support/obs-studio/plugins
+```
+
+or directly to your OBS install directory, e.g.
 ```
 $ unzip -o obs-backgroundremoval-macosx.zip -d /Applications/OBS.app/Contents/
 ```
+
+The first is recommended as it preserves the plugins over the parallel installation of OBS versions (i.e. running the latest productive version and a release candidate) whereas the latter will also remove the plugin if you decide to delete the OBS application.
 
 ### Linux
 
