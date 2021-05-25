@@ -239,7 +239,7 @@ if(UNIX AND NOT APPLE)
 	install(FILES ${locale_files}
 		DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/obs/obs-plugins/${CMAKE_PROJECT_NAME}/locale")
 
-	install(FILES "data/SINet_Softmax.onnx"
+	install(FILES "data/SINet_Softmax_simple.onnx"
 		DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/obs/obs-plugins/${CMAKE_PROJECT_NAME}/")
 endif()
 # --- End of section ---
