@@ -14,7 +14,7 @@ fi
 
 cd $WORK_DIR
 
-ONNXRT_VER=1.5.3
+ONNXRT_VER=1.7.2
 ONNXRT_DIR=$WORK_DIR/onnxruntime-$ONNXRT_VER
 
 if [[ ! -d $ONNXRT_DIR ]]; then
@@ -25,7 +25,7 @@ cd $ONNXRT_DIR
 
 ./build.sh --config RelWithDebInfo --parallel --skip_tests
 
-cd build/Linux/RelWithDebInfo
+cd build/MacOS/RelWithDebInfo
 
 cmake $WORK_DIR/onnxruntime-$ONNXRT_VER/cmake -DCMAKE_INSTALL_PREFIX=$OUTPUT_DIR && \
     cmake --build . --target install
