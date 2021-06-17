@@ -174,9 +174,7 @@ static void createOrtSession(struct background_removal_filter *tf) {
 		sessionOptions.SetExecutionMode(ExecutionMode::ORT_SEQUENTIAL);
 	}
 
-	blog(LOG_INFO, "tf->modelSelection %s", tf->modelSelection);
 	char* modelFilepath_rawPtr = obs_module_file(tf->modelSelection.c_str());
-	blog(LOG_INFO, "Model location %s", modelFilepath_rawPtr);
 
 	if (modelFilepath_rawPtr == nullptr) {
 		blog(LOG_ERROR, "Unable to get model filename from plugin.");
@@ -278,13 +276,10 @@ static void filter_update(void *data, obs_data_t *settings)
 	const bool newUseGpu = (bool)obs_data_get_bool(settings, "useGPU");
 	const std::string newModel = obs_data_get_string(settings, "model_select");
 
-    blog(LOG_INFO, "newModel %s tf->modelSelection %s", newModel, tf->modelSelection);
-
 	if (tf->modelSelection.empty() || tf->modelSelection != newModel || newUseGpu != tf->useGPU)
 	{
 		// Re-initialize model if it's not already the selected one
 		tf->modelSelection = std::string(newModel);
-        blog(LOG_INFO, "newModel %s tf->modelSelection %s", newModel, tf->modelSelection);
 		tf->useGPU = newUseGpu;
 		destroyScalers(tf);
 		createOrtSession(tf);
