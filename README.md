@@ -53,7 +53,7 @@ Static linking should be more robust across versions of OSX, as well as building
 
 If you install the desktop OBS app (https://obsproject.com/download) you already have the binaries
 for libobs (e.g. `/Applications/OBS.app/Contents/Frameworks/libobs.0.dylib`)
-But you don't have the headers - so clone the main obs repo e.g. `git clone --single-branch -b 26.1.2 git@github.com:obsproject/obs-studio.git` (match the version number to your OBS install. Right now on OSX it's 26.1.2)
+But you don't have the headers - so clone the main obs repo e.g. `git clone --single-branch -b 27.0.1 git@github.com:obsproject/obs-studio.git` (match the version number to your OBS install. Right now on OSX it's 27.0.1)
 
 #### Build
 ```
@@ -132,7 +132,7 @@ $ Invoke-WebRequest https://dist.nuget.org/win-x86-commandline/latest/nuget.exe 
 $ nuget.exe install Microsoft.ML.OnnxRuntime.DirectML
 ```
 
-Clone the OBS repo, `Downloads\ $ git clone --single-branch -b 26.1.2 git@github.com:obsproject/obs-studio.git`, to e.g. Downloads.
+Clone the OBS repo, `Downloads\ $ git clone --single-branch -b 27.0.1 git@github.com:obsproject/obs-studio.git`, to e.g. Downloads.
 
 #### Build and install the plugin
 ```

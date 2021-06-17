@@ -118,7 +118,11 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 
 # --- Windows-specific build settings and tasks ---
 if(WIN32)
-    find_library(OBS_FRONTEND_LIB obs-frontend-api PATHS ${obsPath}/build/UI/obs-frontend-api/Release)
+    find_library(OBS_FRONTEND_LIB obs-frontend-api
+        PATHS
+            ${obsPath}/build/UI/obs-frontend-api/Release
+            ${obsPath}/build64/UI/obs-frontend-api/Release
+    )
 
 	if(NOT DEFINED OBS_FRONTEND_LIB)
 		set(OBS_FRONTEND_LIB "OBS_FRONTEND_LIB-NOTFOUND" CACHE FILEPATH "OBS frontend library")

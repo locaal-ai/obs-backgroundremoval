@@ -22,6 +22,13 @@
 
 #include "plugin-macros.generated.h"
 
+
+const char* MODEL_SINET = "SINet_Softmax_simple.onnx";
+const char* MODEL_MODNET = "modnet_simple.onnx";
+const char* MODEL_MEDIAPIPE = "mediapipe.onnx";
+const char* MODEL_SELFIE = "selfie_segmentation.onnx";
+
+
 struct background_removal_filter {
 	std::unique_ptr<Ort::Session> session;
 	std::unique_ptr<Ort::Env> env;
@@ -40,7 +47,7 @@ struct background_removal_filter {
 	float smoothContour = 0.5f;
 	float feather = 0.0f;
 	bool useGPU = false;
-	std::string modelSelection;
+	std::string modelSelection = MODEL_MEDIAPIPE;
 
 	// Use the media-io converter to both scale and convert the colorspace
 	video_scaler_t* scalerToBGR;
@@ -52,11 +59,6 @@ struct background_removal_filter {
 	const char* modelFilepath = nullptr;
 #endif
 };
-
-const char* MODEL_SINET = "SINet_Softmax_simple.onnx";
-const char* MODEL_MODNET = "modnet_simple.onnx";
-const char* MODEL_MEDIAPIPE = "mediapipe.onnx";
-const char* MODEL_SELFIE = "selfie_segmentation.onnx";
 
 static const char *filter_getname(void *unused)
 {
@@ -172,6 +174,7 @@ static void createOrtSession(struct background_removal_filter *tf) {
 		sessionOptions.SetExecutionMode(ExecutionMode::ORT_SEQUENTIAL);
 	}
 
+	blog(LOG_INFO, "tf->modelSelection %s", tf->modelSelection);
 	char* modelFilepath_rawPtr = obs_module_file(tf->modelSelection.c_str());
 	blog(LOG_INFO, "Model location %s", modelFilepath_rawPtr);
 
@@ -273,12 +276,15 @@ static void filter_update(void *data, obs_data_t *settings)
 	tf->feather       = (float)obs_data_get_double(settings, "feather");
 
 	const bool newUseGpu = (bool)obs_data_get_bool(settings, "useGPU");
-	const std::string newModel(obs_data_get_string(settings, "model_select"));
+	const std::string newModel = obs_data_get_string(settings, "model_select");
 
-	if (tf->modelSelection.empty() or tf->modelSelection != newModel or newUseGpu != tf->useGPU)
+    blog(LOG_INFO, "newModel %s tf->modelSelection %s", newModel, tf->modelSelection);
+
+	if (tf->modelSelection.empty() || tf->modelSelection != newModel || newUseGpu != tf->useGPU)
 	{
 		// Re-initialize model if it's not already the selected one
-		tf->modelSelection = newModel;
+		tf->modelSelection = std::string(newModel);
+        blog(LOG_INFO, "newModel %s tf->modelSelection %s", newModel, tf->modelSelection);
 		tf->useGPU = newUseGpu;
 		destroyScalers(tf);
 		createOrtSession(tf);
@@ -386,9 +392,8 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 		cv::cvtColor(imageBGR, imageRGB, cv::COLOR_BGR2RGB);
 
 		// Resize to network input size
-		cv::Mat resizedImageRGB;
 		uint32_t inputWidth, inputHeight;
-		if (tf->modelSelection == MODEL_SINET or tf->modelSelection == MODEL_MODNET) {
+		if (tf->modelSelection == MODEL_SINET || tf->modelSelection == MODEL_MODNET) {
 			// BCHW
 			inputWidth  = (int)tf->inputDims[3];
 			inputHeight = (int)tf->inputDims[2];
@@ -398,6 +403,7 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 			inputHeight = (int)tf->inputDims[1];
 		}
 
+		cv::Mat resizedImageRGB;
 		cv::resize(imageRGB, resizedImageRGB, cv::Size(inputWidth, inputHeight));
 
 		// Prepare input to nework
@@ -414,7 +420,7 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 			preprocessedImage = resizedImage / 255.0;
 		}
 
-		if (tf->modelSelection == MODEL_SINET or tf->modelSelection == MODEL_MODNET) {
+		if (tf->modelSelection == MODEL_SINET || tf->modelSelection == MODEL_MODNET) {
 			hwc_to_chw(resizedImage, preprocessedImage);
 			tf->inputTensorValues.assign(
 				preprocessedImage.begin<float>(),
@@ -432,7 +438,7 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 
 		uint32_t outputWidth, outputHeight;
 		int64_t outputChannels;
-		if (tf->modelSelection == MODEL_SINET or tf->modelSelection == MODEL_MODNET) {
+		if (tf->modelSelection == MODEL_SINET || tf->modelSelection == MODEL_MODNET) {
 			// BCHW
 			outputWidth = (int)tf->outputDims.at(3);
 			outputHeight = (int)tf->outputDims.at(2);
@@ -466,7 +472,7 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 		}
 
 		cv::Mat backgroundMask;
-		if (tf->modelSelection == MODEL_SINET or tf->modelSelection == MODEL_MEDIAPIPE) {
+		if (tf->modelSelection == MODEL_SINET || tf->modelSelection == MODEL_MEDIAPIPE) {
 			backgroundMask = outputImage > tf->threshold;
 		} else {
 			backgroundMask = outputImage < tf->threshold;
@@ -518,7 +524,6 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 	catch(const std::exception& e) {
 		blog(LOG_ERROR, "%s", e.what());
 	}
-
 	// Put masked image back on frame
 	convertBGRToFrame(imageBGR, frame, tf);
 	return frame;
