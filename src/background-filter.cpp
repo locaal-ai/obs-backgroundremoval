@@ -4,9 +4,11 @@
 #if defined(__APPLE__)
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
 #include <onnxruntime/core/providers/cpu/cpu_provider_factory.h>
+#include <onnxruntime/core/providers/cuda/cuda_provider_factory.h>
 #else
 #include <onnxruntime_cxx_api.h>
 #include <cpu_provider_factory.h>
+#include <cuda_provider_factory.h>
 #endif
 #ifdef _WIN32
 #include <dml_provider_factory.h>
@@ -132,7 +134,7 @@ static obs_properties_t *filter_properties(void *data)
 	obs_property_t *p_use_gpu = obs_properties_add_bool(
 		props,
 		"useGPU",
-		obs_module_text("Use GPU for inference (Windows only)"));
+		obs_module_text("Use GPU for inference"));
 
 	obs_property_t *p_model_select = obs_properties_add_list(
 		props,
@@ -145,10 +147,6 @@ static obs_properties_t *filter_properties(void *data)
 	obs_property_list_add_string(p_model_select, obs_module_text("MODNet"), MODEL_MODNET);
 	obs_property_list_add_string(p_model_select, obs_module_text("MediaPipe"), MODEL_MEDIAPIPE);
 	obs_property_list_add_string(p_model_select, obs_module_text("Selfie Segmentation"), MODEL_SELFIE);
-
-#ifndef _WIN32
-    obs_property_set_enabled(p_use_gpu, false);
-#endif
 
 	UNUSED_PARAMETER(data);
 	return props;
@@ -193,11 +191,9 @@ static void createOrtSession(struct background_removal_filter *tf) {
 #endif
 
 	try {
-#ifdef _WIN32
 		if (tf->useGPU) {
-				Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
+				Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0));
 		}
-#endif
 		tf->session.reset(new Ort::Session(*tf->env, tf->modelFilepath, sessionOptions));
 	} catch (const std::exception& e) {
 		blog(LOG_ERROR, "%s", e.what());
@@ -279,7 +275,7 @@ static void filter_update(void *data, obs_data_t *settings)
 	if (tf->modelSelection.empty() || tf->modelSelection != newModel || newUseGpu != tf->useGPU)
 	{
 		// Re-initialize model if it's not already the selected one
-		tf->modelSelection = std::string(newModel);
+		tf->modelSelection = newModel;
 		tf->useGPU = newUseGpu;
 		destroyScalers(tf);
 		createOrtSession(tf);
