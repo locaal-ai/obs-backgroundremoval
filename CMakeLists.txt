@@ -18,6 +18,11 @@ set(MACOS_BUNDLEID "com.example.obs-backgroundremoval")
 # Replace `me@contoso.com` with the maintainer email address you want to put in Linux packages
 set(LINUX_MAINTAINER_EMAIL "roy.shil@gmail.com")
 
+option(WITH_CUDA "Build with CUDA support." OFF)
+if(WITH_CUDA)
+    add_compile_definitions("WITH_CUDA=1")
+endif()
+
 if(WIN32 OR MSVC)
     set(VCPKG_DIR ${CMAKE_BINARY_DIR}/vcpkg)
     set(VCPKG_INSTALLED_DIR ${VCPKG_DIR}/installed/x64-windows-static)
@@ -33,10 +38,19 @@ if(WIN32 OR MSVC)
     find_path(TIFF_INCLUDE_DIR tiff.h PATHS ${VCPKG_INSTALLED_DIR}/include)
 
     find_file(Protobuf_PROTOC_EXECUTABLE protoc.exe PATHS ${VCPKG_INSTALLED_DIR}/tools)
+else()
+    # Apple or linux
+    if (WITH_CUDA)
+        message(FATAL "Cannot use CUDA on non-Windows builds")
+    endif()
 endif()
 
 if (UNIX)
     set(Onnxruntime_INCLUDE_HINT /usr/local/include/)
+endif()
+
+if (APPLE)
+    set(OpenCV_DIR ${CMAKE_BINARY_DIR}/opencv/lib/cmake/opencv4)
 endif()
 
 set(RELEASE_DIR "${PROJECT_SOURCE_DIR}/release" CACHE STRING "Directory for building release packages")
@@ -54,11 +68,6 @@ if (APPLE)
 else()
     find_package(LibObs REQUIRED)
 endif()
-
-# Qt is not required for this plugin, at the moment.
-# set(CMAKE_AUTOMOC ON)
-# set(CMAKE_AUTOUIC ON)
-# find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
 
 configure_file(
     src/plugin-macros.h.in
@@ -95,9 +104,6 @@ add_library(${CMAKE_PROJECT_NAME} MODULE ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
 
 find_package(Onnxruntime REQUIRED)
 
-if (APPLE)
-    set(OpenCV_DIR ${CMAKE_BINARY_DIR}/opencv/lib/cmake/opencv4)
-endif()
 find_package(OpenCV 4.2 REQUIRED COMPONENTS core imgproc)
 
 include_directories(
@@ -129,10 +135,6 @@ if(WIN32)
 		message(FATAL_ERROR "Could not find OBS Frontend API\'s library !")
 	endif()
 
-    # find the onnxruntime DLL for packaging with the plugin DLL
-    set(Onnxruntime_DLL "${Onnxruntime_LIBRARY_DIR}/onnxruntime.dll")
-    set(DirectML_DLL "${CMAKE_BINARY_DIR}/nuget/Microsoft.AI.DirectML.1.4.2/bin/x64-win/DirectML.dll")
-
     # Enable Multicore Builds and disable FH4 (to not depend on VCRUNTIME140_1.DLL when building with VS2019)
     if (MSVC)
         add_definitions(/MP /d2FH4- /std:c++latest /MT)
@@ -157,6 +159,10 @@ if(WIN32)
 	# --- Release package helper ---
 	# The "release" folder has a structure similar OBS' one on Windows
     add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+        COMMAND if $<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>==1 (
+            "${CMAKE_COMMAND}" -E remove_directory "${RELEASE_DIR}"
+        )
+
         # If config is Release or RelWithDebInfo, package release files
         COMMAND if $<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>==1 (
             "${CMAKE_COMMAND}" -E make_directory
@@ -176,9 +182,17 @@ if(WIN32)
                 "${RELEASE_DIR}/obs-plugins/${ARCH_NAME}"
         )
 
+        # package the DirectML DLL with the plugin DLL unless using CUDA
+        COMMAND if $<AND:$<NOT:$<BOOL:${WITH_CUDA}>>,$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>>==1 (
+            "${CMAKE_COMMAND}" -E copy
+                "${CMAKE_BINARY_DIR}/nuget/Microsoft.AI.DirectML.1.4.2/bin/x64-win/DirectML.dll"
+                "${RELEASE_DIR}/obs-plugins/${ARCH_NAME}"
+        )
+
+        # package the onnxruntime DLL with the plugin DLL
         COMMAND if $<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>==1 (
             "${CMAKE_COMMAND}" -E copy
-                "${Onnxruntime_DLL}" "${DirectML_DLL}"
+                "${Onnxruntime_LIBRARY_DIR}/onnxruntime.dll"
                 "${RELEASE_DIR}/obs-plugins/${ARCH_NAME}"
         )
 
@@ -219,7 +233,10 @@ if(WIN32)
     # Tell CPack to create a zip file.
     set(CPACK_GENERATOR "ZIP")
     # Tell CPack what to name the zip file. It will append `.zip`.
-    set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-win64")
+    if (WITH_CUDA)
+        set(CPACK_PACKAGE_NAME "${CMAKE_PROJECT_NAME}-cuda")
+    endif()
+
     # Tell CPack not to put everything inside an enclosing directory.
     set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
     # Apparently this should be always on but isn't for backwards compatibility.

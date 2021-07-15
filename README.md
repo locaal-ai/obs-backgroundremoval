@@ -129,7 +129,8 @@ Install Onnxruntime with NuGet:
 $ cd build
 $ mkdir nuget
 $ Invoke-WebRequest https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -UseBasicParsing -OutFile nuget.exe
-$ nuget.exe install Microsoft.ML.OnnxRuntime.DirectML
+$ nuget.exe install Microsoft.ML.OnnxRuntime.DirectML -Version 1.7.0
+$ nuget.exe install Microsoft.ML.OnnxRuntime.Gpu -Version 1.7.1
 ```
 
 Clone the OBS repo, `Downloads\ $ git clone --single-branch -b 27.0.1 git@github.com:obsproject/obs-studio.git`, to e.g. Downloads.
@@ -141,3 +142,10 @@ $ cmake --build . --config Release
 $ cpack
 $ Expand-Archive .\obs-backgroundremoval-win64.zip -DestinationPath 'C:\Program Files\obs-studio\' -Force
 ```
+
+To build with CUDA support, tell cmake to use the CUDA version of OnnxRuntime
+```
+$ cmake .. -DobsPath="$HOME\Downloads\obs-studio\" -DWITH_CUDA=ON
+```
+The rest of the build process is similar, but the result archive will be
+`obs-backgroundremoval-win64-cuda.zip`.

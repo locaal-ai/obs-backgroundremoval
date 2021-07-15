@@ -9,8 +9,11 @@
 #include <cpu_provider_factory.h>
 #endif
 #ifdef _WIN32
-#include <dml_provider_factory.h>
+#ifdef WITH_CUDA
 #include <cuda_provider_factory.h>
+#else
+#include <dml_provider_factory.h>
+#endif
 #include <wchar.h>
 #endif
 
@@ -50,8 +53,8 @@ struct background_removal_filter {
 	float contourFilter = 0.05f;
 	float smoothContour = 0.5f;
 	float feather = 0.0f;
-	std::string useGPU = USEGPU_CPU;
-	std::string modelSelection = MODEL_MEDIAPIPE;
+	std::string useGPU;
+	std::string modelSelection;
 
 	// Use the media-io converter to both scale and convert the colorspace
 	video_scaler_t* scalerToBGR;
@@ -148,8 +151,11 @@ static obs_properties_t *filter_properties(void *data)
 
 	obs_property_list_add_string(p_use_gpu, obs_module_text("CPU"), USEGPU_CPU);
 #if _WIN32
-	obs_property_list_add_string(p_use_gpu, obs_module_text("GPU - DirectML"), USEGPU_DML);
+#ifdef WITH_CUDA
 	obs_property_list_add_string(p_use_gpu, obs_module_text("GPU - CUDA"), USEGPU_CUDA);
+#else
+	obs_property_list_add_string(p_use_gpu, obs_module_text("GPU - DirectML"), USEGPU_DML);
+#endif
 #endif
 
 	obs_property_t *p_model_select = obs_properties_add_list(
@@ -168,7 +174,7 @@ static obs_properties_t *filter_properties(void *data)
 		props,
 		"mask_every_x_frames",
 		obs_module_text("Calculate mask every X frame"),
-		0,
+		1,
 		300,
 		1);
 
@@ -177,14 +183,14 @@ static obs_properties_t *filter_properties(void *data)
 }
 
 static void filter_defaults(obs_data_t *settings) {
-	obs_data_set_default_double(settings, "threshold", 					 0.5);
-	obs_data_set_default_double(settings, "contour_filter", 		 0.05);
-	obs_data_set_default_double(settings, "smooth_contour", 		 0.5);
-	obs_data_set_default_double(settings, "feather", 						 0.0);
-	obs_data_set_default_int(		settings, "replaceColor", 			 0x000000);
-	obs_data_set_default_string(settings, "useGPU", 						 USEGPU_CPU);
-	obs_data_set_default_string(settings, "model_select", 			 MODEL_MEDIAPIPE);
-	obs_data_set_default_int(		settings, "mask_every_x_frames", 1);
+	obs_data_set_default_double(settings, "threshold", 0.5);
+	obs_data_set_default_double(settings, "contour_filter", 0.05);
+	obs_data_set_default_double(settings, "smooth_contour", 0.5);
+	obs_data_set_default_double(settings, "feather", 0.0);
+	obs_data_set_default_int(settings, "replaceColor", 0x000000);
+	obs_data_set_default_string(settings, "useGPU", USEGPU_CPU);
+	obs_data_set_default_string(settings, "model_select", MODEL_MEDIAPIPE);
+	obs_data_set_default_int(settings, "mask_every_x_frames", 1);
 }
 
 static void createOrtSession(struct background_removal_filter *tf) {
@@ -200,7 +206,7 @@ static void createOrtSession(struct background_removal_filter *tf) {
 	char* modelFilepath_rawPtr = obs_module_file(tf->modelSelection.c_str());
 
 	if (modelFilepath_rawPtr == nullptr) {
-		blog(LOG_ERROR, "Unable to get model filename from plugin.");
+		blog(LOG_ERROR, "Unable to get model filename %s from plugin.", tf->modelSelection.c_str());
 		return;
 	}
 
@@ -217,11 +223,11 @@ static void createOrtSession(struct background_removal_filter *tf) {
 
 	try {
 #if _WIN32
-		if (tf->useGPU == USEGPU_CUDA) {
-			Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0));
-		} else if (tf->useGPU == USEGPU_DML) {
-			Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
-		}
+#ifdef WITH_CUDA
+        Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0));
+#else
+        Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
+#endif
 #endif
 		tf->session.reset(new Ort::Session(*tf->env, tf->modelFilepath, sessionOptions));
 	} catch (const std::exception& e) {
@@ -304,7 +310,9 @@ static void filter_update(void *data, obs_data_t *settings)
 	const std::string newUseGpu = obs_data_get_string(settings, "useGPU");
 	const std::string newModel = obs_data_get_string(settings, "model_select");
 
-	if (tf->modelSelection.empty() || tf->modelSelection != newModel || newUseGpu != tf->useGPU)
+	if (tf->modelSelection.empty() ||
+        tf->modelSelection != newModel ||
+        tf->useGPU != newUseGpu)
 	{
 		// Re-initialize model if it's not already the selected one or switching inference device
 		tf->modelSelection = newModel;
@@ -324,6 +332,7 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
 	std::string instanceName{"background-removal-inference"};
 	tf->env.reset(new Ort::Env(OrtLoggingLevel::ORT_LOGGING_LEVEL_ERROR, instanceName.c_str()));
 
+    tf->modelSelection = MODEL_MEDIAPIPE;
 	filter_update(tf, settings);
 
 	return tf;
@@ -406,6 +415,10 @@ static void processImageForBackground(
 	const cv::Mat& imageBGR,
 	cv::Mat& backgroundMask)
 {
+    if (tf->session.get() == nullptr) {
+        // Onnx runtime session is not initialized. Problem in initialization
+        return;
+    }
 	try {
 		// To RGB
 		cv::Mat imageRGB;
@@ -535,9 +548,10 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 	// Convert to BGR
 	cv::Mat imageBGR = convertFrameToBGR(frame, tf);
 
-	cv::Mat backgroundMask;
+	cv::Mat backgroundMask(imageBGR.size(), CV_8UC1, cv::Scalar(255));
+
 	tf->maskEveryXFramesCount = ++(tf->maskEveryXFramesCount) % tf->maskEveryXFrames;
-	if (tf->maskEveryXFramesCount != 0) {
+	if (tf->maskEveryXFramesCount != 0 && !tf->backgroundMask.empty()) {
 		// We are skipping processing of the mask for this frame.
 		// Get the background mask previously generated.
 		tf->backgroundMask.copyTo(backgroundMask);
@@ -583,6 +597,7 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 	catch(const std::exception& e) {
 		blog(LOG_ERROR, "%s", e.what());
 	}
+
 	// Put masked image back on frame,
 	convertBGRToFrame(imageBGR, frame, tf);
 	return frame;

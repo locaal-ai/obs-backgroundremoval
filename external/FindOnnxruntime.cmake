@@ -11,12 +11,18 @@ if(APPLE AND EXISTS ${Onnxruntime_DIR_BUILD})
     set(Onnxruntime_LIBRARIES ${Onnxruntime_LIBRARIES_EX} CACHE STRING "Onnxruntime libraries")
     set(Onnxruntime_INCLUDE_DIR ${Onnxruntime_DIR_BUILD}/include CACHE STRING "Onnxruntime include directory")
 else()
+    if (WITH_CUDA)
+        set(ONNXRUNTIME_DIR_HINT ${CMAKE_BINARY_DIR}/nuget/Microsoft.ML.OnnxRuntime.Gpu.1.7.1/)
+    else()
+        set(ONNXRUNTIME_DIR_HINT ${CMAKE_BINARY_DIR}/nuget/Microsoft.ML.OnnxRuntime.DirectML.1.7.0/)
+    endif()
+
     find_library(Onnxruntime_LIBRARIES
         NAMES
             onnxruntime
         PATHS
             ${Onnxruntime_DIR}
-            ${CMAKE_BINARY_DIR}/nuget/Microsoft.ML.OnnxRuntime.DirectML.1.7.0/runtimes/win-x64/native
+            ${ONNXRUNTIME_DIR_HINT}runtimes/win-x64/native
         DOC "Onnxruntime library")
 
     find_path(Onnxruntime_INCLUDE_DIR
@@ -25,7 +31,7 @@ else()
             "onnxruntime/core/session/onnxruntime_cxx_api.h"
         PATHS
             ${Onnxruntime_INCLUDE_HINT}
-            ${CMAKE_BINARY_DIR}/nuget/Microsoft.ML.OnnxRuntime.DirectML.1.7.0/build/native/include
+            ${ONNXRUNTIME_DIR_HINT}build/native/include
         DOC "Onnxruntime include directory")
 endif()
 
