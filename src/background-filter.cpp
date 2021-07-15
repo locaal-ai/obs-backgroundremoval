@@ -10,6 +10,7 @@
 #endif
 #ifdef _WIN32
 #include <dml_provider_factory.h>
+#include <cuda_provider_factory.h>
 #include <wchar.h>
 #endif
 
@@ -28,6 +29,9 @@ const char* MODEL_MODNET = "modnet_simple.onnx";
 const char* MODEL_MEDIAPIPE = "mediapipe.onnx";
 const char* MODEL_SELFIE = "selfie_segmentation.onnx";
 
+const char* USEGPU_CPU = "cpu";
+const char* USEGPU_DML = "dml";
+const char* USEGPU_CUDA = "cuda";
 
 struct background_removal_filter {
 	std::unique_ptr<Ort::Session> session;
@@ -46,7 +50,7 @@ struct background_removal_filter {
 	float contourFilter = 0.05f;
 	float smoothContour = 0.5f;
 	float feather = 0.0f;
-	bool useGPU = false;
+	std::string useGPU = USEGPU_CPU;
 	std::string modelSelection = MODEL_MEDIAPIPE;
 
 	// Use the media-io converter to both scale and convert the colorspace
@@ -129,10 +133,18 @@ static obs_properties_t *filter_properties(void *data)
 		"replaceColor",
 		obs_module_text("Background Color"));
 
-	obs_property_t *p_use_gpu = obs_properties_add_bool(
+	obs_property_t *p_use_gpu = obs_properties_add_list(
 		props,
 		"useGPU",
-		obs_module_text("Use GPU for inference (Windows only)"));
+		obs_module_text("Inference device"),
+		OBS_COMBO_TYPE_LIST,
+		OBS_COMBO_FORMAT_STRING
+	);
+	obs_property_list_add_string(p_use_gpu, obs_module_text("CPU"), USEGPU_CPU);
+#if _WIN32
+	obs_property_list_add_string(p_use_gpu, obs_module_text("GPU - DirectML"), USEGPU_DML);
+	obs_property_list_add_string(p_use_gpu, obs_module_text("GPU - CUDA"), USEGPU_CUDA);
+#endif
 
 	obs_property_t *p_model_select = obs_properties_add_list(
 		props,
@@ -146,10 +158,6 @@ static obs_properties_t *filter_properties(void *data)
 	obs_property_list_add_string(p_model_select, obs_module_text("MediaPipe"), MODEL_MEDIAPIPE);
 	obs_property_list_add_string(p_model_select, obs_module_text("Selfie Segmentation"), MODEL_SELFIE);
 
-#ifndef _WIN32
-    obs_property_set_enabled(p_use_gpu, false);
-#endif
-
 	UNUSED_PARAMETER(data);
 	return props;
 }
@@ -160,7 +168,7 @@ static void filter_defaults(obs_data_t *settings) {
 	obs_data_set_default_double(settings, "smooth_contour", 0.5);
 	obs_data_set_default_double(settings, "feather", 0.0);
 	obs_data_set_default_int(settings, "replaceColor", 0x000000);
-	obs_data_set_default_bool(settings, "useGPU", false);
+	obs_data_set_default_string(settings, "useGPU", USEGPU_CPU);
 	obs_data_set_default_string(settings, "model_select", MODEL_MEDIAPIPE);
 }
 
@@ -169,7 +177,7 @@ static void createOrtSession(struct background_removal_filter *tf) {
 	Ort::SessionOptions sessionOptions;
 
 	sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
-	if (tf->useGPU) {
+	if (tf->useGPU != USEGPU_CPU) {
 		sessionOptions.DisableMemPattern();
 		sessionOptions.SetExecutionMode(ExecutionMode::ORT_SEQUENTIAL);
 	}
@@ -193,9 +201,11 @@ static void createOrtSession(struct background_removal_filter *tf) {
 #endif
 
 	try {
-#ifdef _WIN32
-		if (tf->useGPU) {
-				Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
+#if _WIN32
+		if (tf->useGPU == USEGPU_CUDA) {
+			Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0));
+		} else if (tf->useGPU == USEGPU_DML) {
+			Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
 		}
 #endif
 		tf->session.reset(new Ort::Session(*tf->env, tf->modelFilepath, sessionOptions));
@@ -273,13 +283,13 @@ static void filter_update(void *data, obs_data_t *settings)
 	tf->smoothContour = (float)obs_data_get_double(settings, "smooth_contour");
 	tf->feather       = (float)obs_data_get_double(settings, "feather");
 
-	const bool newUseGpu = (bool)obs_data_get_bool(settings, "useGPU");
+	const std::string newUseGpu = obs_data_get_string(settings, "useGPU");
 	const std::string newModel = obs_data_get_string(settings, "model_select");
 
 	if (tf->modelSelection.empty() || tf->modelSelection != newModel || newUseGpu != tf->useGPU)
 	{
-		// Re-initialize model if it's not already the selected one
-		tf->modelSelection = std::string(newModel);
+		// Re-initialize model if it's not already the selected one or switching inference device
+		tf->modelSelection = newModel;
 		tf->useGPU = newUseGpu;
 		destroyScalers(tf);
 		createOrtSession(tf);
