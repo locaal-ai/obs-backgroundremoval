@@ -10,6 +10,7 @@
 #endif
 #ifdef _WIN32
 #include <dml_provider_factory.h>
+#include <cuda_provider_factory.h>
 #include <wchar.h>
 #endif
 
@@ -28,6 +29,9 @@ const char* MODEL_MODNET = "modnet_simple.onnx";
 const char* MODEL_MEDIAPIPE = "mediapipe.onnx";
 const char* MODEL_SELFIE = "selfie_segmentation.onnx";
 
+const char* USEGPU_CPU = "cpu";
+const char* USEGPU_DML = "dml";
+const char* USEGPU_CUDA = "cuda";
 
 struct background_removal_filter {
 	std::unique_ptr<Ort::Session> session;
@@ -46,12 +50,17 @@ struct background_removal_filter {
 	float contourFilter = 0.05f;
 	float smoothContour = 0.5f;
 	float feather = 0.0f;
-	bool useGPU = false;
+	std::string useGPU = USEGPU_CPU;
 	std::string modelSelection = MODEL_MEDIAPIPE;
 
 	// Use the media-io converter to both scale and convert the colorspace
 	video_scaler_t* scalerToBGR;
 	video_scaler_t* scalerFromBGR;
+
+	cv::Mat backgroundMask;
+	int maskEveryXFrames = 1;
+	int maskEveryXFramesCount = 0;
+
 
 #if _WIN32
 	const wchar_t* modelFilepath = nullptr;
@@ -59,6 +68,7 @@ struct background_removal_filter {
 	const char* modelFilepath = nullptr;
 #endif
 };
+
 
 static const char *filter_getname(void *unused)
 {
@@ -129,39 +139,52 @@ static obs_properties_t *filter_properties(void *data)
 		"replaceColor",
 		obs_module_text("Background Color"));
 
-	obs_property_t *p_use_gpu = obs_properties_add_bool(
+	obs_property_t *p_use_gpu = obs_properties_add_list(
 		props,
 		"useGPU",
-		obs_module_text("Use GPU for inference (Windows only)"));
+		obs_module_text("Inference device"),
+		OBS_COMBO_TYPE_LIST,
+		OBS_COMBO_FORMAT_STRING);
+
+	obs_property_list_add_string(p_use_gpu, obs_module_text("CPU"), USEGPU_CPU);
+#if _WIN32
+	obs_property_list_add_string(p_use_gpu, obs_module_text("GPU - DirectML"), USEGPU_DML);
+	obs_property_list_add_string(p_use_gpu, obs_module_text("GPU - CUDA"), USEGPU_CUDA);
+#endif
 
 	obs_property_t *p_model_select = obs_properties_add_list(
 		props,
 		"model_select",
 		obs_module_text("Segmentation model"),
 		OBS_COMBO_TYPE_LIST,
-		OBS_COMBO_FORMAT_STRING
-	);
+		OBS_COMBO_FORMAT_STRING);
+
 	obs_property_list_add_string(p_model_select, obs_module_text("SINet"), MODEL_SINET);
 	obs_property_list_add_string(p_model_select, obs_module_text("MODNet"), MODEL_MODNET);
 	obs_property_list_add_string(p_model_select, obs_module_text("MediaPipe"), MODEL_MEDIAPIPE);
 	obs_property_list_add_string(p_model_select, obs_module_text("Selfie Segmentation"), MODEL_SELFIE);
 
-#ifndef _WIN32
-    obs_property_set_enabled(p_use_gpu, false);
-#endif
+	obs_property_t *p_mask_every_x_frames = obs_properties_add_int(
+		props,
+		"mask_every_x_frames",
+		obs_module_text("Calculate mask every X frame"),
+		0,
+		300,
+		1);
 
 	UNUSED_PARAMETER(data);
 	return props;
 }
 
 static void filter_defaults(obs_data_t *settings) {
-	obs_data_set_default_double(settings, "threshold", 0.5);
-	obs_data_set_default_double(settings, "contour_filter", 0.05);
-	obs_data_set_default_double(settings, "smooth_contour", 0.5);
-	obs_data_set_default_double(settings, "feather", 0.0);
-	obs_data_set_default_int(settings, "replaceColor", 0x000000);
-	obs_data_set_default_bool(settings, "useGPU", false);
-	obs_data_set_default_string(settings, "model_select", MODEL_MEDIAPIPE);
+	obs_data_set_default_double(settings, "threshold", 					 0.5);
+	obs_data_set_default_double(settings, "contour_filter", 		 0.05);
+	obs_data_set_default_double(settings, "smooth_contour", 		 0.5);
+	obs_data_set_default_double(settings, "feather", 						 0.0);
+	obs_data_set_default_int(		settings, "replaceColor", 			 0x000000);
+	obs_data_set_default_string(settings, "useGPU", 						 USEGPU_CPU);
+	obs_data_set_default_string(settings, "model_select", 			 MODEL_MEDIAPIPE);
+	obs_data_set_default_int(		settings, "mask_every_x_frames", 1);
 }
 
 static void createOrtSession(struct background_removal_filter *tf) {
@@ -169,7 +192,7 @@ static void createOrtSession(struct background_removal_filter *tf) {
 	Ort::SessionOptions sessionOptions;
 
 	sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
-	if (tf->useGPU) {
+	if (tf->useGPU != USEGPU_CPU) {
 		sessionOptions.DisableMemPattern();
 		sessionOptions.SetExecutionMode(ExecutionMode::ORT_SEQUENTIAL);
 	}
@@ -193,9 +216,11 @@ static void createOrtSession(struct background_removal_filter *tf) {
 #endif
 
 	try {
-#ifdef _WIN32
-		if (tf->useGPU) {
-				Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
+#if _WIN32
+		if (tf->useGPU == USEGPU_CUDA) {
+			Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0));
+		} else if (tf->useGPU == USEGPU_DML) {
+			Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
 		}
 #endif
 		tf->session.reset(new Ort::Session(*tf->env, tf->modelFilepath, sessionOptions));
@@ -269,17 +294,20 @@ static void filter_update(void *data, obs_data_t *settings)
 	tf->backgroundColor.val[1] = (double)((color >> 8) & 0x0000ff);
 	tf->backgroundColor.val[2] = (double)(color & 0x0000ff);
 
-	tf->contourFilter = (float)obs_data_get_double(settings, "contour_filter");
-	tf->smoothContour = (float)obs_data_get_double(settings, "smooth_contour");
-	tf->feather       = (float)obs_data_get_double(settings, "feather");
+	tf->contourFilter         = (float)obs_data_get_double(settings, "contour_filter");
+	tf->smoothContour         = (float)obs_data_get_double(settings, "smooth_contour");
+	tf->feather               = (float)obs_data_get_double(settings, "feather");
+	tf->maskEveryXFrames      = (int)obs_data_get_int(settings, "mask_every_x_frames");
+	tf->maskEveryXFramesCount = (int)(0);
 
-	const bool newUseGpu = (bool)obs_data_get_bool(settings, "useGPU");
+
+	const std::string newUseGpu = obs_data_get_string(settings, "useGPU");
 	const std::string newModel = obs_data_get_string(settings, "model_select");
 
 	if (tf->modelSelection.empty() || tf->modelSelection != newModel || newUseGpu != tf->useGPU)
 	{
-		// Re-initialize model if it's not already the selected one
-		tf->modelSelection = std::string(newModel);
+		// Re-initialize model if it's not already the selected one or switching inference device
+		tf->modelSelection = newModel;
 		tf->useGPU = newUseGpu;
 		destroyScalers(tf);
 		createOrtSession(tf);
@@ -373,15 +401,12 @@ static void convertBGRToFrame(
 }
 
 
-static struct obs_source_frame * filter_render(void *data, struct obs_source_frame *frame)
+static void processImageForBackground(
+	struct background_removal_filter *tf,
+	const cv::Mat& imageBGR,
+	cv::Mat& backgroundMask)
 {
-	struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
-
-	// Convert to BGR
-	cv::Mat imageBGR = convertFrameToBGR(frame, tf);
-
 	try {
-
 		// To RGB
 		cv::Mat imageRGB;
 		cv::cvtColor(imageBGR, imageRGB, cv::COLOR_BGR2RGB);
@@ -432,7 +457,7 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 			tf->outputNames.data(), &(tf->outputTensor), 1);
 
 		uint32_t outputWidth, outputHeight;
-		int64_t outputChannels;
+		int32_t outputChannels;
 		if (tf->modelSelection == MODEL_SINET || tf->modelSelection == MODEL_MODNET) {
 			// BCHW
 			outputWidth = (int)tf->outputDims.at(3);
@@ -466,7 +491,6 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 			cv::normalize(outputImage, outputImage, 1.0, 0.0, cv::NORM_MINMAX);
 		}
 
-		cv::Mat backgroundMask;
 		if (tf->modelSelection == MODEL_SINET || tf->modelSelection == MODEL_MEDIAPIPE) {
 			backgroundMask = outputImage > tf->threshold;
 		} else {
@@ -488,38 +512,78 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 			drawContours(backgroundMask, filteredContours, -1, cv::Scalar(255), -1);
 		}
 
-		// Mask the input
+		// Resize the size of the mask back to the size of the original input.
 		cv::resize(backgroundMask, backgroundMask, imageBGR.size());
 
-		// Smooth mask with a fast filter (box)
+		// Smooth mask with a fast filter (box).
 		if (tf->smoothContour > 0.0) {
 			int k_size = (int)(100 * tf->smoothContour);
 			cv::boxFilter(backgroundMask, backgroundMask, backgroundMask.depth(), cv::Size(k_size, k_size));
 			backgroundMask = backgroundMask > 128;
 		}
+	}
+	catch(const std::exception& e) {
+		blog(LOG_ERROR, "%s", e.what());
+	}
+}
 
+
+static struct obs_source_frame * filter_render(void *data, struct obs_source_frame *frame)
+{
+	struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
+
+	// Convert to BGR
+	cv::Mat imageBGR = convertFrameToBGR(frame, tf);
+
+	cv::Mat backgroundMask;
+	tf->maskEveryXFramesCount = ++(tf->maskEveryXFramesCount) % tf->maskEveryXFrames;
+	if (tf->maskEveryXFramesCount != 0) {
+		// We are skipping processing of the mask for this frame.
+		// Get the background mask previously generated.
+		tf->backgroundMask.copyTo(backgroundMask);
+	} else {
+		// Process the image to find the mask.
+		processImageForBackground(tf, imageBGR, backgroundMask);
+
+		// Now that the mask is completed, save it off so it can be used on a later frame
+		// if we've chosen to only process the mask every X frames.
+		backgroundMask.copyTo(tf->backgroundMask);
+	}
+
+	// Apply the mask back to the main image.
+	try {
 		if (tf->feather > 0.0) {
-			// Feather mask
-			int k_size = (int)(40 * tf->feather);
+			// If we're going to feather/alpha blend, we need to do some processing that
+			// will combine the blended "foreground" and "masked background" images onto the main image.
 			cv::Mat maskFloat;
+			int k_size = (int)(40 * tf->feather);
+
+			// Convert Mat to float and Normalize the alpha mask to keep intensity between 0 and 1.
 			backgroundMask.convertTo(maskFloat, CV_32FC1, 1.0 / 255.0);
+			//Feather the normalized mask.
 			cv::boxFilter(maskFloat, maskFloat, maskFloat.depth(), cv::Size(k_size, k_size));
 
 			// Alpha blend
 			cv::Mat maskFloat3c;
 			cv::cvtColor(maskFloat, maskFloat3c, cv::COLOR_GRAY2BGR);
 			cv::Mat tmpImage, tmpBackground;
+			// Mutiply the unmasked foreground area of the image with ( 1 - alpha matte).
 			cv::multiply(imageBGR, cv::Scalar(1, 1, 1) - maskFloat3c, tmpImage, 1.0, CV_32FC3);
+			// Multiply the masked background area (with the background color applied) with the alpha matte.
 			cv::multiply(cv::Mat(imageBGR.size(), CV_32FC3, tf->backgroundColor), maskFloat3c, tmpBackground);
+			// Add the foreground and background images together, rescale back to an 8bit integer image
+			// and apply onto the main image.
 			cv::Mat(tmpImage + tmpBackground).convertTo(imageBGR, CV_8UC3);
 		} else {
+			// If we're not feathering/alpha blending, we can
+			// apply the mask as-is back onto the main image.
 			imageBGR.setTo(tf->backgroundColor, backgroundMask);
 		}
 	}
 	catch(const std::exception& e) {
 		blog(LOG_ERROR, "%s", e.what());
 	}
-	// Put masked image back on frame
+	// Put masked image back on frame,
 	convertBGRToFrame(imageBGR, frame, tf);
 	return frame;
 }
