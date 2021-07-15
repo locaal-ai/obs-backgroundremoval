@@ -31,7 +31,7 @@ const char* MODEL_SELFIE = "selfie_segmentation.onnx";
 
 const char* USEGPU_CPU = "cpu";
 const char* USEGPU_DML = "dml";
-const char* USEGPU_CUDA = "CUDA";
+const char* USEGPU_CUDA = "cuda";
 
 struct background_removal_filter {
 	std::unique_ptr<Ort::Session> session;
