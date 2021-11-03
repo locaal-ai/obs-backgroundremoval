@@ -53,11 +53,11 @@ Static linking should be more robust across versions of OSX, as well as building
 
 If you install the desktop OBS app (https://obsproject.com/download) you already have the binaries
 for libobs (e.g. `/Applications/OBS.app/Contents/Frameworks/libobs.0.dylib`)
-But you don't have the headers - so clone the main obs repo e.g. `git clone --single-branch -b 27.0.1 git@github.com:obsproject/obs-studio.git` (match the version number to your OBS install. Right now on OSX it's 27.0.1)
+But you don't have the headers - so clone the main obs repo e.g. `git clone --single-branch -b 27.1.3 git@github.com:obsproject/obs-studio.git` (match the version number to your OBS install. Right now on OSX it's 27.1.3)
 
 #### Build
 ```
-$ mkdir build && cd build
+$ mkdir -p build && cd build
 $ cmake .. -DobsLibPath=/Applications/OBS.app/Contents/Frameworks -DobsIncludePath=~/Downloads/obs-studio/libobs
 $ cmake --build . --target dist
 $ cpack

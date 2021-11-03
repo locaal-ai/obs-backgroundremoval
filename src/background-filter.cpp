@@ -25,12 +25,14 @@
 #include <fstream>
 
 #include "plugin-macros.generated.h"
+#include "Model.h"
 
 
 const char* MODEL_SINET = "SINet_Softmax_simple.onnx";
 const char* MODEL_MODNET = "modnet_simple.onnx";
 const char* MODEL_MEDIAPIPE = "mediapipe.onnx";
 const char* MODEL_SELFIE = "selfie_segmentation.onnx";
+const char* MODEL_RVM = "rvm_mobilenetv3_fp32.onnx";
 
 const char* USEGPU_CPU = "cpu";
 const char* USEGPU_DML = "dml";
@@ -41,12 +43,12 @@ struct background_removal_filter {
 	std::unique_ptr<Ort::Env> env;
 	std::vector<const char*> inputNames;
 	std::vector<const char*> outputNames;
-	Ort::Value inputTensor;
-	Ort::Value outputTensor;
-	std::vector<int64_t> inputDims;
-	std::vector<int64_t> outputDims;
-	std::vector<float> outputTensorValues;
-	std::vector<float> inputTensorValues;
+	std::vector<Ort::Value> inputTensor;
+	std::vector<Ort::Value> outputTensor;
+	std::vector<std::vector<int64_t> > inputDims;
+	std::vector<std::vector<int64_t> > outputDims;
+	std::vector<std::vector<float> > outputTensorValues;
+	std::vector<std::vector<float> > inputTensorValues;
 	Ort::MemoryInfo memoryInfo;
 	float threshold = 0.5f;
 	cv::Scalar backgroundColor{0, 0, 0};
@@ -55,6 +57,7 @@ struct background_removal_filter {
 	float feather = 0.0f;
 	std::string useGPU;
 	std::string modelSelection;
+	std::unique_ptr<Model> model;
 
 	// Use the media-io converter to both scale and convert the colorspace
 	video_scaler_t* scalerToBGR;
@@ -77,25 +80,6 @@ static const char *filter_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 	return "Background Removal";
-}
-
-template <typename T>
-T vectorProduct(const std::vector<T>& v)
-{
-    return accumulate(v.begin(), v.end(), (T)1, std::multiplies<T>());
-}
-
-static void hwc_to_chw(cv::InputArray src, cv::OutputArray dst) {
-    std::vector<cv::Mat> channels;
-    cv::split(src, channels);
-
-    // Stretch one-channel images to vector
-    for (auto &img : channels) {
-        img = img.reshape(1, 1);
-    }
-
-    // Concatenate three vectors to one
-    cv::hconcat( channels, dst );
 }
 
 
@@ -169,6 +153,7 @@ static obs_properties_t *filter_properties(void *data)
 	obs_property_list_add_string(p_model_select, obs_module_text("MODNet"), MODEL_MODNET);
 	obs_property_list_add_string(p_model_select, obs_module_text("MediaPipe"), MODEL_MEDIAPIPE);
 	obs_property_list_add_string(p_model_select, obs_module_text("Selfie Segmentation"), MODEL_SELFIE);
+	obs_property_list_add_string(p_model_select, obs_module_text("Robust Video Matting"), MODEL_RVM);
 
 	obs_property_t *p_mask_every_x_frames = obs_properties_add_int(
 		props,
@@ -237,43 +222,44 @@ static void createOrtSession(struct background_removal_filter *tf) {
 
 	Ort::AllocatorWithDefaultOptions allocator;
 
-	tf->inputNames.clear();
-	tf->outputNames.clear();
+  tf->model->populateInputOutputNames(tf->session, tf->inputNames, tf->outputNames);
 
-	tf->inputNames.push_back(tf->session->GetInputName(0, allocator));
-	tf->outputNames.push_back(tf->session->GetOutputName(0, allocator));
+  if (!tf->model->populateInputOutputShapes(tf->session, tf->inputDims, tf->outputDims)) {
+    blog(LOG_ERROR, "Unable to get model input and output shapes");
+    return;
+  }
 
-	// Allocate output buffer
-	const Ort::TypeInfo outputTypeInfo = tf->session->GetOutputTypeInfo(0);
-	const auto outputTensorInfo = outputTypeInfo.GetTensorTypeAndShapeInfo();
-	tf->outputDims = outputTensorInfo.GetShape();
-	tf->outputTensorValues.resize(vectorProduct(tf->outputDims));
+  for (size_t i = 0; i < tf->inputNames.size(); i++) {
+    blog(LOG_INFO, "Model %s input %d: name %s shape (%d dim) %d x %d x %d x %d",
+      tf->modelSelection.c_str(), (int)i,
+      tf->inputNames[i],
+      (int)tf->inputDims[i].size(),
+      (int)tf->inputDims[i][0],
+      ((int)tf->inputDims[i].size() > 1) ? (int)tf->inputDims[i][1] : 0,
+      ((int)tf->inputDims[i].size() > 2) ? (int)tf->inputDims[i][2] : 0,
+      ((int)tf->inputDims[i].size() > 3) ? (int)tf->inputDims[i][3] : 0
+    );
+  }
+  for (size_t i = 0; i < tf->outputNames.size(); i++) {
+    blog(LOG_INFO, "Model %s output %d: name %s shape (%d dim) %d x %d x %d x %d",
+      tf->modelSelection.c_str(), (int)i,
+      tf->outputNames[i],
+      (int)tf->outputDims[i].size(),
+      (int)tf->outputDims[i][0],
+      ((int)tf->outputDims[i].size() > 1) ? (int)tf->outputDims[i][1] : 0,
+      ((int)tf->outputDims[i].size() > 2) ? (int)tf->outputDims[i][2] : 0,
+      ((int)tf->outputDims[i].size() > 3) ? (int)tf->outputDims[i][3] : 0);
+  }
 
-	// Allocate input buffer
-	const Ort::TypeInfo inputTypeInfo = tf->session->GetInputTypeInfo(0);
-	const auto inputTensorInfo = inputTypeInfo.GetTensorTypeAndShapeInfo();
-	tf->inputDims = inputTensorInfo.GetShape();
-	tf->inputTensorValues.resize(vectorProduct(tf->inputDims));
-
-	blog(LOG_INFO, "Model input: name %s shape %d x %d x %d, output: name %s shape %d x %d x %d",
-		tf->inputNames[0], (int)tf->inputDims[1], (int)tf->inputDims[2], (int)tf->inputDims[3],
-		tf->outputNames[0], (int)tf->outputDims[1], (int)tf->outputDims[2], (int)tf->outputDims[3]);
-
-	// Build input and output tensors
-	tf->memoryInfo = Ort::MemoryInfo::CreateCpu(
-		OrtAllocatorType::OrtDeviceAllocator, OrtMemType::OrtMemTypeDefault);
-	tf->outputTensor = Ort::Value::CreateTensor<float>(
-		tf->memoryInfo,
-		tf->outputTensorValues.data(),
-		tf->outputTensorValues.size(),
-		tf->outputDims.data(),
-		tf->outputDims.size());
-	tf->inputTensor = Ort::Value::CreateTensor<float>(
-		tf->memoryInfo,
-		tf->inputTensorValues.data(),
-		tf->inputTensorValues.size(),
-		tf->inputDims.data(),
-		tf->inputDims.size());
+	// Allocate buffers
+  tf->model->allocateTensorBuffers(
+    tf->inputDims,
+    tf->outputDims,
+    tf->outputTensorValues,
+  	tf->inputTensorValues,
+    tf->inputTensor,
+    tf->outputTensor
+  );
 }
 
 
@@ -318,6 +304,23 @@ static void filter_update(void *data, obs_data_t *settings)
 		tf->modelSelection = newModel;
 		tf->useGPU = newUseGpu;
 		destroyScalers(tf);
+
+		if (tf->modelSelection == MODEL_SINET) {
+			tf->model.reset(new ModelSINET);
+		}
+		if (tf->modelSelection == MODEL_MODNET) {
+			tf->model.reset(new ModelMODNET);
+		}
+		if (tf->modelSelection == MODEL_SELFIE) {
+			tf->model.reset(new ModelSelfie);
+		}
+		if (tf->modelSelection == MODEL_MEDIAPIPE) {
+			tf->model.reset(new ModelMediaPipe);
+		}
+		if (tf->modelSelection == MODEL_RVM) {
+			tf->model.reset(new ModelRVM);
+		}
+
 		createOrtSession(tf);
 	}
 }
@@ -394,150 +397,95 @@ static cv::Mat convertFrameToBGR(
 
 
 static void convertBGRToFrame(
-	const cv::Mat& imageBGR,
-	struct obs_source_frame *frame,
-	struct background_removal_filter *tf
+  const cv::Mat& imageBGR,
+  struct obs_source_frame *frame,
+  struct background_removal_filter *tf
 ) {
-	if (tf->scalerFromBGR == nullptr) {
-		// Lazy initialize the frame scale & color converter
-		initializeScalers(cv::Size(frame->width, frame->height), frame->format, tf);
-	}
+  if (tf->scalerFromBGR == nullptr) {
+    // Lazy initialize the frame scale & color converter
+    initializeScalers(cv::Size(frame->width, frame->height), frame->format, tf);
+  }
 
-	const uint32_t rgbLinesize = (uint32_t)(imageBGR.cols * imageBGR.elemSize());
-	video_scaler_scale(tf->scalerFromBGR,
-		frame->data, frame->linesize,
-		&(imageBGR.data), &(rgbLinesize));
+  const uint32_t rgbLinesize = (uint32_t)(imageBGR.cols * imageBGR.elemSize());
+  video_scaler_scale(tf->scalerFromBGR,
+    frame->data, frame->linesize,
+    &(imageBGR.data), &(rgbLinesize));
 }
 
 
 static void processImageForBackground(
-	struct background_removal_filter *tf,
-	const cv::Mat& imageBGR,
-	cv::Mat& backgroundMask)
+  struct background_removal_filter *tf,
+  const cv::Mat& imageBGR,
+  cv::Mat& backgroundMask)
 {
-    if (tf->session.get() == nullptr) {
-        // Onnx runtime session is not initialized. Problem in initialization
-        return;
+  if (tf->session.get() == nullptr) {
+      // Onnx runtime session is not initialized. Problem in initialization
+      return;
+  }
+  try {
+    // To RGB
+    cv::Mat imageRGB;
+    cv::cvtColor(imageBGR, imageRGB, cv::COLOR_BGR2RGB);
+
+    // Resize to network input size
+    uint32_t inputWidth, inputHeight;
+    tf->model->getNetworkInputSize(tf->inputDims, inputWidth, inputHeight);
+
+    cv::Mat resizedImageRGB;
+    cv::resize(imageRGB, resizedImageRGB, cv::Size(inputWidth, inputHeight));
+
+    // Prepare input to nework
+    cv::Mat resizedImage, preprocessedImage;
+    resizedImageRGB.convertTo(resizedImage, CV_32F);
+
+    tf->model->prepareInputToNetwork(resizedImage, preprocessedImage);
+
+    tf->model->loadInputToTensor(preprocessedImage, inputWidth, inputHeight, tf->inputTensorValues);
+
+    // Run network inference
+    tf->model->runNetworkInference(tf->session, tf->inputNames, tf->outputNames, tf->inputTensor, tf->outputTensor);
+
+    // Get output
+    // Map network output mask to cv::Mat
+    cv::Mat outputImage = tf->model->getNetworkOutput(tf->outputDims, tf->outputTensorValues, tf->inputDims, tf->inputTensorValues);
+
+    // Post-process output
+    tf->model->postprocessOutput(outputImage);
+
+    if (tf->modelSelection == MODEL_SINET || tf->modelSelection == MODEL_MEDIAPIPE) {
+      backgroundMask = outputImage > tf->threshold;
+    } else {
+      backgroundMask = outputImage < tf->threshold;
     }
-	try {
-		// To RGB
-		cv::Mat imageRGB;
-		cv::cvtColor(imageBGR, imageRGB, cv::COLOR_BGR2RGB);
 
-		// Resize to network input size
-		uint32_t inputWidth, inputHeight;
-		if (tf->modelSelection == MODEL_SINET || tf->modelSelection == MODEL_MODNET) {
-			// BCHW
-			inputWidth  = (int)tf->inputDims[3];
-			inputHeight = (int)tf->inputDims[2];
-		} else {
-			// BHWC
-			inputWidth  = (int)tf->inputDims[2];
-			inputHeight = (int)tf->inputDims[1];
-		}
+    // Contour processing
+    if (tf->contourFilter > 0.0 && tf->contourFilter < 1.0) {
+      std::vector<std::vector<cv::Point> > contours;
+      findContours(backgroundMask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+      std::vector<std::vector<cv::Point> > filteredContours;
+      const int64_t contourSizeThreshold = (int64_t)(backgroundMask.total() * tf->contourFilter);
+      for (auto& contour : contours) {
+        if (cv::contourArea(contour) > contourSizeThreshold) {
+          filteredContours.push_back(contour);
+        }
+      }
+      backgroundMask.setTo(0);
+      drawContours(backgroundMask, filteredContours, -1, cv::Scalar(255), -1);
+    }
 
-		cv::Mat resizedImageRGB;
-		cv::resize(imageRGB, resizedImageRGB, cv::Size(inputWidth, inputHeight));
+    // Resize the size of the mask back to the size of the original input.
+    cv::resize(backgroundMask, backgroundMask, imageBGR.size());
 
-		// Prepare input to nework
-		cv::Mat resizedImage, preprocessedImage;
-		resizedImageRGB.convertTo(resizedImage, CV_32F);
-
-		if (tf->modelSelection == MODEL_SINET) {
-			cv::subtract(resizedImage, cv::Scalar(102.890434, 111.25247, 126.91212), resizedImage);
-			cv::multiply(resizedImage, cv::Scalar(1.0 / 62.93292,  1.0 / 62.82138, 1.0 / 66.355705) / 255.0, resizedImage);
-		} else if (tf->modelSelection == MODEL_MODNET) {
-			cv::subtract(resizedImage, cv::Scalar::all(127.5), resizedImage);
-			resizedImage = resizedImage / 127.5;
-		} else {
-			preprocessedImage = resizedImage / 255.0;
-		}
-
-		if (tf->modelSelection == MODEL_SINET || tf->modelSelection == MODEL_MODNET) {
-			hwc_to_chw(resizedImage, preprocessedImage);
-			tf->inputTensorValues.assign(
-				preprocessedImage.begin<float>(),
-				preprocessedImage.end<float>()
-			);
-		} else {
-			preprocessedImage.copyTo(cv::Mat(inputHeight, inputWidth, CV_32FC3, &(tf->inputTensorValues[0])));
-		}
-
-		// Run network inference
-		tf->session->Run(
-			Ort::RunOptions{nullptr},
-			tf->inputNames.data(), &(tf->inputTensor), 1,
-			tf->outputNames.data(), &(tf->outputTensor), 1);
-
-		uint32_t outputWidth, outputHeight;
-		int32_t outputChannels;
-		if (tf->modelSelection == MODEL_SINET || tf->modelSelection == MODEL_MODNET) {
-			// BCHW
-			outputWidth = (int)tf->outputDims.at(3);
-			outputHeight = (int)tf->outputDims.at(2);
-			outputChannels = CV_32FC1;
-		} else {
-			// BHWC
-			outputWidth = (int)tf->outputDims.at(2);
-			outputHeight = (int)tf->outputDims.at(1);
-			outputChannels = (tf->modelSelection == MODEL_MEDIAPIPE) ? CV_32FC2 : CV_32FC1;
-		}
-
-		// Map network output mask to cv::Mat
-		cv::Mat outputImage(outputHeight, outputWidth, outputChannels, &(tf->outputTensorValues[0]));
-
-		if (tf->modelSelection == MODEL_MEDIAPIPE) {
-			// take 1st channel
-			std::vector<cv::Mat> outputImageSplit;
-			cv::split(outputImage, outputImageSplit);
-
-			// "Softmax"
-			cv::Mat outputA, outputB;
-			cv::exp(outputImageSplit[0], outputA);
-			cv::exp(outputImageSplit[1], outputB);
-			outputImage = outputA / (outputA + outputB);
-
-			cv::normalize(outputImage, outputImage, 1.0, 0.0, cv::NORM_MINMAX);
-		}
-
-		if (tf->modelSelection == MODEL_SELFIE) {
-			cv::normalize(outputImage, outputImage, 1.0, 0.0, cv::NORM_MINMAX);
-		}
-
-		if (tf->modelSelection == MODEL_SINET || tf->modelSelection == MODEL_MEDIAPIPE) {
-			backgroundMask = outputImage > tf->threshold;
-		} else {
-			backgroundMask = outputImage < tf->threshold;
-		}
-
-		// Contour processing
-		if (tf->contourFilter > 0.0 && tf->contourFilter < 1.0) {
-			std::vector<std::vector<cv::Point> > contours;
-			findContours(backgroundMask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-			std::vector<std::vector<cv::Point> > filteredContours;
-			const int64_t contourSizeThreshold = (int64_t)(backgroundMask.total() * tf->contourFilter);
-			for (auto& contour : contours) {
-				if (cv::contourArea(contour) > contourSizeThreshold) {
-					filteredContours.push_back(contour);
-				}
-			}
-			backgroundMask.setTo(0);
-			drawContours(backgroundMask, filteredContours, -1, cv::Scalar(255), -1);
-		}
-
-		// Resize the size of the mask back to the size of the original input.
-		cv::resize(backgroundMask, backgroundMask, imageBGR.size());
-
-		// Smooth mask with a fast filter (box).
-		if (tf->smoothContour > 0.0) {
-			int k_size = (int)(100 * tf->smoothContour);
-			cv::boxFilter(backgroundMask, backgroundMask, backgroundMask.depth(), cv::Size(k_size, k_size));
-			backgroundMask = backgroundMask > 128;
-		}
-	}
-	catch(const std::exception& e) {
-		blog(LOG_ERROR, "%s", e.what());
-	}
+    // Smooth mask with a fast filter (box).
+    if (tf->smoothContour > 0.0) {
+      int k_size = (int)(100 * tf->smoothContour);
+      cv::boxFilter(backgroundMask, backgroundMask, backgroundMask.depth(), cv::Size(k_size, k_size));
+      backgroundMask = backgroundMask > 128;
+    }
+  }
+  catch(const std::exception& e) {
+    blog(LOG_ERROR, "%s", e.what());
+  }
 }
 
 
