@@ -80,7 +80,7 @@ The first is recommended as it preserves the plugins over the parallel installat
 
 #### Ubuntu
 ```
-$ apt install -y libobs-dev libopencv-dev language-pack-en wget git build-essential cmake
+$ apt install -y libobs-dev libopencv-dev libsimde-dev language-pack-en wget git build-essential cmake
 $ wget https://github.com/microsoft/onnxruntime/releases/download/v1.7.0/onnxruntime-linux-x64-1.7.0.tgz
 $ tar xzvf onnxruntime-linux-x64-1.7.0.tgz --strip-components=1 -C /usr/local/ --wildcards "*/include/*" "*/lib*/"
 ```
