@@ -79,17 +79,48 @@ The first is recommended as it preserves the plugins over the parallel installat
 ### Linux
 
 #### Ubuntu
+
 ```
-$ apt install -y libobs-dev libopencv-dev language-pack-en wget git build-essential cmake
+$ sudo apt install -y libobs-dev libopencv-dev language-pack-en wget git build-essential cmake
 $ wget https://github.com/microsoft/onnxruntime/releases/download/v1.7.0/onnxruntime-linux-x64-1.7.0.tgz
-$ tar xzvf onnxruntime-linux-x64-1.7.0.tgz --strip-components=1 -C /usr/local/ --wildcards "*/include/*" "*/lib*/"
+$ sudo tar xzvf onnxruntime-linux-x64-1.7.0.tgz --strip-components=1 -C /usr/local/ --wildcards "*/include/*" "*/lib*/"
 ```
 
 Then build and install:
 ```
 $ mkdir build && cd build
-$ cmake .. && cmake --build . && cmake --install .
+$ cmake .. && cmake --build . && sudo cmake --install .
 ```
+
+To build with CUDA support, you will need the CUDA libraries installed as well as the GPU version of the ONNX Runtime library.
+
+Use the instructions at [https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#ubuntu-installation](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#ubuntu-installation) to set up the NVIDIA Cuda repository, then:
+
+> These instructions use the 1.9.0 version of onnxruntime. If you wish to use a different version, change the export line
+> to the version number you require.
+
+```
+$ export ONNX_VERSION=1.9.0
+$ sudo apt install cuda libcudnn8
+$ wget https://github.com/microsoft/onnxruntime/releases/download/v${ONNX_VERSION}/onnxruntime-linux-x64-gpu-${ONNX_VERSION}.tgz
+$ sudo tar xzvf onnxruntime-linux-x64-gpu-${ONNX_VERSION}.tgz --strip-components=1 -C /usr/local/ --wildcards "*/include/*" "*/lib*/"
+```
+
+Then build and install:
+```
+$ sudo ldconfig  # required if you have previously had a different version of onnxruntime installed
+$ mkdir build && cd build
+$ cmake -DWITH_CUDA=ON .. && cmake --build . && sudo cmake --install .
+```
+
+If after installing, the plugin fails to load and cannot be found in the interface, there are additional steps to carry out.
+
+```
+$ mkdir -p ~/.config/obs-studio/plugins/obs-backgroundremoval/bin/64bit
+$ ln -s /usr/local/lib/obs-plugins/obs-backgroundremoval.so ~/.config/obs-studio/plugins/obs-backgroundremoval/bin/64bit/
+$ ln -s /usr/local/share/obs/obs-plugins/obs-backgroundremoval ~/.config/obs-studio/plugins/obs-backgroundremoval/data
+```
+If you wish to install this system-wide, change obs-studio path from `~/.config/obs-studio/plugins` to `/usr/share/obs/obs-plugins`.
 
 #### Archlinux
 A `PKGBUILD` file is provided for making the plugin package
