@@ -8,15 +8,16 @@
 #include <onnxruntime_cxx_api.h>
 #include <cpu_provider_factory.h>
 #endif
-#ifdef _WIN32
+
 #ifdef WITH_CUDA
 #include <cuda_provider_factory.h>
-#else
+#endif
+#ifdef _WIN32
+#ifndef WITH_CUDA
 #include <dml_provider_factory.h>
 #endif
 #include <wchar.h>
 #endif
-
 
 template <typename T>
 T vectorProduct(const std::vector<T>& v)

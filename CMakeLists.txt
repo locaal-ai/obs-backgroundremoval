@@ -38,10 +38,10 @@ if(WIN32 OR MSVC)
     find_path(TIFF_INCLUDE_DIR tiff.h PATHS ${VCPKG_INSTALLED_DIR}/include)
 
     find_file(Protobuf_PROTOC_EXECUTABLE protoc.exe PATHS ${VCPKG_INSTALLED_DIR}/tools)
-else()
-    # Apple or linux
+elseif(APPLE)
+    # Apple
     if (WITH_CUDA)
-        message(FATAL "Cannot use CUDA on non-Windows builds")
+        message(FATAL "Cannot use CUDA on Apple builds")
     endif()
 endif()
 
