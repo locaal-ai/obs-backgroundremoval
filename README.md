@@ -89,8 +89,9 @@ $ wget https://github.com/microsoft/onnxruntime/releases/download/v1.7.0/onnxrun
 $ sudo tar xzvf onnxruntime-linux-x64-1.7.0.tgz --strip-components=1 -C /usr/local/ --wildcards "*/include/*" "*/lib*/"
 ```
 
-Then build and install:
+Clone this repo into a directory of your choice, then build and install, e.g.:
 ```
+$ cd obs-backgroundremoval
 $ mkdir build && cd build
 $ cmake .. && cmake --build . && sudo cmake --install .
 ```
