@@ -1,5 +1,5 @@
 pkgname=obs-backgroundremoval
-pkgver=0.3.0_beta
+pkgver=0.4.0
 _ONNXRUNTIME_FILE=onnxruntime-linux-x64-1.7.0.tgz
 _onnxdir=onnxruntime-linux-x64-1.7.0
 _bgdir=$pkgname-${pkgver//_/-}
@@ -12,7 +12,7 @@ depends=(obs-studio opencv)
 makedepends=(cmake)
 source=("${_bgdir}.tar.gz::https://github.com/royshil/$pkgname/archive/refs/tags/v${pkgver//_/-}.tar.gz"
         "https://github.com/microsoft/onnxruntime/releases/download/v1.7.0/$_ONNXRUNTIME_FILE")
-sha256sums=('874e09c03b622054fb8e001873318bf631b4f9767adc383b3327032a92dd496b'
+sha256sums=('e88bbc902154b5efd46d8fc1dee52fcf079c8ff2ae6593d9f716017fdd1ef601'
             '0345f45f222208344406d79a6db3280ed2ccc884dc1e064ce6e6951ed4c70606')
 
 prepare() {
