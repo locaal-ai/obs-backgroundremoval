@@ -50,7 +50,7 @@ public:
 
   const char* name;
 
-  const char* getModelFilepath(const std::string& modelSelection) {
+  const std::string getModelFilepath(const std::string& modelSelection) {
     char* modelFilepath_rawPtr = obs_module_file(modelSelection.c_str());
 
     if (modelFilepath_rawPtr == nullptr) {
@@ -64,9 +64,9 @@ public:
 #if _WIN32
     std::wstring modelFilepath_ws(modelFilepath_s.size(), L' ');
     std::copy(modelFilepath_s.begin(), modelFilepath_s.end(), modelFilepath_ws.begin());
-    return modelFilepath_ws.c_str();
+    return modelFilepath_ws;
 #else
-	  return modelFilepath_s.c_str();
+	  return modelFilepath_s;
 #endif
   }
 
@@ -110,7 +110,7 @@ public:
 
     if (inputDims[0].size() < 3 || outputDims[0].size() < 3) {
       blog(LOG_ERROR, "Input or output tensor dims are < 3. input = %d, output = %d",
-        inputDims.size(), outputDims.size());
+        (int)inputDims.size(), (int)outputDims.size());
       return false;
     }
 

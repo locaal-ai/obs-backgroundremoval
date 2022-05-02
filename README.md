@@ -53,7 +53,7 @@ Static linking should be more robust across versions of OSX, as well as building
 
 If you install the desktop OBS app (https://obsproject.com/download) you already have the binaries
 for libobs (e.g. `/Applications/OBS.app/Contents/Frameworks/libobs.0.dylib`)
-But you don't have the headers - so clone the main obs repo e.g. `git clone --single-branch -b 27.1.3 git@github.com:obsproject/obs-studio.git` (match the version number to your OBS install. Right now on OSX it's 27.1.3)
+But you don't have the headers - so clone the main obs repo e.g. `git clone --single-branch -b 27.2.4 git@github.com:obsproject/obs-studio.git` (match the version number to your OBS install. Right now on OSX it's 27.2.4)
 
 #### Build
 ```
@@ -73,7 +73,7 @@ sudo unzip -j obs-backgroundremoval-macosx.zip "Resources/data/obs-plugins/obs-b
 ```
 
 or directly to your OBS install directory, e.g.
-```
+```sh
 $ unzip -o obs-backgroundremoval-macosx.zip -d /Applications/OBS.app/Contents/
 ```
 
