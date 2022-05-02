@@ -207,9 +207,13 @@ static void createOrtSession(struct background_removal_filter *tf) {
 
 	try {
 #ifdef WITH_CUDA
-        Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0));
-#elif _WIN32
-        Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
+        if (tf->useGPU == USEGPU_CUDA) {
+            Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0));
+        }
+#else
+        if (tf->useGPU == USEGPU_DML) {
+            Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
+        }
 #endif
 		tf->session.reset(new Ort::Session(*tf->env, tf->modelFilepath, sessionOptions));
 	} catch (const std::exception& e) {

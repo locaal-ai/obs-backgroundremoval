@@ -32,6 +32,7 @@ The plugin was built and tested on Mac OSX, Windows and Ubuntu Linux. Help is ap
 ### Prerequisites for building
 - OpenCV v4.2+: https://github.com/opencv/opencv/
 - ONNXRuntime: https://github.com/microsoft/onnxruntime
+- CMake v3.20+: https://cmake.org/download/
 
 ### Mac OSX
 
@@ -83,14 +84,14 @@ The first is recommended as it preserves the plugins over the parallel installat
 
 #### Ubuntu
 
-```
+```sh
 $ sudo apt install -y libobs-dev libopencv-dev language-pack-en wget git build-essential cmake libsimde-dev
 $ wget https://github.com/microsoft/onnxruntime/releases/download/v1.7.0/onnxruntime-linux-x64-1.7.0.tgz
 $ sudo tar xzvf onnxruntime-linux-x64-1.7.0.tgz --strip-components=1 -C /usr/local/ --wildcards "*/include/*" "*/lib*/"
 ```
 
 Clone this repo into a directory of your choice, then build and install, e.g.:
-```
+```sh
 $ cd obs-backgroundremoval
 $ mkdir build && cd build
 $ cmake .. && cmake --build . && sudo cmake --install .
@@ -103,7 +104,7 @@ Use the instructions at [https://docs.nvidia.com/cuda/cuda-installation-guide-li
 > These instructions use the 1.9.0 version of onnxruntime. If you wish to use a different version, change the export line
 > to the version number you require.
 
-```
+```sh
 $ export ONNX_VERSION=1.9.0
 $ sudo apt install cuda libcudnn8
 $ wget https://github.com/microsoft/onnxruntime/releases/download/v${ONNX_VERSION}/onnxruntime-linux-x64-gpu-${ONNX_VERSION}.tgz
@@ -111,7 +112,7 @@ $ sudo tar xzvf onnxruntime-linux-x64-gpu-${ONNX_VERSION}.tgz --strip-components
 ```
 
 Then build and install:
-```
+```sh
 $ sudo ldconfig  # required if you have previously had a different version of onnxruntime installed
 $ mkdir build && cd build
 $ cmake -DWITH_CUDA=ON .. && cmake --build . && sudo cmake --install .
@@ -119,7 +120,7 @@ $ cmake -DWITH_CUDA=ON .. && cmake --build . && sudo cmake --install .
 
 If after installing, the plugin fails to load and cannot be found in the interface, there are additional steps to carry out.
 
-```
+```sh
 $ mkdir -p ~/.config/obs-studio/plugins/obs-backgroundremoval/bin/64bit
 $ ln -s /usr/local/lib/obs-plugins/obs-backgroundremoval.so ~/.config/obs-studio/plugins/obs-backgroundremoval/bin/64bit/
 $ ln -s /usr/local/share/obs/obs-plugins/obs-backgroundremoval ~/.config/obs-studio/plugins/obs-backgroundremoval/data
@@ -128,13 +129,13 @@ If you wish to install this system-wide, change obs-studio path from `~/.config/
 
 #### Archlinux
 A `PKGBUILD` file is provided for making the plugin package
-```
+```sh
 $ cd scripts
 $ makepkg -s
 ```
 
 Building for Arch in Docker (host OS e.g. MacOSX):
-```
+```sh
 $ docker pull archlinux:latest
 $ docker run -it -v $(pwd):/src archlinux:latest /bin/bash
 # pacman -Sy --needed --noconfirm sudo fakeroot binutils gcc make
@@ -150,7 +151,7 @@ We will use static linking (as much as possible) to aviod having to lug around .
 
 #### Install Prerequisites
 Install OpenCV via `vcpkg`:
-```
+```powershell
 $ mkdir build
 $ cd build
 $ git clone https://github.com/microsoft/vcpkg
@@ -160,27 +161,31 @@ $ .\vcpkg.exe install opencv[core]:x64-windows-static
 ```
 
 Install Onnxruntime with NuGet:
-```
+```powershell
 $ cd build
 $ mkdir nuget
 $ Invoke-WebRequest https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -UseBasicParsing -OutFile nuget.exe
-$ nuget.exe install Microsoft.ML.OnnxRuntime.DirectML -Version 1.7.0
-$ nuget.exe install Microsoft.ML.OnnxRuntime.Gpu -Version 1.7.1
+$ .\nuget.exe install Microsoft.ML.OnnxRuntime.DirectML -Version 1.11.0
+$ .\nuget.exe install Microsoft.ML.OnnxRuntime.Gpu -Version 1.11.0
 ```
 
-Clone the OBS repo, `Downloads\ $ git clone --single-branch -b 27.0.1 git@github.com:obsproject/obs-studio.git`, to e.g. Downloads.
+##### Build OBS Studio from source
+Clone the OBS repo, `$HOME\Downloads\ $ git clone --recursive git@github.com:obsproject/obs-studio.git`, to e.g. Downloads.
+Use OBS scripts to build: `$HOME\Downloads\obs-studio $ .\CI\build-windows.ps1`
+
+Find the complete instructions here: https://obsproject.com/wiki/build-instructions-for-windows
 
 #### Build and install the plugin
-```
-$ cmake .. -DobsPath="$HOME\Downloads\obs-studio\"
+```powershell
+$ cmake .. -Dlibobs_DIR="$HOME\Downloads\obs-studio\build64\libobs"
 $ cmake --build . --config Release
 $ cpack
-$ Expand-Archive .\obs-backgroundremoval-win64.zip -DestinationPath 'C:\Program Files\obs-studio\' -Force
+$ Expand-Archive .\obs-backgroundremoval-0.4.0-win64.zip -DestinationPath 'C:\Program Files\obs-studio\' -Force
 ```
 
 To build with CUDA support, tell cmake to use the CUDA version of OnnxRuntime
-```
-$ cmake .. -DobsPath="$HOME\Downloads\obs-studio\" -DWITH_CUDA=ON
+```powershell
+$ cmake .. -Dlibobs_DIR="$HOME\Downloads\obs-studio\build64\libobs" -DWITH_CUDA=ON
 ```
 The rest of the build process is similar, but the result archive will be
 `obs-backgroundremoval-win64-cuda.zip`.

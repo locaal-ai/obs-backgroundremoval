@@ -12,9 +12,9 @@ if(APPLE AND EXISTS ${Onnxruntime_DIR_BUILD})
     set(Onnxruntime_INCLUDE_DIR ${Onnxruntime_DIR_BUILD}/include CACHE STRING "Onnxruntime include directory")
 else()
     if (WITH_CUDA)
-        set(ONNXRUNTIME_DIR_HINT ${CMAKE_BINARY_DIR}/nuget/Microsoft.ML.OnnxRuntime.Gpu.1.7.1/)
+        set(ONNXRUNTIME_DIR_HINT ${CMAKE_BINARY_DIR}/nuget/Microsoft.ML.OnnxRuntime.Gpu.1.11.0/)
     else()
-        set(ONNXRUNTIME_DIR_HINT ${CMAKE_BINARY_DIR}/nuget/Microsoft.ML.OnnxRuntime.DirectML.1.7.0/)
+        set(ONNXRUNTIME_DIR_HINT ${CMAKE_BINARY_DIR}/nuget/Microsoft.ML.OnnxRuntime.DirectML.1.11.0/)
     endif()
 
     find_library(Onnxruntime_LIBRARIES
