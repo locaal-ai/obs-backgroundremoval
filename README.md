@@ -7,6 +7,7 @@
   - [Windows](#windows)
 
 ## Download
+
 Check out the [latest releases](https://github.com/royshil/obs-backgroundremoval/releases) for downloads and install instructions.
 
 ## Introduction
@@ -20,6 +21,7 @@ a transparent color.
 
 The models used for background detection are SINet: https://arxiv.org/abs/1911.09099 and MODNet: https://arxiv.org/pdf/2011.11961.pdf
 The pre-trained model weights were taken from:
+
 - https://github.com/anilsathyan7/Portrait-Segmentation/tree/master/SINet
 - https://github.com/ZHKKKe/MODNet
 
@@ -30,6 +32,7 @@ Some more information about how I built it: https://www.morethantechnical.com/20
 The plugin was built and tested on Mac OSX, Windows and Ubuntu Linux. Help is appreciated in building on other OSs and formalizing the one-click installers.
 
 ### Prerequisites for building
+
 - OpenCV v4.2+: https://github.com/opencv/opencv/
 - ONNXRuntime: https://github.com/microsoft/onnxruntime
 - CMake v3.20+: https://cmake.org/download/
@@ -39,15 +42,18 @@ The plugin was built and tested on Mac OSX, Windows and Ubuntu Linux. Help is ap
 #### Install dependencies
 
 You may use homebrew:
+
 ```
 $ brew install opencv onnxruntime
 ```
 
 Or - you may also build a (very minimal) version of OpenCV and ONNX Runtime for static-linking, instead of the homebrew ones:
+
 ```
 <root>/build/ $ ../scripts/makeOpenCV_osx.sh
 <root>/build/ $ ../scripts/makeOnnxruntime_osx.sh
 ```
+
 Static linking should be more robust across versions of OSX, as well as building for 10.13.
 
 #### Finding libobs
@@ -57,6 +63,7 @@ for libobs (e.g. `/Applications/OBS.app/Contents/Frameworks/libobs.0.dylib`)
 But you don't have the headers - so clone the main obs repo e.g. `git clone --single-branch -b 27.2.4 git@github.com:obsproject/obs-studio.git` (match the version number to your OBS install. Right now on OSX it's 27.2.4)
 
 #### Build
+
 ```
 $ mkdir -p build && cd build
 $ cmake .. -DobsLibPath=/Applications/OBS.app/Contents/Frameworks -DobsIncludePath=~/Downloads/obs-studio/libobs
@@ -65,6 +72,7 @@ $ cpack
 ```
 
 #### Install
+
 Unpack the package to the plugins directory of the system's Library folder (which is Apple's preferred way but requires admin privileges)
 
 ```sh
@@ -74,6 +82,7 @@ sudo unzip -j obs-backgroundremoval-macosx.zip "Resources/data/obs-plugins/obs-b
 ```
 
 or directly to your OBS install directory, e.g.
+
 ```sh
 $ unzip -o obs-backgroundremoval-macosx.zip -d /Applications/OBS.app/Contents/
 ```
@@ -91,6 +100,7 @@ $ sudo tar xzvf onnxruntime-linux-x64-1.7.0.tgz --strip-components=1 -C /usr/loc
 ```
 
 Clone this repo into a directory of your choice, then build and install, e.g.:
+
 ```sh
 $ cd obs-backgroundremoval
 $ mkdir build && cd build
@@ -112,6 +122,7 @@ $ sudo tar xzvf onnxruntime-linux-x64-gpu-${ONNX_VERSION}.tgz --strip-components
 ```
 
 Then build and install:
+
 ```sh
 $ sudo ldconfig  # required if you have previously had a different version of onnxruntime installed
 $ mkdir build && cd build
@@ -125,16 +136,20 @@ $ mkdir -p ~/.config/obs-studio/plugins/obs-backgroundremoval/bin/64bit
 $ ln -s /usr/local/lib/obs-plugins/obs-backgroundremoval.so ~/.config/obs-studio/plugins/obs-backgroundremoval/bin/64bit/
 $ ln -s /usr/local/share/obs/obs-plugins/obs-backgroundremoval ~/.config/obs-studio/plugins/obs-backgroundremoval/data
 ```
+
 If you wish to install this system-wide, change obs-studio path from `~/.config/obs-studio/plugins` to `/usr/share/obs/obs-plugins`.
 
 #### Archlinux
+
 A `PKGBUILD` file is provided for making the plugin package
+
 ```sh
 $ cd scripts
 $ makepkg -s
 ```
 
 Building for Arch in Docker (host OS e.g. MacOSX):
+
 ```sh
 $ docker pull archlinux:latest
 $ docker run -it -v $(pwd):/src archlinux:latest /bin/bash
@@ -145,12 +160,52 @@ $ docker run -it -v $(pwd):/src archlinux:latest /bin/bash
 # sudo -u builduser bash -c 'cd /src/scripts && makepkg -s'
 ```
 
+### Fedora
+
+```sh
+$ sudo dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
+$ sudo dnf groupinstall "Development Tools" "Development Libraries"
+$ sudo dnf install obs-studio obs-studio-devel obs-studio-libs opencv-devel opencv american-fuzzy-lop-clang kernel-devel cmake
+$ wget https://github.com/microsoft/onnxruntime/releases/download/v1.7.0/onnxruntime-linux-x64-1.7.0.tgz
+$ sudo tar xzvf onnxruntime-linux-x64-1.7.0.tgz --strip-components=1 -C /usr/local/ --wildcards "*/include/*" "*/lib*/"
+```
+
+Clone this repo into a directory of your choice, then build and install, e.g.:
+
+```sh
+$ cd obs-backgroundremoval
+$ mkdir build && cd build
+$ cmake -DLIBOBS_INCLUDE_DIR=$LIBOBS_INCLUDE_DIR -DEXTRA_LIBRARY_PATH=/usr/include/obs -DWITH_CUDA=ON .. && cmake --build . && sudo cmake --install .
+```
+
+Fix installation.
+
+```sh
+sudo cp /usr/local/share/obs/obs-plugins/obs-backgroundremoval -R /usr/share/obs/obs-plugins/
+sudo cp /usr/local/lib64/obs-plugins/obs-backgroundremoval.so  /usr/lib64/obs-plugins/
+```
+
+Add `/usr/local/lib` to `LD_LIBRARY_PATH`
+
+```sh
+echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/" > ~/.bash_profile
+source ~/.bash_profile
+```
+
+To test execute obs from terminal
+
+```
+obs
+```
+
 ### Windows
 
 We will use static linking (as much as possible) to aviod having to lug around .DLLs with the plugin.
 
 #### Install Prerequisites
+
 Install OpenCV via `vcpkg`:
+
 ```powershell
 $ mkdir build
 $ cd build
@@ -161,6 +216,7 @@ $ .\vcpkg.exe install opencv[core]:x64-windows-static
 ```
 
 Install Onnxruntime with NuGet:
+
 ```powershell
 $ cd build
 $ mkdir nuget
@@ -170,12 +226,14 @@ $ .\nuget.exe install Microsoft.ML.OnnxRuntime.Gpu -Version 1.11.0
 ```
 
 ##### Build OBS Studio from source
+
 Clone the OBS repo, `$HOME\Downloads\ $ git clone --recursive git@github.com:obsproject/obs-studio.git`, to e.g. Downloads.
 Use OBS scripts to build: `$HOME\Downloads\obs-studio $ .\CI\build-windows.ps1`
 
 Find the complete instructions here: https://obsproject.com/wiki/build-instructions-for-windows
 
 #### Build and install the plugin
+
 ```powershell
 $ cmake .. -Dlibobs_DIR="$HOME\Downloads\obs-studio\build64\libobs"
 $ cmake --build . --config Release
@@ -184,8 +242,10 @@ $ Expand-Archive .\obs-backgroundremoval-0.4.0-win64.zip -DestinationPath 'C:\Pr
 ```
 
 To build with CUDA support, tell cmake to use the CUDA version of OnnxRuntime
+
 ```powershell
 $ cmake .. -Dlibobs_DIR="$HOME\Downloads\obs-studio\build64\libobs" -DWITH_CUDA=ON
 ```
+
 The rest of the build process is similar, but the result archive will be
 `obs-backgroundremoval-win64-cuda.zip`.
