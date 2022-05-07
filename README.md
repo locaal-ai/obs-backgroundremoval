@@ -198,6 +198,8 @@ To test execute obs from terminal
 obs
 ```
 
+Finally logout and login to be able to run obs from your desktop icon
+
 ### Windows
 
 We will use static linking (as much as possible) to aviod having to lug around .DLLs with the plugin.
