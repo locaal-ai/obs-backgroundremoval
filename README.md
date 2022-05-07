@@ -175,7 +175,7 @@ Clone this repo into a directory of your choice, then build and install, e.g.:
 ```sh
 $ cd obs-backgroundremoval
 $ mkdir build && cd build
-$ cmake -DLIBOBS_INCLUDE_DIR=$LIBOBS_INCLUDE_DIR -DEXTRA_LIBRARY_PATH=/usr/include/obs -DWITH_CUDA=ON .. && cmake --build . && sudo cmake --install .
+$ cmake -DLIBOBS_INCLUDE_DIR=/usr/share/obs/libobs -DEXTRA_LIBRARY_PATH=/usr/include/obs -DWITH_CUDA=ON .. && cmake --build . && sudo cmake --install .
 ```
 
 Fix installation.
