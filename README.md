@@ -185,10 +185,19 @@ sudo cp /usr/local/share/obs/obs-plugins/obs-backgroundremoval -R /usr/share/obs
 sudo cp /usr/local/lib64/obs-plugins/obs-backgroundremoval.so  /usr/lib64/obs-plugins/
 ```
 
-Add `/usr/local/lib` to `LD_LIBRARY_PATH`
+Add `/usr/local/lib` to `LD_LIBRARY_PATH` environment variable editing `~/.bash_profile` and adding the code below at the end.
 
 ```sh
-echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/" > ~/.bash_profile
+if [ -n "${LD_LIBRARY_PATH}" ]; then
+  export LD_LIBRARY_PATH=:/usr/local/lib/
+else
+  export LD_LIBRARY_PATH=/usr/local/lib/
+fi
+```
+
+source your `.bash_profile`
+
+```sh
 source ~/.bash_profile
 ```
 
