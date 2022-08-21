@@ -103,8 +103,8 @@ set(PLUGIN_HEADERS
 # --- Platform-independent build settings ---
 add_library(${CMAKE_PROJECT_NAME} MODULE ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
 
-find_package(libobs REQUIRED)
-find_package(obs-frontend-api REQUIRED)
+find_package(LibObs REQUIRED)
+#find_package(obs-frontend-api REQUIRED)
 include(external/ObsPluginHelpers.cmake)
 
 find_package(Onnxruntime REQUIRED)
@@ -120,7 +120,7 @@ include_directories(
 )
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
-    OBS::libobs OBS::obs-frontend-api
+    obs obs-frontend-api
     ${Onnxruntime_LIBRARIES}
     ${OpenCV_LIBRARIES}
 )

@@ -24,7 +24,7 @@ if(DEFINED LIBOBS_INCLUDE_DIR AND NOT TARGET OBS::libobs)
     DEPRECATION
       "You are using an outdated method of adding 'libobs' to your project. Refer to the updated wiki on how to build and export 'libobs' and use it in your plugin projects."
   )
-  find_package(libobs REQUIRED)
+  find_package(LibObs REQUIRED)
   if(TARGET OBS::libobs)
     set_target_properties(OBS::libobs PROPERTIES IMPORTED_GLOBAL TRUE)
     message(STATUS "OBS: Using modern libobs target")
