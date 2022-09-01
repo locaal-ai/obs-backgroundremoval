@@ -281,18 +281,17 @@ if(APPLE)
 
         COMMAND
             "${CMAKE_COMMAND}" -E make_directory
-                "${RELEASE_DIR}/Resources/data/obs-plugins/${CMAKE_PROJECT_NAME}"
-                "${RELEASE_DIR}/Plugins"
+                "${RELEASE_DIR}/${CMAKE_PROJECT_NAME}.plugin/Contents/MacOS"
 
         COMMAND
             "${CMAKE_COMMAND}" -E copy_directory
                 "${PROJECT_SOURCE_DIR}/data"
-                "${RELEASE_DIR}/Resources/data/obs-plugins/${CMAKE_PROJECT_NAME}"
+                "${RELEASE_DIR}/${CMAKE_PROJECT_NAME}.plugin/Contents/Resources"
 
         COMMAND
             "${CMAKE_COMMAND}" -E copy
                 "$<TARGET_FILE:${CMAKE_PROJECT_NAME}>"
-                "${RELEASE_DIR}/Plugins/"
+                "${RELEASE_DIR}/${CMAKE_PROJECT_NAME}.plugin/Contents/MacOS/${CMAKE_PROJECT_NAME}"
 
         COMMAND
             "${CMAKE_COMMAND}" -E rm -f
