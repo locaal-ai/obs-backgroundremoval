@@ -29,22 +29,15 @@ if(WIN32 OR MSVC)
     set(CMAKE_TOOLCHAIN_FILE ${VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake)
 
     set(OpenCV_DIR ${VCPKG_INSTALLED_DIR}/share/opencv)
-    set(Protobuf_DIR ${VCPKG_INSTALLED_DIR}/share/protobuf)
+    set(protobuf_DIR ${VCPKG_INSTALLED_DIR}/share/protobuf)
     set(LibLZMA_DIR ${VCPKG_INSTALLED_DIR}/share/liblzma)
     set(quirc_DIR ${VCPKG_INSTALLED_DIR}/share/quirc)
-
-    if(NOT ${libobs_DIR})
-        message(FATAL "Please provide libobs_DIR to CMake.")
-    endif(NOT ${libobs_DIR})
-
-    set(w32-pthreads_DIR ${libobs_DIR}/../deps/w32-pthreads)
-    set(obs-frontend-api_DIR ${libobs_DIR}/../UI/obs-frontend-api)
 
     # Find lib TIFF
     find_library(TIFF_LIBRARY tiff PATHS ${VCPKG_INSTALLED_DIR}/lib)
     find_path(TIFF_INCLUDE_DIR tiff.h PATHS ${VCPKG_INSTALLED_DIR}/include)
 
-    find_file(Protobuf_PROTOC_EXECUTABLE protoc.exe PATHS ${VCPKG_INSTALLED_DIR}/tools/protobuf)
+    find_file(Protobuf_PROTOC_EXECUTABLE protoc.exe PATHS ${VCPKG_INSTALLED_DIR}/tools)
 elseif(APPLE)
     # Apple
     if (WITH_CUDA)
@@ -67,8 +60,14 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/external")
 
 # In case you need C++
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if (APPLE)
+    include(external/FindLibObs.cmake)
+else()
+    find_package(LibObs REQUIRED)
+endif()
 
 configure_file(
     src/plugin-macros.h.in
@@ -103,13 +102,9 @@ set(PLUGIN_HEADERS
 # --- Platform-independent build settings ---
 add_library(${CMAKE_PROJECT_NAME} MODULE ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
 
-find_package(libobs REQUIRED)
-find_package(obs-frontend-api REQUIRED)
-include(external/ObsPluginHelpers.cmake)
-
 find_package(Onnxruntime REQUIRED)
 
-find_package(OpenCV 4.5 REQUIRED COMPONENTS core imgproc)
+find_package(OpenCV 4.2 REQUIRED COMPONENTS core imgproc)
 
 include_directories(
 	${LIBOBS_INCLUDE_DIR}/../UI/obs-frontend-api
@@ -120,7 +115,7 @@ include_directories(
 )
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
-    OBS::libobs OBS::obs-frontend-api
+	${LIBOBS_LIBRARIES}
     ${Onnxruntime_LIBRARIES}
     ${OpenCV_LIBRARIES}
 )
@@ -129,10 +124,37 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 
 # --- Windows-specific build settings and tasks ---
 if(WIN32)
+    find_library(OBS_FRONTEND_LIB obs-frontend-api
+        PATHS
+            ${obsPath}/build/UI/obs-frontend-api/Release
+            ${obsPath}/build64/UI/obs-frontend-api/Release
+    )
+
+	if(NOT DEFINED OBS_FRONTEND_LIB)
+		set(OBS_FRONTEND_LIB "OBS_FRONTEND_LIB-NOTFOUND" CACHE FILEPATH "OBS frontend library")
+		message(FATAL_ERROR "Could not find OBS Frontend API\'s library !")
+	endif()
+
     # Enable Multicore Builds and disable FH4 (to not depend on VCRUNTIME140_1.DLL when building with VS2019)
     if (MSVC)
         add_definitions(/MP /d2FH4- /std:c++latest /MT)
     endif()
+
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		set(ARCH_NAME "64bit")
+		set(OBS_BUILDDIR_ARCH "build64")
+	else()
+		set(ARCH_NAME "32bit")
+		set(OBS_BUILDDIR_ARCH "build32")
+	endif()
+
+	include_directories(
+		"${LIBOBS_INCLUDE_DIR}/../${OBS_BUILDDIR_ARCH}/UI"
+	)
+
+	target_link_libraries(${CMAKE_PROJECT_NAME}
+		"${OBS_FRONTEND_LIB}"
+    )
 
 	# --- Release package helper ---
 	# The "release" folder has a structure similar OBS' one on Windows
@@ -163,7 +185,7 @@ if(WIN32)
         # package the DirectML DLL with the plugin DLL unless using CUDA
         COMMAND if $<AND:$<NOT:$<BOOL:${WITH_CUDA}>>,$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>>==1 (
             "${CMAKE_COMMAND}" -E copy
-                "${CMAKE_BINARY_DIR}/nuget/Microsoft.AI.DirectML.1.8.0/bin/x64-win/DirectML.dll"
+                "${CMAKE_BINARY_DIR}/nuget/Microsoft.AI.DirectML.1.4.2/bin/x64-win/DirectML.dll"
                 "${RELEASE_DIR}/obs-plugins/${ARCH_NAME}"
         )
 

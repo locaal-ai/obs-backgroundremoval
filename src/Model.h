@@ -50,12 +50,7 @@ public:
 
   const char* name;
 
-#if _WIN32
-  const std::wstring
-#else
-  const std::string
-#endif
-  getModelFilepath(const std::string& modelSelection) {
+  const std::string getModelFilepath(const std::string& modelSelection) {
     char* modelFilepath_rawPtr = obs_module_file(modelSelection.c_str());
 
     if (modelFilepath_rawPtr == nullptr) {
