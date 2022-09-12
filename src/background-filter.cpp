@@ -1,9 +1,11 @@
 #include <obs-module.h>
 #include <media-io/video-scaler.h>
+#include <iostream>
 
 #if defined(__APPLE__)
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
 #include <onnxruntime/core/providers/cpu/cpu_provider_factory.h>
+#include "FacePoseSegmentation.h"
 #else
 #include <onnxruntime_cxx_api.h>
 #include <cpu_provider_factory.h>
@@ -34,6 +36,7 @@ const char* MODEL_MODNET = "modnet_simple.onnx";
 const char* MODEL_MEDIAPIPE = "mediapipe.onnx";
 const char* MODEL_SELFIE = "selfie_segmentation.onnx";
 const char* MODEL_RVM = "rvm_mobilenetv3_fp32.onnx";
+const char* MODEL_VISION = "Vision";
 
 const char* USEGPU_CPU = "cpu";
 const char* USEGPU_DML = "dml";
@@ -154,6 +157,10 @@ static obs_properties_t *filter_properties(void *data)
 	obs_property_list_add_string(p_model_select, obs_module_text("Selfie Segmentation"), MODEL_SELFIE);
 	obs_property_list_add_string(p_model_select, obs_module_text("Robust Video Matting"), MODEL_RVM);
 
+#ifdef __APPLE__
+	obs_property_list_add_string(p_model_select, obs_module_text("Vision (Apple)"), MODEL_VISION);
+#endif
+
 	obs_property_t *p_mask_every_x_frames = obs_properties_add_int(
 		props,
 		"mask_every_x_frames",
@@ -178,6 +185,8 @@ static void filter_defaults(obs_data_t *settings) {
 }
 
 static void createOrtSession(struct background_removal_filter *tf) {
+
+    if (tf->modelSelection == MODEL_VISION) return;
 
 	Ort::SessionOptions sessionOptions;
 
@@ -316,6 +325,9 @@ static void filter_update(void *data, obs_data_t *settings)
 		}
 		if (tf->modelSelection == MODEL_RVM) {
 			tf->model.reset(new ModelRVM);
+		}
+		if (tf->modelSelection == MODEL_VISION) {
+			tf->model.release();
 		}
 
 		createOrtSession(tf);
@@ -502,7 +514,11 @@ static struct obs_source_frame * filter_render(void *data, struct obs_source_fra
 		tf->backgroundMask.copyTo(backgroundMask);
 	} else {
 		// Process the image to find the mask.
-		processImageForBackground(tf, imageBGR, backgroundMask);
+		if (tf->modelSelection == MODEL_VISION) {
+			processImageForBackgroundByVision(imageBGR, backgroundMask);
+		} else {
+			processImageForBackground(tf, imageBGR, backgroundMask);
+		}
 
 		// Now that the mask is completed, save it off so it can be used on a later frame
 		// if we've chosen to only process the mask every X frames.

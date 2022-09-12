@@ -268,11 +268,15 @@ endif()
 
 # -- OS X specific build settings and tasks --
 if(APPLE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -fvisibility=default -framework Foundation")
+    set(CMAKE_OSX_DEPLOYMENT_TARGET 12)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -fvisibility=default")
+    enable_language(OBJCXX)
+    enable_language(Swift)
+
+    add_library(FacePoseSegmentation src/FacePoseSegmentation.h src/FacePoseSegmentation.swift src/FacePoseSegmentation.mm)
 
 	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES PREFIX "")
-	target_link_libraries(${CMAKE_PROJECT_NAME} "${OBS_FRONTEND_LIB}")
+	target_link_libraries(${CMAKE_PROJECT_NAME} "${OBS_FRONTEND_LIB}" FacePoseSegmentation)
 
     # add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
     add_custom_target(dist DEPENDS ${CMAKE_PROJECT_NAME}
