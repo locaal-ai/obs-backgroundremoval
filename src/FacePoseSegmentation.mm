@@ -7,9 +7,6 @@
 
 void processImageForBackgroundByVision(const cv::Mat& imageBGR, cv::Mat& backgroundMask);
 
-//==================================================
-// [C++] Objective-C クラスのメソッドを呼ぶ
-//==================================================
 void processImageForBackgroundByVision(const cv::Mat& imageBGR, cv::Mat& backgroundMask)
 {
     cv::Mat imageBGRA;
