@@ -20,7 +20,6 @@ public class FacePoseSegmentation : NSObject {
         
         CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_OneComponent8, nil, &pixelBuffer)
 
-        // put bytes into pixelBuffer
         let context = CIContext()
         context.render(image, to: pixelBuffer!)
         return pixelBuffer
