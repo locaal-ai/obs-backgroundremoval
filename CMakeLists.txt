@@ -70,6 +70,12 @@ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/external")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if (APPLE)
+    include(external/FindLibObs.cmake)
+else()
+    find_package(LibObs REQUIRED)
+endif()
+
 configure_file(
     src/plugin-macros.h.in
     ../src/plugin-macros.generated.h
@@ -103,13 +109,9 @@ set(PLUGIN_HEADERS
 # --- Platform-independent build settings ---
 add_library(${CMAKE_PROJECT_NAME} MODULE ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
 
-find_package(libobs REQUIRED)
-find_package(obs-frontend-api REQUIRED)
-include(external/ObsPluginHelpers.cmake)
-
 find_package(Onnxruntime REQUIRED)
 
-find_package(OpenCV 4.5 REQUIRED COMPONENTS core imgproc)
+find_package(OpenCV 4.2 REQUIRED COMPONENTS core imgproc)
 
 include_directories(
 	${LIBOBS_INCLUDE_DIR}/../UI/obs-frontend-api
@@ -120,7 +122,7 @@ include_directories(
 )
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
-    OBS::libobs OBS::obs-frontend-api
+    ${LIBOBS_LIBRARIES}
     ${Onnxruntime_LIBRARIES}
     ${OpenCV_LIBRARIES}
 )

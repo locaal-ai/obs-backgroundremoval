@@ -94,7 +94,7 @@ Clone this repo into a directory of your choice, then build and install, e.g.:
 ```sh
 $ cd obs-backgroundremoval
 $ mkdir build && cd build
-$ cmake .. && cmake --build . && sudo cmake --install .
+$ cmake -DCMAKE_INSTALL_PREFIX=/usr .. && cmake --build . && sudo cmake --install .
 ```
 
 To build with CUDA support, you will need the CUDA libraries installed as well as the GPU version of the ONNX Runtime library.
@@ -115,7 +115,7 @@ Then build and install:
 ```sh
 $ sudo ldconfig  # required if you have previously had a different version of onnxruntime installed
 $ mkdir build && cd build
-$ cmake -DWITH_CUDA=ON .. && cmake --build . && sudo cmake --install .
+$ cmake -DWITH_CUDA=ON -DCMAKE_INSTALL_PREFIX=/usr .. && cmake --build . && sudo cmake --install .
 ```
 
 If after installing, the plugin fails to load and cannot be found in the interface, there are additional steps to carry out.
