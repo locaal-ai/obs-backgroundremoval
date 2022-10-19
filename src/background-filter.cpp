@@ -210,7 +210,7 @@ static void createOrtSession(struct background_removal_filter *tf) {
         if (tf->useGPU == USEGPU_CUDA) {
             Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0));
         }
-#else
+#elif _WIN32
         if (tf->useGPU == USEGPU_DML) {
             Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
         }
