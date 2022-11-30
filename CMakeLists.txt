@@ -51,6 +51,7 @@ endif()
 
 if (APPLE)
     set(OpenCV_DIR ${CMAKE_BINARY_DIR}/opencv/lib/cmake/opencv4)
+    add_compile_options(-O3)
 endif()
 
 set(RELEASE_DIR "${PROJECT_SOURCE_DIR}/release" CACHE STRING "Directory for building release packages")
