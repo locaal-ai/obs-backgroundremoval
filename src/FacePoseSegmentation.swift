@@ -3,9 +3,13 @@ import Vision
 import AVFoundation
 import CoreImage.CIFilterBuiltins
 
+
 public class FacePoseSegmentation : NSObject {
-    var originalImage: CIImage? = nil
-    var mask: CVPixelBuffer? = nil
+    var originalImage: CIImage?
+    var mask: CVPixelBuffer?
+    var globalFramePixelBuffer: CVPixelBuffer?
+    var requestHandler: VNSequenceRequestHandler?
+    var segmentationRequest: VNGeneratePersonSegmentationRequest?
     
     func imageToPixelBuffer(_ image: CIImage) -> CVPixelBuffer? {
         var pixelBuffer: CVPixelBuffer?
@@ -21,8 +25,8 @@ public class FacePoseSegmentation : NSObject {
     }
     
     func handler(request: VNRequest, error: Error?) {
-        print(request)
         guard let segmantationRequest = request as? VNGeneratePersonSegmentationRequest else { return }
+        
         guard let originalImage = self.originalImage else { return }
         
         let rect = originalImage.extent
@@ -48,25 +52,55 @@ public class FacePoseSegmentation : NSObject {
         self.mask = outputMask
     }
     
-    @objc
-    public func process(_ framePixelBuffer: CVPixelBuffer) -> CVPixelBuffer {
-        let originalImage = CIImage(cvPixelBuffer: framePixelBuffer)
-        self.originalImage = originalImage
-
-        DispatchQueue.global().async {
-            let requestHandler = VNSequenceRequestHandler()
+    func checkPixelBufferDimension(_ buf: CVPixelBuffer?, width: Int, height: Int) -> Bool {
+        guard let b = buf else { return false }
+        let bufWidth = CVPixelBufferGetWidth(b)
+        let bufHeight = CVPixelBufferGetHeight(b)
+        return bufWidth == width && bufHeight == height
+    }
+    
+    func createFramePixelBuffer(expectedWidth: Int, expectedHeight: Int) -> CVPixelBuffer? {
+        if (checkPixelBufferDimension(self.globalFramePixelBuffer, width: expectedWidth, height: expectedHeight)) {
+            return self.globalFramePixelBuffer
+        } else {
+            CVPixelBufferCreate(nil, expectedWidth, expectedHeight, kCVPixelFormatType_32BGRA, nil, &self.globalFramePixelBuffer)
+            self.requestHandler = VNSequenceRequestHandler()
             let segmentationRequest = VNGeneratePersonSegmentationRequest(completionHandler: self.handler(request:error:))
             segmentationRequest.qualityLevel = .fast
             segmentationRequest.outputPixelFormat = kCVPixelFormatType_OneComponent32Float
+            self.segmentationRequest = segmentationRequest
+            return self.globalFramePixelBuffer
+        }
+    }
+    
+    @objc
+    public func process(_ buf: UnsafeMutableRawPointer, width: Int, height: Int, outputBuf: UnsafeMutableRawPointer) {
+        guard let framePixelBuffer = createFramePixelBuffer(expectedWidth: width, expectedHeight: height) else { return }
+        CVPixelBufferLockBaseAddress(framePixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
+        guard let dest = CVPixelBufferGetBaseAddressOfPlane(framePixelBuffer, 0) else { return }
+        dest.copyMemory(from: buf, byteCount: width * height * 4)
+        CVPixelBufferUnlockBaseAddress(framePixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
+        
+        let originalImage = CIImage(cvPixelBuffer: framePixelBuffer)
+        self.originalImage = originalImage
+
+        guard let requestHandler = self.requestHandler else { return }
+        guard let segmentationRequest = self.segmentationRequest else { return }
+
+        DispatchQueue.global().async {
             try! requestHandler.perform([segmentationRequest], on: framePixelBuffer)
         }
         
-        guard let outputMask = self.mask else {
-            let rect = originalImage.extent
-            let whiteImage = CIImage(color: .white).cropped(to: rect)
-            return imageToPixelBuffer(whiteImage.oriented(.left))!
-        }
+        guard let outputMask = self.mask else { return }
         
-        return outputMask
+        let resultWidth = CVPixelBufferGetWidth(outputMask)
+        let resultHeight = CVPixelBufferGetHeight(outputMask)
+        if (width == resultWidth && height == resultHeight) {
+            CVPixelBufferLockBaseAddress(outputMask, .readOnly)
+            guard let source = CVPixelBufferGetBaseAddressOfPlane(outputMask, 0) else { return }
+            let bytesCount = resultWidth * resultHeight * 4
+            outputBuf.copyMemory(from: source, byteCount: bytesCount)
+            CVPixelBufferUnlockBaseAddress(outputMask, .readOnly)
+        }
     }
 }
