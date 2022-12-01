@@ -17,13 +17,8 @@ void processImageForBackgroundByVision(const cv::Mat& imageBGR, cv::Mat& backgro
     CVPixelBufferRef imagePixelBuffer;
     int imageWidth = imageBGR.cols;
     int imageHeight = imageBGR.rows;
-    CVReturn status = CVPixelBufferCreate(kCFAllocatorMalloc, imageWidth, imageHeight, kCVPixelFormatType_32BGRA, nil, &imagePixelBuffer);
-    CVPixelBufferLockBaseAddress(imagePixelBuffer, 0);
-    void *base = CVPixelBufferGetBaseAddress(imagePixelBuffer);
-    memcpy(base, imageBGRA.data, imageBGRA.total() * imageBGRA.elemSize());
-    CVPixelBufferUnlockBaseAddress(imagePixelBuffer, 0);
     
-    CVPixelBufferRef resultPixelBuffer = [obj process:imagePixelBuffer];
+    CVPixelBufferRef resultPixelBuffer = [obj process:imageBGRA.data width:imageWidth height:imageHeight];
     CVPixelBufferLockBaseAddress(resultPixelBuffer, 0);
     size_t width = CVPixelBufferGetWidth(resultPixelBuffer);
     size_t height = CVPixelBufferGetHeight(resultPixelBuffer);

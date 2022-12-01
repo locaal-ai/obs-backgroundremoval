@@ -49,7 +49,10 @@ public class FacePoseSegmentation : NSObject {
     }
     
     @objc
-    public func process(_ framePixelBuffer: CVPixelBuffer) -> CVPixelBuffer {
+    public func process(_ buf: UnsafeMutableRawPointer, width: Int, height: Int) -> CVPixelBuffer {
+        var rawFramePixelBuffer: CVPixelBuffer?
+        CVPixelBufferCreateWithBytes(nil, width, height, kCVPixelFormatType_32BGRA, buf, width * 4, nil, nil, nil, &rawFramePixelBuffer)
+        let framePixelBuffer = rawFramePixelBuffer!
         let originalImage = CIImage(cvPixelBuffer: framePixelBuffer)
         self.originalImage = originalImage
 
