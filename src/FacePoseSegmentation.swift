@@ -21,7 +21,6 @@ public class FacePoseSegmentation : NSObject {
     }
     
     func handler(request: VNRequest, error: Error?) {
-        print(request)
         guard let segmantationRequest = request as? VNGeneratePersonSegmentationRequest else { return }
         guard let originalImage = self.originalImage else { return }
         
