@@ -1,7 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
 
-#import "FacePoseSegmentation-Swift.h"
+#import "VisionSegmentation-Swift.h"
 
 #include <opencv2/opencv.hpp>
 
