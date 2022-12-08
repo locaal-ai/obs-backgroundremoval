@@ -5,7 +5,7 @@
 #if defined(__APPLE__)
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
 #include <onnxruntime/core/providers/cpu/cpu_provider_factory.h>
-#include "FacePoseSegmentation.h"
+#include "VisionSegmentation.h"
 #else
 #include <onnxruntime_cxx_api.h>
 #include <cpu_provider_factory.h>
