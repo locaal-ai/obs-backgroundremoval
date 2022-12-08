@@ -5,7 +5,7 @@
 
 #include <opencv2/opencv.hpp>
 
-static FacePoseSegmentation *obj = [[FacePoseSegmentation alloc] init];
+static VisionSegmentation *obj = [[VisionSegmentation alloc] init];
 
 void processImageForBackgroundByVision(const cv::Mat& imageBGR, cv::Mat& backgroundMask);
 

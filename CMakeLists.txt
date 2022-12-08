@@ -274,10 +274,10 @@ if(APPLE)
     enable_language(OBJCXX)
     enable_language(Swift)
 
-    add_library(FacePoseSegmentation src/FacePoseSegmentation.h src/FacePoseSegmentation.swift src/FacePoseSegmentation.mm)
+    add_library(VisionSegmentation src/VisionSegmentation.h src/VisionSegmentation.swift src/VisionSegmentation.mm)
 
 	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES PREFIX "")
-	target_link_libraries(${CMAKE_PROJECT_NAME} "${OBS_FRONTEND_LIB}" FacePoseSegmentation)
+	target_link_libraries(${CMAKE_PROJECT_NAME} "${OBS_FRONTEND_LIB}" VisionSegmentation)
 
     # add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
     add_custom_target(dist DEPENDS ${CMAKE_PROJECT_NAME}

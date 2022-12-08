@@ -3,7 +3,7 @@ import Vision
 import AVFoundation
 import CoreImage.CIFilterBuiltins
 
-public class FacePoseSegmentation : NSObject {
+public class VisionSegmentation : NSObject {
     var originalImage: CIImage? = nil
     var mask: CVPixelBuffer? = nil
     let requestHandler = VNSequenceRequestHandler()
