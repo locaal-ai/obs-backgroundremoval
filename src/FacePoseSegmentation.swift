@@ -6,6 +6,13 @@ import CoreImage.CIFilterBuiltins
 public class FacePoseSegmentation : NSObject {
     var originalImage: CIImage? = nil
     var mask: CVPixelBuffer? = nil
+    let requestHandler = VNSequenceRequestHandler()
+    lazy var segmentationRequest = {
+        let segmentationRequest = VNGeneratePersonSegmentationRequest(completionHandler: self.handler(request:error:))
+        segmentationRequest.qualityLevel = .fast
+        segmentationRequest.outputPixelFormat = kCVPixelFormatType_OneComponent32Float
+        return segmentationRequest
+    }()
     
     func imageToPixelBuffer(_ image: CIImage) -> CVPixelBuffer? {
         var pixelBuffer: CVPixelBuffer?
@@ -44,7 +51,9 @@ public class FacePoseSegmentation : NSObject {
         
         guard let outputImage = blendFilter.outputImage else { return }
         guard let outputMask = imageToPixelBuffer(outputImage) else { return }
-        self.mask = outputMask
+        DispatchQueue.main.async {
+            self.mask = outputMask
+        }
     }
     
     @objc
@@ -54,13 +63,9 @@ public class FacePoseSegmentation : NSObject {
         let framePixelBuffer = rawFramePixelBuffer!
         let originalImage = CIImage(cvPixelBuffer: framePixelBuffer)
         self.originalImage = originalImage
-
+        
         DispatchQueue.global().async {
-            let requestHandler = VNSequenceRequestHandler()
-            let segmentationRequest = VNGeneratePersonSegmentationRequest(completionHandler: self.handler(request:error:))
-            segmentationRequest.qualityLevel = .fast
-            segmentationRequest.outputPixelFormat = kCVPixelFormatType_OneComponent32Float
-            try! requestHandler.perform([segmentationRequest], on: framePixelBuffer)
+            try! self.requestHandler.perform([self.segmentationRequest], on: framePixelBuffer)
         }
         
         guard let outputMask = self.mask else {
