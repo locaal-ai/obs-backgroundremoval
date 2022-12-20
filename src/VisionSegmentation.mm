@@ -13,18 +13,11 @@ void processImageForBackgroundByVision(const cv::Mat& imageBGR, cv::Mat& backgro
 {
     cv::Mat imageBGRA;
     cv::cvtColor(imageBGR, imageBGRA, cv::COLOR_BGR2BGRA);
-    
-    CVPixelBufferRef imagePixelBuffer;
+
     int imageWidth = imageBGR.cols;
     int imageHeight = imageBGR.rows;
     
-    CVPixelBufferRef resultPixelBuffer = [obj process:imageBGRA.data width:imageWidth height:imageHeight];
-    CVPixelBufferLockBaseAddress(resultPixelBuffer, 0);
-    size_t width = CVPixelBufferGetWidth(resultPixelBuffer);
-    size_t height = CVPixelBufferGetHeight(resultPixelBuffer);
-    void *baseaddress = CVPixelBufferGetBaseAddressOfPlane(resultPixelBuffer, 0);
-    cv::Mat mat((int)height, (int)width, CV_8U, baseaddress, 0);
-    CVPixelBufferUnlockBaseAddress(resultPixelBuffer, 0);
-
+    cv::Mat mat((int)imageHeight, (int)imageWidth, CV_8U);
+    [obj process:imageBGRA.data width:imageWidth height:imageHeight output:mat.data];
     backgroundMask = mat;
 }

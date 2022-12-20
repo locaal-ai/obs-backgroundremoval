@@ -9,7 +9,7 @@ public class VisionSegmentation : NSObject {
     let requestHandler = VNSequenceRequestHandler()
     lazy var segmentationRequest = {
         let segmentationRequest = VNGeneratePersonSegmentationRequest(completionHandler: self.handler(request:error:))
-        segmentationRequest.qualityLevel = .fast
+        segmentationRequest.qualityLevel = .accurate
         segmentationRequest.outputPixelFormat = kCVPixelFormatType_OneComponent32Float
         return segmentationRequest
     }()
@@ -28,15 +28,24 @@ public class VisionSegmentation : NSObject {
     }
     
     func handler(request: VNRequest, error: Error?) {
-        guard let segmantationRequest = request as? VNGeneratePersonSegmentationRequest else { return }
-        guard let originalImage = self.originalImage else { return }
+        guard let segmantationRequest = request as? VNGeneratePersonSegmentationRequest else {
+            print("VNRequest is not VNGeneratePersonSegmentationRequest")
+            return
+        }
+        guard let originalImage = self.originalImage else {
+            print("originalImage is nil")
+            return
+        }
         
         let rect = originalImage.extent
         let blackImage = CIImage(color: .black).cropped(to: rect)
         let whiteImage = CIImage(color: .white).cropped(to: rect)
         let whitePixelBuffer = imageToPixelBuffer(whiteImage.oriented(.left))!
 
-        guard let maskPixelBuffer = segmantationRequest.results?.first?.pixelBuffer else { return }
+        guard let maskPixelBuffer = segmantationRequest.results?.first?.pixelBuffer else {
+            print("Result is not available")
+            return
+        }
 
         var maskImage = CIImage(cvPixelBuffer: maskPixelBuffer)
         
@@ -49,31 +58,48 @@ public class VisionSegmentation : NSObject {
         blendFilter.backgroundImage = whiteImage
         blendFilter.maskImage = maskImage
         
-        guard let outputImage = blendFilter.outputImage else { return }
-        guard let outputMask = imageToPixelBuffer(outputImage) else { return }
+        guard let outputImage = blendFilter.outputImage else {
+            print("Blend failed")
+            return
+        }
+        guard let outputMask = imageToPixelBuffer(outputImage) else {
+            print("CVPixelBuffer cannot be generated")
+            return
+        }
         DispatchQueue.main.async {
             self.mask = outputMask
         }
     }
     
     @objc
-    public func process(_ buf: UnsafeMutableRawPointer, width: Int, height: Int) -> CVPixelBuffer {
+    public func process(_ buf: UnsafeMutableRawPointer, width: Int, height: Int, output: UnsafeMutableRawPointer) {
         var rawFramePixelBuffer: CVPixelBuffer?
         CVPixelBufferCreateWithBytes(nil, width, height, kCVPixelFormatType_32BGRA, buf, width * 4, nil, nil, nil, &rawFramePixelBuffer)
         let framePixelBuffer = rawFramePixelBuffer!
         let originalImage = CIImage(cvPixelBuffer: framePixelBuffer)
         self.originalImage = originalImage
         
-        DispatchQueue.global().async {
-            try! self.requestHandler.perform([self.segmentationRequest], on: framePixelBuffer)
+        DispatchQueue.global(qos: .userInteractive).async {
+            try? self.requestHandler.perform([self.segmentationRequest], on: framePixelBuffer)
         }
         
         guard let outputMask = self.mask else {
-            let rect = originalImage.extent
-            let whiteImage = CIImage(color: .white).cropped(to: rect)
-            return imageToPixelBuffer(whiteImage.oriented(.left))!
+            print("a")
+            return
         }
         
-        return outputMask
+        let outputWidth = CVPixelBufferGetWidth(outputMask)
+        let outputHeight = CVPixelBufferGetHeight(outputMask)
+        if (outputWidth != width || outputHeight != height) {
+            print("b")
+            return
+        }
+        CVPixelBufferLockBaseAddress(outputMask, .readOnly)
+        guard let source = CVPixelBufferGetBaseAddressOfPlane(outputMask, 0) else {
+            print("c")
+            return
+        }
+        output.copyMemory(from: source, byteCount: width * height)
+        CVPixelBufferUnlockBaseAddress(outputMask, .readOnly)
     }
 }
