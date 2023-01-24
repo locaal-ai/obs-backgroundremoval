@@ -49,15 +49,8 @@ configure_file(src/plugin-macros.h.in
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin-macros.generated.h)
 
 include(cmake/BuildMyOpenCV.cmake)
-
-set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/external")
-find_package(Onnxruntime REQUIRED)
-# find_package(OpenCV 4.7.1 REQUIRED COMPONENTS core imgproc)
-include_directories(
-  ${LIBOBS_INCLUDE_DIR}/../UI/obs-frontend-api ${LIBOBS_INCLUDE_DIR}
-  ${LIBOBS_INCLUDE_DIRS} ${Onnxruntime_INCLUDE_DIRS})
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE ${Onnxruntime_LIBRARIES}
-                                                    OpenCV)
+include(cmake/BuildMyOnnxruntime.cmake)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Onnxruntime OpenCV)
 
 # /!\ TAKE NOTE: No need to edit things past this point /!\
 
