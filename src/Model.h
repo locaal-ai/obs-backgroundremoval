@@ -78,15 +78,15 @@ public:
 
   virtual void populateInputOutputNames(
     const std::unique_ptr<Ort::Session>& session,
-    std::vector<const char*>& inputNames,
-	  std::vector<const char*>& outputNames
+    std::vector<Ort::AllocatedStringPtr>& inputNames,
+	  std::vector<Ort::AllocatedStringPtr>& outputNames
   ) {
     Ort::AllocatorWithDefaultOptions allocator;
 
     inputNames.clear();
     outputNames.clear();
-	  inputNames.push_back(session->GetInputName(0, allocator));
-  	outputNames.push_back(session->GetOutputName(0, allocator));
+	  inputNames.push_back(session->GetInputNameAllocated(0, allocator));
+  	outputNames.push_back(session->GetOutputNameAllocated(0, allocator));
   }
 
 
@@ -206,8 +206,8 @@ public:
 
   virtual void runNetworkInference(
     const std::unique_ptr<Ort::Session>& session,
-    const std::vector<const char*>& inputNames,
-	  const std::vector<const char*>& outputNames,
+    const std::vector<Ort::AllocatedStringPtr>& inputNames,
+	  const std::vector<Ort::AllocatedStringPtr>& outputNames,
     const std::vector<Ort::Value>& inputTensor,
     std::vector<Ort::Value>& outputTensor
   ) {
@@ -216,12 +216,22 @@ public:
       return;
     }
 
+    const char *rawInputNames[inputNames.size()];
+    for (int i = 0; i < inputNames.size(); i++) {
+      rawInputNames[i] = inputNames[i].get();
+    }
+
+    const char *rawOutputNames[outputNames.size()];
+    for (int i = 0; i < outputNames.size(); i++) {
+      rawOutputNames[i] = outputNames[i].get();
+    }
+
     session->Run(
       Ort::RunOptions{nullptr},
       // inputNames.data(), &(inputTensor[0]), 1,
       // outputNames.data(), &(outputTensor[0]), 1
-      inputNames.data(), inputTensor.data(), inputNames.size(),
-      outputNames.data(), outputTensor.data(), outputNames.size()
+      rawInputNames, inputTensor.data(), inputNames.size(),
+      rawOutputNames, outputTensor.data(), outputNames.size()
     );
   }
 };
@@ -363,8 +373,8 @@ public:
 
   virtual void populateInputOutputNames(
     const std::unique_ptr<Ort::Session>& session,
-    std::vector<const char*>& inputNames,
-	  std::vector<const char*>& outputNames
+    std::vector<Ort::AllocatedStringPtr>& inputNames,
+	  std::vector<Ort::AllocatedStringPtr>& outputNames
   ) {
     Ort::AllocatorWithDefaultOptions allocator;
 
@@ -372,10 +382,10 @@ public:
     outputNames.clear();
 
     for (size_t i = 0; i < session->GetInputCount(); i++) {
-  	  inputNames.push_back(session->GetInputName(i, allocator));
+  	  inputNames.push_back(session->GetInputNameAllocated(i, allocator));
     }
     for (size_t i = 1; i < session->GetOutputCount(); i++) {
-  	  outputNames.push_back(session->GetOutputName(i, allocator));
+  	  outputNames.push_back(session->GetOutputNameAllocated(i, allocator));
     }
   }
 

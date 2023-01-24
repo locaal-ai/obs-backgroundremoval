@@ -1,6 +1,6 @@
 #!/bin/bash
 
-WORK_DIR=$(git rev-parse --show-toplevel)/build
+WORK_DIR=$(git rev-parse --show-toplevel)/build_arm64
 CURRENT_DIR=$(pwd)
 OUTPUT_DIR=$WORK_DIR/onnxruntime
 
