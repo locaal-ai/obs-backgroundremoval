@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16...3.21)
 
 # Change obs-plugintemplate to your plugin's name in a machine-readable format
 # (e.g.: obs-myawesomeplugin) and set
-project(obs-backgroundremoval VERSION 0.5.1)
+project(obs-backgroundremoval VERSION 0.5.4)
 add_library(${CMAKE_PROJECT_NAME} MODULE)
 
 # Replace `Your Name Here` with the name (yours or your organization's) you want
@@ -49,15 +49,13 @@ configure_file(src/plugin-macros.h.in
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin-macros.generated.h)
 
 include(cmake/BuildMyOpenCV.cmake)
-
-set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/external")
-find_package(Onnxruntime REQUIRED)
-# find_package(OpenCV 4.7.1 REQUIRED COMPONENTS core imgproc)
-include_directories(
-  ${LIBOBS_INCLUDE_DIR}/../UI/obs-frontend-api ${LIBOBS_INCLUDE_DIR}
-  ${LIBOBS_INCLUDE_DIRS} ${Onnxruntime_INCLUDE_DIRS})
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE ${Onnxruntime_LIBRARIES}
-                                                    OpenCV)
+include(cmake/BuildMyOnnxruntime.cmake)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Onnxruntime OpenCV)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin|iOS")
+  foreach(flags CMAKE_CXX_FLAGS CMAKE_OBJC_FLAGS CMAKE_OBJCXX_FLAGS)
+    string(APPEND ${flags} " -fvisibility=hidden -fvisibility-inlines-hidden")
+  endforeach()
+endif()
 
 # /!\ TAKE NOTE: No need to edit things past this point /!\
 
