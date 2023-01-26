@@ -188,7 +188,7 @@ if(OS_POSIX)
   target_compile_options(
     ${CMAKE_PROJECT_NAME}
     PRIVATE
-      -Werror
+      # -Werror
       -Wextra
       -Wvla
       -Wformat
@@ -589,7 +589,7 @@ else()
         ${CMAKE_PROJECT_NAME}
         PRIVATE /MP
                 /W3
-                /WX
+                # /WX
                 /wd4201
                 "$<$<CONFIG:RELWITHDEBINFO>:/Ob2>"
                 "$<$<CONFIG:DEBUG>:/DDEBUG=1;/D_DEBUG=1>"

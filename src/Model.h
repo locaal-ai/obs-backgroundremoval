@@ -14,7 +14,7 @@
 #endif
 #ifdef _WIN32
 #ifndef WITH_CUDA
-#include <dml_provider_factory.h>
+//#include <dml_provider_factory.h>
 #endif
 #include <wchar.h>
 #endif
@@ -216,22 +216,22 @@ public:
       return;
     }
 
-    const char *rawInputNames[inputNames.size()];
-    for (int i = 0; i < inputNames.size(); i++) {
-      rawInputNames[i] = inputNames[i].get();
+    std::vector<const char*> rawInputNames;
+    for (auto &inputName : inputNames) {
+      rawInputNames.push_back(inputName.get());
     }
 
-    const char *rawOutputNames[outputNames.size()];
-    for (int i = 0; i < outputNames.size(); i++) {
-      rawOutputNames[i] = outputNames[i].get();
+    std::vector<const char*> rawOutputNames;
+    for (auto &outputName : outputNames) {
+      rawInputNames.push_back(outputName.get());
     }
 
     session->Run(
       Ort::RunOptions{nullptr},
       // inputNames.data(), &(inputTensor[0]), 1,
       // outputNames.data(), &(outputTensor[0]), 1
-      rawInputNames, inputTensor.data(), inputNames.size(),
-      rawOutputNames, outputTensor.data(), outputNames.size()
+      rawInputNames.data(), inputTensor.data(), inputNames.size(),
+      rawOutputNames.data(), outputTensor.data(), outputNames.size()
     );
   }
 };

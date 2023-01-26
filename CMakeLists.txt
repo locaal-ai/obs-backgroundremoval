@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.16...3.21)
 
+set(CMAKE_CXX_STANDARD 20)
+
 # Change obs-plugintemplate to your plugin's name in a machine-readable format
 # (e.g.: obs-myawesomeplugin) and set
-project(obs-backgroundremoval VERSION 0.5.4)
+project(obs-backgroundremoval VERSION 0.5.5)
 add_library(${CMAKE_PROJECT_NAME} MODULE)
 
 # Replace `Your Name Here` with the name (yours or your organization's) you want
@@ -100,8 +102,6 @@ else()
   target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -Wall)
 endif()
 # --- End of section ---
-
-target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -Wno-error)
 
 setup_plugin_target(${CMAKE_PROJECT_NAME})
 

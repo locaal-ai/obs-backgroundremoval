@@ -13,7 +13,7 @@
 #endif
 #ifdef _WIN32
 #ifndef WITH_CUDA
-#include <dml_provider_factory.h>
+//#include <dml_provider_factory.h>
 #endif
 #include <wchar.h>
 #endif
