@@ -223,7 +223,7 @@ public:
 
     std::vector<const char*> rawOutputNames;
     for (auto &outputName : outputNames) {
-      rawInputNames.push_back(outputName.get());
+      rawOutputNames.push_back(outputName.get());
     }
 
     session->Run(
