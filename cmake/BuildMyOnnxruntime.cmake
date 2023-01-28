@@ -20,8 +20,16 @@ elseif(OS_MACOS)
   set(CP cp)
   set(PYTHON python3)
   set(Onnxruntime_PLATFORM_OPTIONS
-      --cmake_generator Ninja --apple_deploy_target
-      ${CMAKE_OSX_DEPLOYMENT_TARGET} --osx_arch ${CMAKE_OSX_ARCHITECTURES})
+      --cmake_generator
+      Ninja
+      --apple_deploy_target
+      ${CMAKE_OSX_DEPLOYMENT_TARGET}
+      --osx_arch
+      ${CMAKE_OSX_ARCHITECTURES}
+      --cmake_extra_defines
+      CMAKE_C_COMPILER_LAUNCHER=ccache
+      --cmake_extra_defines
+      CMAKE_CXX_COMPILER_LAUNCHER=ccache)
   set(Onnxruntime_NSYNC_BYPRODUCT
       <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX}
   )
