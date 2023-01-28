@@ -118,6 +118,8 @@ jobs:
           key: macos-${{ matrix.arch }}-ccache-plugin-${{ steps.setup.outputs.ccacheDate }}
           restore-keys: |
             macos-${{ matrix.arch }}-ccache-plugin-
+      
+      - run: ccache --p
 
       - name: Check for GitHub Labels
         id: seekingTesters
