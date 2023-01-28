@@ -1,5 +1,6 @@
 autoload -Uz log_debug log_warning
 
+hash -r
 if (( ${+commands[ccache]} )) {
   log_debug "Found ccache at ${commands[ccache]}"
 
