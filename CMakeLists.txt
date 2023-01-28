@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 # Change obs-plugintemplate to your plugin's name in a machine-readable format
 # (e.g.: obs-myawesomeplugin) and set
-project(obs-backgroundremoval VERSION 0.5.6)
+project(obs-backgroundremoval VERSION 0.5.7)
 add_library(${CMAKE_PROJECT_NAME} MODULE)
 
 # Replace `Your Name Here` with the name (yours or your organization's) you want
@@ -52,6 +52,10 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin-macros.generated.h)
 
 include(cmake/BuildMyOpenCV.cmake)
 include(cmake/BuildMyOnnxruntime.cmake)
+if(OS_WINDOWS)
+  install(IMPORTED_RUNTIME_ARTIFACTS Onnxruntime::DirectML DESTINATION
+          "${OBS_PLUGIN_DESTINATION}")
+endif()
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Onnxruntime OpenCV)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin|iOS")
   foreach(flags CMAKE_CXX_FLAGS CMAKE_OBJC_FLAGS CMAKE_OBJCXX_FLAGS)

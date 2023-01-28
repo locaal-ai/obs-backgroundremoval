@@ -13,7 +13,7 @@
 #endif
 #ifdef _WIN32
 #ifndef WITH_CUDA
-//#include <dml_provider_factory.h>
+#include <dml_provider_factory.h>
 #endif
 #include <wchar.h>
 #endif
@@ -211,9 +211,11 @@ static void createOrtSession(struct background_removal_filter *tf) {
             Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0));
         }
 #else
-        // if (tf->useGPU == USEGPU_DML) {
-        //     Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
-        // }
+#ifdef _WIN32
+        if (tf->useGPU == USEGPU_DML) {
+            Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
+        }
+#endif
 #endif
 		tf->session.reset(new Ort::Session(*tf->env, tf->modelFilepath, sessionOptions));
 	} catch (const std::exception& e) {
