@@ -3,16 +3,31 @@ include(ExternalProject)
 string(REPLACE ";" "$<SEMICOLON>" CMAKE_OSX_ARCHITECTURES_
                "${CMAKE_OSX_ARCHITECTURES}")
 
+if(${CMAKE_BUILD_TYPE} STREQUAL Release OR ${CMAKE_BUILD_TYPE} STREQUAL
+                                           RelWithDebInfo)
+  set(Onnxruntime_BUILD_TYPE Release)
+else()
+  set(Onnxruntime_BUILD_TYPE Debug)
+endif()
+
 if(MSVC)
-  set(Onnxruntime_LIB_PREFIX ${CMAKE_BUILD_TYPE})
+  set(Onnxruntime_LIB_PREFIX ${Onnxruntime_BUILD_TYPE})
 else()
   set(Onnxruntime_LIB_PREFIX "")
 endif()
 
 if(OS_WINDOWS)
+  find_program(ccache_exe ccache)
   set(PYTHON3 python)
-  set(Onnxruntime_PLATFORM_OPTIONS --cmake_generator ${CMAKE_GENERATOR}
-                                   --use_dml)
+  set(Onnxruntime_PLATFORM_CONFIGURE ${CMAKE_COMMAND} -E copy ${ccache_exe}
+                                     ${CMAKE_BINARY_DIR}/cl.exe)
+  set(Onnxruntime_PLATFORM_OPTIONS
+      --cmake_generator
+      ${CMAKE_GENERATOR}
+      --use_dml
+      --cmake_extra_defines
+      CMAKE_VS_GLOBALS=CLToolExe=cl.exe$<SEMICOLON>CLToolPath=${CMAKE_BINARY_DIR}$<SEMICOLON>TrackFileAccess=false$<SEMICOLON>UseMultiToolTask=true$<SEMICOLON>DebugInformationFormat=OldStyle
+  )
   set(Onnxruntime_PLATFORM_BYPRODUCT
       <INSTALL_DIR>/lib/DirectML.lib <INSTALL_DIR>/lib/DirectML.dll
       <INSTALL_DIR>/lib/DirectML.pdb)
@@ -24,6 +39,7 @@ if(OS_WINDOWS)
   set(Onnxruntime_PROTOBUF_PREFIX lib)
 elseif(OS_MACOS)
   set(PYTHON3 python3)
+  set(Onnxruntime_PLATFORM_CONFIGURE "")
   set(Onnxruntime_PLATFORM_OPTIONS
       --cmake_generator
       Ninja
@@ -39,11 +55,12 @@ elseif(OS_MACOS)
       <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX}
   )
   set(Onnxruntime_PLATFORM_INSTALL_FILES
-      <BINARY_DIR>/${CMAKE_BUILD_TYPE}/external/nsync/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX}
+      <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/nsync/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX}
   )
   set(Onnxruntime_PROTOBUF_PREFIX ${CMAKE_STATIC_LIBRARY_PREFIX})
 else()
   set(PYTHON3 python3)
+  set(Onnxruntime_PLATFORM_CONFIGURE "")
   set(Onnxruntime_PLATFORM_OPTIONS
       --cmake_generator Ninja --cmake_extra_defines
       CMAKE_C_COMPILER_LAUNCHER=ccache --cmake_extra_defines
@@ -52,7 +69,7 @@ else()
       <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX}
   )
   set(Onnxruntime_PLATFORM_INSTALL_FILES
-      <BINARY_DIR>/${CMAKE_BUILD_TYPE}/external/nsync/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX}
+      <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/nsync/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX}
   )
   set(Onnxruntime_PROTOBUF_PREFIX ${CMAKE_STATIC_LIBRARY_PREFIX})
 endif()
@@ -61,10 +78,10 @@ ExternalProject_Add(
   Ort
   GIT_REPOSITORY https://github.com/microsoft/onnxruntime.git
   GIT_TAG v1.13.1
-  CONFIGURE_COMMAND ""
+  CONFIGURE_COMMAND "${Onnxruntime_PLATFORM_CONFIGURE}"
   BUILD_COMMAND
     ${PYTHON3} <SOURCE_DIR>/tools/ci_build/build.py --build_dir <BINARY_DIR>
-    --config ${CMAKE_BUILD_TYPE} --parallel --skip_tests
+    --config ${Onnxruntime_BUILD_TYPE} --parallel --skip_tests
     ${Onnxruntime_PLATFORM_OPTIONS}
   BUILD_BYPRODUCTS
     <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_session${CMAKE_STATIC_LIBRARY_SUFFIX}
@@ -87,17 +104,18 @@ ExternalProject_Add(
     <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}absl_raw_hash_set${CMAKE_STATIC_LIBRARY_SUFFIX}
     ${Onnxruntime_PLATFORM_BYPRODUCT}
   INSTALL_COMMAND
-    ${CMAKE_COMMAND} --install <BINARY_DIR>/${CMAKE_BUILD_TYPE} --config
-    ${CMAKE_BUILD_TYPE} --prefix <INSTALL_DIR> && ${CMAKE_COMMAND} -E copy
-    <BINARY_DIR>/${CMAKE_BUILD_TYPE}/external/onnx/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}onnx${CMAKE_STATIC_LIBRARY_SUFFIX}
-    <BINARY_DIR>/${CMAKE_BUILD_TYPE}/external/onnx/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}onnx_proto${CMAKE_STATIC_LIBRARY_SUFFIX}
-    <BINARY_DIR>/${CMAKE_BUILD_TYPE}/external/protobuf/cmake/${Onnxruntime_LIB_PREFIX}/libprotobuf-lite${CMAKE_STATIC_LIBRARY_SUFFIX}
-    <BINARY_DIR>/${CMAKE_BUILD_TYPE}/external/re2/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}re2${CMAKE_STATIC_LIBRARY_SUFFIX}
-    <BINARY_DIR>/${CMAKE_BUILD_TYPE}/external/abseil-cpp/absl/base/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_throw_delegate${CMAKE_STATIC_LIBRARY_SUFFIX}
-    <BINARY_DIR>/${CMAKE_BUILD_TYPE}/external/abseil-cpp/absl/hash/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_hash${CMAKE_STATIC_LIBRARY_SUFFIX}
-    <BINARY_DIR>/${CMAKE_BUILD_TYPE}/external/abseil-cpp/absl/hash/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_city${CMAKE_STATIC_LIBRARY_SUFFIX}
-    <BINARY_DIR>/${CMAKE_BUILD_TYPE}/external/abseil-cpp/absl/hash/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_low_level_hash${CMAKE_STATIC_LIBRARY_SUFFIX}
-    <BINARY_DIR>/${CMAKE_BUILD_TYPE}/external/abseil-cpp/absl/container/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_raw_hash_set${CMAKE_STATIC_LIBRARY_SUFFIX}
+    ${CMAKE_COMMAND} --install <BINARY_DIR>/${Onnxruntime_BUILD_TYPE} --config
+    ${Onnxruntime_BUILD_TYPE} --prefix <INSTALL_DIR> && ${CMAKE_COMMAND} -E
+    copy
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/onnx/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}onnx${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/onnx/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}onnx_proto${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/protobuf/cmake/${Onnxruntime_LIB_PREFIX}/libprotobuf-lite${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/re2/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}re2${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/abseil-cpp/absl/base/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_throw_delegate${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/abseil-cpp/absl/hash/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_hash${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/abseil-cpp/absl/hash/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_city${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/abseil-cpp/absl/hash/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_low_level_hash${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/abseil-cpp/absl/container/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_raw_hash_set${CMAKE_STATIC_LIBRARY_SUFFIX}
     ${Onnxruntime_PLATFORM_INSTALL_FILES} <INSTALL_DIR>/lib)
 
 ExternalProject_Get_Property(Ort INSTALL_DIR)

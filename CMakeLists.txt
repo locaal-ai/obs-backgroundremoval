@@ -50,8 +50,8 @@ configure_file(src/plugin-macros.h.in
 
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin-macros.generated.h)
 
-include(cmake/BuildMyOpenCV.cmake)
 include(cmake/BuildMyOnnxruntime.cmake)
+include(cmake/BuildMyOpenCV.cmake)
 if(OS_WINDOWS)
   install(IMPORTED_RUNTIME_ARTIFACTS Onnxruntime::DirectML DESTINATION
           "${OBS_PLUGIN_DESTINATION}")
