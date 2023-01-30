@@ -4,12 +4,18 @@ string(REPLACE ";" "$<SEMICOLON>" CMAKE_OSX_ARCHITECTURES_
                "${CMAKE_OSX_ARCHITECTURES}")
 
 if(MSVC)
+  find_program(OpenCV_CCACHE_EXE ccache)
   if(${CMAKE_GENERATOR_PLATFORM} STREQUAL x64
      AND ${MSVC_VERSION} GREATER_EQUAL 1910
      AND ${MSVC_VERSION} LESS_EQUAL 1939)
     set(OpenCV_LIB_PATH x64/vc17/staticlib)
     set(OpenCV_LIB_PATH_3RD x64/vc17/staticlib)
     set(OpenCV_LIB_SUFFIX 470)
+    set(OpenCV_INSTALL_CCACHE ${CMAKE_COMMAND} -E copy ${OpenCV_CCACHE_EXE}
+                              <BINARY_DIR>/cl.exe)
+    set(OpenCV_PLATFORM_CMAKE_ARGS
+        -DCMAKE_VS_GLOBALS=CLToolExe=cl.exe$<SEMICOLON>CLToolPath=<BINARY_DIR>$<SEMICOLON>TrackFileAccess=false$<SEMICOLON>UseMultiToolTask=true$<SEMICOLON>DebugInformationFormat=OldStyle
+    )
   else()
     message(FATAL_ERROR "Unsupported MSVC!")
   endif()
@@ -17,6 +23,8 @@ else()
   set(OpenCV_LIB_PATH lib)
   set(OpenCV_LIB_PATH_3RD lib/opencv4/3rdparty)
   set(OpenCV_LIB_SUFFIX "")
+  set(OpenCV_INSTALL_CCACHE ":")
+  set(OpenCV_PLATFORM_CMAKE_ARGS "")
 endif()
 
 if(${CMAKE_BUILD_TYPE} STREQUAL Release OR ${CMAKE_BUILD_TYPE} STREQUAL
@@ -29,7 +37,9 @@ endif()
 ExternalProject_Add(
   OpenCV_Build
   URL https://github.com/umireon/opencv/archive/refs/tags/4.7.1.tar.gz
-  BUILD_COMMAND cmake --build <BINARY_DIR> --config ${OpenCV_BUILD_TYPE}
+  PATCH_COMMAND ${OpenCV_INSTALL_CCACHE}
+  BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config
+                ${OpenCV_BUILD_TYPE}
   BUILD_BYPRODUCTS
     <INSTALL_DIR>/${OpenCV_LIB_PATH}/${CMAKE_STATIC_LIBRARY_PREFIX}opencv_core${OpenCV_LIB_SUFFIX}${CMAKE_STATIC_LIBRARY_SUFFIX}
     <INSTALL_DIR>/${OpenCV_LIB_PATH}/${CMAKE_STATIC_LIBRARY_PREFIX}opencv_features2d${OpenCV_LIB_SUFFIX}${CMAKE_STATIC_LIBRARY_SUFFIX}
@@ -38,7 +48,8 @@ ExternalProject_Add(
     <INSTALL_DIR>/${OpenCV_LIB_PATH_3RD}/${CMAKE_STATIC_LIBRARY_PREFIX}libpng${CMAKE_STATIC_LIBRARY_SUFFIX}
     <INSTALL_DIR>/${OpenCV_LIB_PATH_3RD}/${CMAKE_STATIC_LIBRARY_PREFIX}zlib${CMAKE_STATIC_LIBRARY_SUFFIX}
   CMAKE_GENERATOR ${CMAKE_GENERATOR}
-  INSTALL_COMMAND cmake --install <BINARY_DIR> --config ${OpenCV_BUILD_TYPE}
+  INSTALL_COMMAND ${CMAKE_COMMAND} --install <BINARY_DIR> --config
+                  ${OpenCV_BUILD_TYPE}
   CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
              -DCMAKE_BUILD_TYPE=${OpenCV_BUILD_TYPE}
              -DCMAKE_GENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}
@@ -110,7 +121,8 @@ ExternalProject_Add(
              -DWITH_ADE=OFF
              -DWITH_ITT=OFF
              -DWITH_OPENCL=OFF
-             -DWITH_IPP=OFF)
+             -DWITH_IPP=OFF
+             ${OpenCV_PLATFORM_CMAKE_ARGS})
 
 ExternalProject_Get_Property(OpenCV_Build INSTALL_DIR)
 if(MSVC)

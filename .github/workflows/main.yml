@@ -298,6 +298,8 @@ jobs:
           ccache --set-config=compression=true
           ccache -z
 
+      - uses: ilammy/msvc-dev-cmd@v1
+
       - name: Checkout obs-studio
         uses: actions/checkout@v3
         with:
