@@ -13,8 +13,9 @@ jobs:
   build:
     name: Build flatpak
     runs-on: [ubuntu-latest]
-    env:
-      FLATPAK_BUILD_PATH: flatpak_app/files/share
+    strategy:
+      matrix:
+        arch: [x86_64]
     container:
       image: bilelmoussaoui/flatpak-github-actions:kde-6.4
       options: --privileged
@@ -33,13 +34,21 @@ jobs:
       - name: Build Flatpak Manifest
         uses: flatpak/flatpak-github-actions/flatpak-builder@v5
         with:
-          bundle: obs-studio-${{ steps.setup.outputs.commitHash }}.flatpak
+          arch: ${{ matrix.arch }}
+          bundle: obs-studio-plugin-background-removal-${{ steps.setup.outputs.commitHash }}.flatpak
+          build-bundle: false
           manifest-path: ci/flatpak/com.obsproject.Studio.Plugin.backgroundremoval.yaml
           cache-key: flatpak-builder-${{ hashFiles('ci/flatpak/com.obsproject.Studio.Plugin.backgroundremoval.yaml') }}
-          branch: master
+          branch: stable
 
-      - name: Validate AppStream
+      # /__w/obs-backgroundremoval/obs-backgroundremoval/
+      - name: Build Bundle
         shell: bash
-        working-directory: ${{ env.FLATPAK_BUILD_PATH }}
         run: |
-          appstream-util validate appdata/com.obsproject.Studio.Plugin.backgroundremoval.appdata.xml
+          flatpak build-bundle --runtime repo com.obs.Studio.Plugin.backgroundremoval-${{ steps.setup.outputs.commitHash }}.flatpak com.obsproject.Studio.Plugin.backgroundremoval stable
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: com.obs.Studio.Plugin.backgroundremoval-${{ steps.setup.outputs.commitHash }}.flatpak
+          path: com.obs.Studio.Plugin.backgroundremoval-${{ steps.setup.outputs.commitHash }}.flatpak
