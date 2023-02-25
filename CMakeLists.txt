@@ -103,7 +103,11 @@ set(PLUGIN_HEADERS
 # --- Platform-independent build settings ---
 add_library(${CMAKE_PROJECT_NAME} MODULE ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
 
-find_package(libobs REQUIRED)
+if (UNIX)
+    find_package(LibObs REQUIRED)
+else()
+    find_package(libobs REQUIRED)
+endif()
 find_package(obs-frontend-api REQUIRED)
 include(external/ObsPluginHelpers.cmake)
 
