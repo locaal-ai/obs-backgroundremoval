@@ -2,8 +2,8 @@
 #include <media-io/video-scaler.h>
 
 #if defined(__APPLE__)
-#include <onnxruntime/core/session/onnxruntime_cxx_api.h>
-#include <onnxruntime/core/providers/cpu/cpu_provider_factory.h>
+#include <core/session/onnxruntime_cxx_api.h>
+#include <core/providers/cpu/cpu_provider_factory.h>
 #else	// __APPLE__
 #include <onnxruntime_cxx_api.h>
 #include <cpu_provider_factory.h>
@@ -31,11 +31,11 @@
 #include "Model.h"
 
 
-const char* MODEL_SINET = "SINet_Softmax_simple.onnx";
-const char* MODEL_MODNET = "modnet_simple.onnx";
-const char* MODEL_MEDIAPIPE = "mediapipe.onnx";
-const char* MODEL_SELFIE = "selfie_segmentation.onnx";
-const char* MODEL_RVM = "rvm_mobilenetv3_fp32.onnx";
+const char* MODEL_SINET = "models/SINet_Softmax_simple.onnx";
+const char* MODEL_MODNET = "models/modnet_simple.onnx";
+const char* MODEL_MEDIAPIPE = "models/mediapipe.onnx";
+const char* MODEL_SELFIE = "models/selfie_segmentation.onnx";
+const char* MODEL_RVM = "models/rvm_mobilenetv3_fp32.onnx";
 
 const char* USEGPU_CPU = "cpu";
 const char* USEGPU_DML = "dml";
@@ -44,8 +44,8 @@ const char* USEGPU_CUDA = "cuda";
 struct background_removal_filter {
 	std::unique_ptr<Ort::Session> session;
 	std::unique_ptr<Ort::Env> env;
-	std::vector<const char*> inputNames;
-	std::vector<const char*> outputNames;
+	std::vector<std::string> inputNames;
+	std::vector<std::string> outputNames;
 	std::vector<Ort::Value> inputTensor;
 	std::vector<Ort::Value> outputTensor;
 	std::vector<std::vector<int64_t> > inputDims;
@@ -92,7 +92,7 @@ static obs_properties_t *filter_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
-	obs_property_t *p_threshold = obs_properties_add_float_slider(
+	obs_properties_add_float_slider(
 		props,
 		"threshold",
 		obs_module_text("Threshold"),
@@ -100,7 +100,7 @@ static obs_properties_t *filter_properties(void *data)
 		1.0,
 		0.025);
 
-	obs_property_t *p_contour_filter = obs_properties_add_float_slider(
+	obs_properties_add_float_slider(
 		props,
 		"contour_filter",
 		obs_module_text("Contour Filter (% of image)"),
@@ -108,7 +108,7 @@ static obs_properties_t *filter_properties(void *data)
 		1.0,
 		0.025);
 
-	obs_property_t *p_smooth_contour = obs_properties_add_float_slider(
+	obs_properties_add_float_slider(
 		props,
 		"smooth_contour",
 		obs_module_text("Smooth silhouette"),
@@ -116,7 +116,7 @@ static obs_properties_t *filter_properties(void *data)
 		1.0,
 		0.05);
 
-	obs_property_t *p_feather = obs_properties_add_float_slider(
+	obs_properties_add_float_slider(
 		props,
 		"feather",
 		obs_module_text("Feather blend silhouette"),
@@ -124,7 +124,7 @@ static obs_properties_t *filter_properties(void *data)
 		1.0,
 		0.05);
 
-	obs_property_t *p_color = obs_properties_add_color(
+	obs_properties_add_color(
 		props,
 		"replaceColor",
 		obs_module_text("Background Color"));
@@ -156,7 +156,7 @@ static obs_properties_t *filter_properties(void *data)
 	obs_property_list_add_string(p_model_select, obs_module_text("Selfie Segmentation"), MODEL_SELFIE);
 	obs_property_list_add_string(p_model_select, obs_module_text("Robust Video Matting"), MODEL_RVM);
 
-	obs_property_t *p_mask_every_x_frames = obs_properties_add_int(
+	obs_properties_add_int(
 		props,
 		"mask_every_x_frames",
 		obs_module_text("Calculate mask every X frame"),
@@ -235,7 +235,7 @@ static void createOrtSession(struct background_removal_filter *tf) {
   for (size_t i = 0; i < tf->inputNames.size(); i++) {
     blog(LOG_INFO, "Model %s input %d: name %s shape (%d dim) %d x %d x %d x %d",
       tf->modelSelection.c_str(), (int)i,
-      tf->inputNames[i],
+      tf->inputNames[i].c_str(),
       (int)tf->inputDims[i].size(),
       (int)tf->inputDims[i][0],
       ((int)tf->inputDims[i].size() > 1) ? (int)tf->inputDims[i][1] : 0,
@@ -246,7 +246,7 @@ static void createOrtSession(struct background_removal_filter *tf) {
   for (size_t i = 0; i < tf->outputNames.size(); i++) {
     blog(LOG_INFO, "Model %s output %d: name %s shape (%d dim) %d x %d x %d x %d",
       tf->modelSelection.c_str(), (int)i,
-      tf->outputNames[i],
+      tf->outputNames[i].c_str(),
       (int)tf->outputDims[i].size(),
       (int)tf->outputDims[i][0],
       ((int)tf->outputDims[i].size() > 1) ? (int)tf->outputDims[i][1] : 0,
@@ -331,7 +331,7 @@ static void filter_update(void *data, obs_data_t *settings)
 
 /**                   FILTER CORE                     */
 
-static void *filter_create(obs_data_t *settings, obs_source_t *source)
+static void *filter_create(obs_data_t *settings, obs_source_t *)
 {
 	struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(bzalloc(sizeof(struct background_removal_filter)));
 
@@ -450,7 +450,10 @@ static void processImageForBackground(
 
     // Get output
     // Map network output mask to cv::Mat
-    cv::Mat outputImage = tf->model->getNetworkOutput(tf->outputDims, tf->outputTensorValues, tf->inputDims, tf->inputTensorValues);
+    cv::Mat outputImage = tf->model->getNetworkOutput(tf->outputDims, tf->outputTensorValues);
+
+		// Assign output to input in some models that have temporal information
+		tf->model->assignOutputToInput(tf->outputTensorValues, tf->inputTensorValues);
 
     // Post-process output
     tf->model->postprocessOutput(outputImage);

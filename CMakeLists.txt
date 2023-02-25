@@ -1,11 +1,12 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
-include(external/MunkeiVersionFromGit.cmake)
+include(cmake/MunkeiVersionFromGit.cmake)
 version_from_git()
 
 # Change obs-plugintemplate to your plugin's name in a machine-readable format
 # (e.g.: obs-myawesomeplugin) and set
-project(obs-backgroundremoval VERSION ${VERSION})
+project(obs-backgroundremoval VERSION 0.5.0)
+add_library(${CMAKE_PROJECT_NAME} MODULE)
 
 # Replace `Your Name Here` with the name (yours or your organization's) you want
 # to see as the author of the plugin (in the plugin's metadata itself and in the installers)
@@ -13,7 +14,7 @@ set(PLUGIN_AUTHOR "Roy Shilkrot")
 
 # Replace `com.example.obs-plugin-template` with a unique Bundle ID for macOS releases
 # (used both in the installer and when submitting the installer for notarization)
-set(MACOS_BUNDLEID "com.example.obs-backgroundremoval")
+set(MACOS_BUNDLEID "com.royshilkrot.obs-backgroundremoval")
 
 # Replace `me@contoso.com` with the maintainer email address you want to put in Linux packages
 set(LINUX_MAINTAINER_EMAIL "roy.shil@gmail.com")
@@ -64,239 +65,76 @@ set(RELEASE_DIR "${PROJECT_SOURCE_DIR}/release" CACHE STRING "Directory for buil
 
 set(CMAKE_PREFIX_PATH "${QTDIR}")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/external")
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/cmake")
 
 # In case you need C++
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-configure_file(
-    src/plugin-macros.h.in
-    ../src/plugin-macros.generated.h
-)
-configure_file(
-    installer/installer-macOS.pkgproj.in
-    ../installer/installer-macOS.generated.pkgproj
-)
-configure_file(
-    installer/installer-Windows.iss.in
-    ../installer/installer-Windows.generated.iss
-)
-
-configure_file(
-    ci/ci_includes.sh.in
-    ../ci/ci_includes.generated.sh
-)
-configure_file(
-    ci/ci_includes.cmd.in
-    ../ci/ci_includes.generated.cmd
-)
 
 set(PLUGIN_SOURCES
-    src/background-filter.cpp
-    src/plugin-main.cpp
+    ${CMAKE_SOURCE_DIR}/src/background-filter.cpp
+    ${CMAKE_SOURCE_DIR}/src/plugin-main.cpp
     )
 
-set(PLUGIN_HEADERS
-	src/plugin-macros.generated.h)
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${PLUGIN_SOURCES})
 
-# --- Platform-independent build settings ---
-add_library(${CMAKE_PROJECT_NAME} MODULE ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
+configure_file(src/plugin-macros.h.in ${CMAKE_SOURCE_DIR}/src/plugin-macros.generated.h)
 
-if (UNIX)
-    find_package(LibObs REQUIRED)
-    set(ADDITIONAL_INCLUDE_DIRS ${LibObs_INCLUDE_DIR} ${LibObs_INCLUDE_DIRS})
-    set(ADDITIONAL_LINK_LIBRARIES ${LibObs_LIB} ${LibObs_LIBRARIES})
-else()
-    find_package(libobs REQUIRED)
-    find_package(obs-frontend-api REQUIRED)
-    set(ADDITIONAL_INCLUDE_DIRS ${LIBOBS_INCLUDE_DIR}/../UI/obs-frontend-api)
-    set(ADDITIONAL_LINK_LIBRARIES OBS::obs-frontend-api OBS::libobs)
-endif()
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin-macros.generated.h)
 
-include(external/ObsPluginHelpers.cmake)
+# Import libobs as main plugin dependency
+find_package(libobs REQUIRED)
+include(cmake/ObsPluginHelpers.cmake)
 
 find_package(Onnxruntime REQUIRED)
 
 find_package(OpenCV 4.5 REQUIRED COMPONENTS core imgproc)
 
-include_directories(
-    ${ADDITIONAL_INCLUDE_DIRS}
-    ${LIBOBS_INCLUDE_DIR}
-    ${LIBOBS_INCLUDE_DIRS}
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
     ${Onnxruntime_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
 )
 
-target_link_libraries(${CMAKE_PROJECT_NAME}
-    ${ADDITIONAL_LINK_LIBRARIES}
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
+    OBS::libobs
     ${Onnxruntime_LIBRARIES}
     ${OpenCV_LIBRARIES}
 )
 
-# --- End of section ---
-
 # --- Windows-specific build settings and tasks ---
-if(WIN32)
-    # Enable Multicore Builds and disable FH4 (to not depend on VCRUNTIME140_1.DLL when building with VS2019)
-    if (MSVC)
-        add_definitions(/MP /d2FH4- /std:c++latest /MT)
-    endif()
+if(OS_WINDOWS)
+  configure_file(cmake/bundle/windows/installer-Windows.iss.in
+                 ${CMAKE_BINARY_DIR}/installer-Windows.generated.iss)
 
-	# --- Release package helper ---
-	# The "release" folder has a structure similar OBS' one on Windows
-    add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-        COMMAND if $<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>==1 (
-            "${CMAKE_COMMAND}" -E remove_directory "${RELEASE_DIR}"
-        )
+  configure_file(cmake/bundle/windows/resource.rc.in ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.rc)
+  target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.rc)
 
-        # If config is Release or RelWithDebInfo, package release files
-        COMMAND if $<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>==1 (
-            "${CMAKE_COMMAND}" -E make_directory
-                "${RELEASE_DIR}/data/obs-plugins/${CMAKE_PROJECT_NAME}"
-                "${RELEASE_DIR}/obs-plugins/${ARCH_NAME}"
-        )
+  if(MSVC)
+    target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE /W4)
+  endif()
+  # --- End of section ---
 
-        COMMAND if $<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>==1 (
-            "${CMAKE_COMMAND}" -E copy_directory
-                "${PROJECT_SOURCE_DIR}/data"
-                "${RELEASE_DIR}/data/obs-plugins/${CMAKE_PROJECT_NAME}"
-        )
+  # -- macOS specific build settings and tasks --
+elseif(OS_MACOS)
+  configure_file(cmake/bundle/macos/installer-macos.pkgproj.in
+                 ${CMAKE_BINARY_DIR}/installer-macos.generated.pkgproj)
 
-        COMMAND if $<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>==1 (
-            "${CMAKE_COMMAND}" -E copy
-                "$<TARGET_FILE:${CMAKE_PROJECT_NAME}>"
-                "${RELEASE_DIR}/obs-plugins/${ARCH_NAME}"
-        )
+  set(MACOSX_PLUGIN_GUI_IDENTIFIER "${MACOS_BUNDLEID}")
+  set(MACOSX_PLUGIN_BUNDLE_VERSION "${CMAKE_PROJECT_VERSION}")
+  set(MACOSX_PLUGIN_SHORT_VERSION_STRING "1")
 
-        # package the DirectML DLL with the plugin DLL unless using CUDA
-        COMMAND if $<AND:$<NOT:$<BOOL:${WITH_CUDA}>>,$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>>==1 (
-            "${CMAKE_COMMAND}" -E copy
-                "${CMAKE_BINARY_DIR}/nuget/Microsoft.AI.DirectML.1.8.0/bin/x64-win/DirectML.dll"
-                "${RELEASE_DIR}/obs-plugins/${ARCH_NAME}"
-        )
+  target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -Wall)
+  # --- End of section ---
 
-        # package the onnxruntime DLL with the plugin DLL
-        COMMAND if $<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>==1 (
-            "${CMAKE_COMMAND}" -E copy
-                "${Onnxruntime_LIBRARY_DIR}/onnxruntime.dll"
-                "${RELEASE_DIR}/obs-plugins/${ARCH_NAME}"
-        )
-
-        # If config is RelWithDebInfo, copy the pdb file
-        COMMAND if $<CONFIG:RelWithDebInfo>==1 (
-            "${CMAKE_COMMAND}" -E copy
-                "$<TARGET_PDB_FILE:${CMAKE_PROJECT_NAME}>"
-                "${RELEASE_DIR}/obs-plugins/${ARCH_NAME}"
-        )
-
-        # Copy to obs-studio dev environment for immediate testing
-        COMMAND if $<CONFIG:Debug>==1 (
-            "${CMAKE_COMMAND}" -E copy
-                "$<TARGET_FILE:${CMAKE_PROJECT_NAME}>"
-                "${LIBOBS_INCLUDE_DIR}/../${OBS_BUILDDIR_ARCH}/rundir/$<CONFIG>/obs-plugins/${ARCH_NAME}"
-        )
-
-        COMMAND if $<CONFIG:Debug>==1 (
-            "${CMAKE_COMMAND}" -E copy
-                "$<TARGET_PDB_FILE:${CMAKE_PROJECT_NAME}>"
-                "${LIBOBS_INCLUDE_DIR}/../${OBS_BUILDDIR_ARCH}/rundir/$<CONFIG>/obs-plugins/${ARCH_NAME}"
-        )
-
-        COMMAND if $<CONFIG:Debug>==1 (
-            "${CMAKE_COMMAND}" -E make_directory
-                "${LIBOBS_INCLUDE_DIR}/../${OBS_BUILDDIR_ARCH}/rundir/$<CONFIG>/data/obs-plugins/${CMAKE_PROJECT_NAME}"
-        )
-
-        COMMAND if $<CONFIG:Debug>==1 (
-            "${CMAKE_COMMAND}" -E copy_directory
-                "${PROJECT_SOURCE_DIR}/data"
-                "${LIBOBS_INCLUDE_DIR}/../${OBS_BUILDDIR_ARCH}/rundir/$<CONFIG>/data/obs-plugins/${CMAKE_PROJECT_NAME}"
-        )
-    )
-	# --- End of sub-section ---
-
-    install(DIRECTORY "${RELEASE_DIR}/" DESTINATION .)
-    # Tell CPack to create a zip file.
-    set(CPACK_GENERATOR "ZIP")
-    # Tell CPack what to name the zip file. It will append `.zip`.
-    if (WITH_CUDA)
-        set(CPACK_PACKAGE_NAME "${CMAKE_PROJECT_NAME}-cuda")
-    endif()
-
-    # Tell CPack not to put everything inside an enclosing directory.
-    set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
-    # Apparently this should be always on but isn't for backwards compatibility.
-    set(CPACK_VERBATIM_VARIABLES YES)
-    include(CPack)
+  # --- Linux-specific build settings and tasks ---
+else()
+  target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -Wall)
 endif()
 # --- End of section ---
 
-# --- Linux-specific build settings and tasks ---
-if(UNIX AND NOT APPLE)
-    include(GNUInstallDirs)
+setup_plugin_target(${CMAKE_PROJECT_NAME})
 
-	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES PREFIX "")
-	target_link_libraries(${CMAKE_PROJECT_NAME} obs-frontend-api)
 
-	file(GLOB locale_files data/locale/*.ini)
-	file(GLOB onnxmodels data/*.onnx)
-
-	install(TARGETS ${CMAKE_PROJECT_NAME}
-		LIBRARY DESTINATION "${CMAKE_INSTALL_FULL_LIBDIR}/obs-plugins")
-
-	install(FILES ${locale_files}
-		DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/obs/obs-plugins/${CMAKE_PROJECT_NAME}/locale")
-
-	install(FILES ${onnxmodels}
-		DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/obs/obs-plugins/${CMAKE_PROJECT_NAME}/")
-endif()
-# --- End of section ---
-
-# -- OS X specific build settings and tasks --
-if(APPLE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -fvisibility=default -framework Foundation")
-
-	set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES PREFIX "")
-	target_link_libraries(${CMAKE_PROJECT_NAME} "${OBS_FRONTEND_LIB}")
-
-    # add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-    add_custom_target(dist DEPENDS ${CMAKE_PROJECT_NAME}
-        COMMAND
-            "${CMAKE_COMMAND}" -E rm -rf "${RELEASE_DIR}"
-
-        COMMAND
-            "${CMAKE_COMMAND}" -E make_directory
-                "${RELEASE_DIR}/Resources/data/obs-plugins/${CMAKE_PROJECT_NAME}"
-                "${RELEASE_DIR}/Plugins"
-
-        COMMAND
-            "${CMAKE_COMMAND}" -E copy_directory
-                "${PROJECT_SOURCE_DIR}/data"
-                "${RELEASE_DIR}/Resources/data/obs-plugins/${CMAKE_PROJECT_NAME}"
-
-        COMMAND
-            "${CMAKE_COMMAND}" -E copy
-                "$<TARGET_FILE:${CMAKE_PROJECT_NAME}>"
-                "${RELEASE_DIR}/Plugins/"
-
-        COMMAND
-            "${CMAKE_COMMAND}" -E rm -f
-                "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}-macosx.zip"
-
-    )
-
-    install(DIRECTORY "${RELEASE_DIR}/" DESTINATION .)
-
-    # Tell CPack to create a zip file.
-    set(CPACK_GENERATOR "ZIP")
-    # Tell CPack what to name the zip file. It will append `.zip`.
-    set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-macosx")
-    # Tell CPack not to put everything inside an enclosing directory.
-    set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
-    # Apparently this should be always on but isn't for backwards compatibility.
-    set(CPACK_VERBATIM_VARIABLES YES)
-    include(CPack)
-endif()
-# -- End of section --
+# # --- End of section ---
