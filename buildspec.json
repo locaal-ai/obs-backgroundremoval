@@ -1,0 +1,54 @@
+{
+    "dependencies": {
+        "obs-studio": {
+            "version": "29.0.2",
+            "repository": "https://github.com/obsproject/obs-studio.git",
+            "branch": "master",
+            "hash": "0fb8bb4b1e18ee1c870c48d35ab5b598af3b59e9"
+        },
+        "prebuilt": {
+            "version": "2023-01-06",
+            "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
+            "label": "Pre-built obs-deps",
+            "hashes": {
+                "macos-x86_64": "67d1080536efb4e47a5f4fcf47d07680ef5847d72a1170cb917fc65698b628b0",
+                "macos-arm64": "06b363a842de8d470d4fcae68823178574905de6c98c5dd21052b8a96fc9a0a3",
+                "macos-universal": "811c022a178230d3b9ad1eeb8ae9e1de0e6017b69364f50b183e36246509e0e8",
+                "windows-x64": "1026a72af2548d589e30d58edf2b3c7f2f6a16d8fd481ab33aab64d8181b1556",
+                "windows-x86": "315a9e445d518503bdd36d9fdfee2b2ba1f791355420055c0ef97cd54897a754"
+            }
+        }
+    },
+    "platformConfig": {
+        "macos-x86_64": {
+            "qtVersion": 6,
+            "deploymentTarget": "10.15"
+        },
+        "macos-arm64": {
+            "qtVersion": 6,
+            "deploymentTarget": "11.0"
+        },
+        "macos-universal": {
+            "qtVersion": 6,
+            "deploymentTarget": "10.15"
+        },
+        "windows-x64": {
+            "qtVersion": 6,
+            "visualStudio": "Visual Studio 17 2022",
+            "platformSDK": "10.0.20348.0"
+        },
+        "windows-x86": {
+            "qtVersion": 6,
+            "visualStudio": "Visual Studio 17 2022",
+            "platformSDK": "10.0.20348.0"
+        },
+        "linux-x86_64": {
+            "qtVersion": 6
+        },
+        "linux-aarch64": {
+            "qtVersion": 6
+        }
+    },
+    "name": "obs-plugintemplate",
+    "version": "1.0.0"
+}
