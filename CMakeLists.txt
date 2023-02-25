@@ -107,8 +107,11 @@ if (UNIX)
     find_package(LibObs REQUIRED)
 else()
     find_package(libobs REQUIRED)
+    find_package(obs-frontend-api REQUIRED)
+    set(ADDITIONAL_INCLUDE_DIRS ${LIBOBS_INCLUDE_DIR}/../UI/obs-frontend-api)
+    set(ADDITIONAL_LINK_LIBRARIES OBS::obs-frontend-api)
 endif()
-find_package(obs-frontend-api REQUIRED)
+
 include(external/ObsPluginHelpers.cmake)
 
 find_package(Onnxruntime REQUIRED)
@@ -116,7 +119,7 @@ find_package(Onnxruntime REQUIRED)
 find_package(OpenCV 4.5 REQUIRED COMPONENTS core imgproc)
 
 include_directories(
-	${LIBOBS_INCLUDE_DIR}/../UI/obs-frontend-api
+    ${ADDITIONAL_INCLUDE_DIRS}
     ${LIBOBS_INCLUDE_DIR}
     ${LIBOBS_INCLUDE_DIRS}
     ${Onnxruntime_INCLUDE_DIRS}
@@ -124,7 +127,8 @@ include_directories(
 )
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
-    OBS::libobs OBS::obs-frontend-api
+    OBS::libobs
+    ${ADDITIONAL_LINK_LIBRARIES}
     ${Onnxruntime_LIBRARIES}
     ${OpenCV_LIBRARIES}
 )
