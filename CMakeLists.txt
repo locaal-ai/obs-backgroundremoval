@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
 
-include(cmake/MunkeiVersionFromGit.cmake)
-version_from_git()
-
 # Change obs-plugintemplate to your plugin's name in a machine-readable format
 # (e.g.: obs-myawesomeplugin) and set
 project(obs-backgroundremoval VERSION 0.5.0)
