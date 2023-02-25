@@ -22,17 +22,17 @@ jobs:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-    
-    - name: Install prerequisites 
+
+    - name: Install prerequisites
       run: sudo apt-get update && sudo apt-get install -y libobs-dev libopencv-dev language-pack-en wget git
-      
+
     - name: Download ONNX runtime
       run: wget https://github.com/microsoft/onnxruntime/releases/download/v1.7.0/onnxruntime-linux-x64-1.7.0.tgz && sudo tar xzvf onnxruntime-linux-x64-1.7.0.tgz --strip-components=1 -C /usr/local/ --wildcards "*/include/*" "*/lib*/"
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DLibObs_DIR=/usr/lib/x86_64-linux-gnu/cmake/LibObs
 
     - name: Build
       # Build your program with the given configuration
@@ -40,7 +40,7 @@ jobs:
 
 #     - name: Test
 #       working-directory: ${{github.workspace}}/build
-#       # Execute tests defined by the CMake configuration.  
+#       # Execute tests defined by the CMake configuration.
 #       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
 #       run: ctest -C ${{env.BUILD_TYPE}}
-      
+

@@ -4,19 +4,21 @@
 #if defined(__APPLE__)
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
 #include <onnxruntime/core/providers/cpu/cpu_provider_factory.h>
-#else
+#else	// __APPLE__
 #include <onnxruntime_cxx_api.h>
 #include <cpu_provider_factory.h>
 #endif
+
 #ifdef WITH_CUDA
 #include <cuda_provider_factory.h>
 #endif
+
 #ifdef _WIN32
 #ifndef WITH_CUDA
 #include <dml_provider_factory.h>
 #endif
 #include <wchar.h>
-#endif
+#endif // _WIN32
 
 #include <opencv2/imgproc.hpp>
 
@@ -207,13 +209,13 @@ static void createOrtSession(struct background_removal_filter *tf) {
 
 	try {
 #ifdef WITH_CUDA
-        if (tf->useGPU == USEGPU_CUDA) {
-            Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0));
-        }
-#else
-        if (tf->useGPU == USEGPU_DML) {
-            Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
-        }
+		if (tf->useGPU == USEGPU_CUDA) {
+				Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0));
+		}
+#elif _WIN32
+		if (tf->useGPU == USEGPU_DML) {
+				Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
+		}
 #endif
 		tf->session.reset(new Ort::Session(*tf->env, tf->modelFilepath, sessionOptions));
 	} catch (const std::exception& e) {
