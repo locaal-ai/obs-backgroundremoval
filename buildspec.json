@@ -1,0 +1,86 @@
+{
+    "dependencies": {
+        "obs-studio": {
+            "version": "29.0.2",
+            "repository": "https://github.com/obsproject/obs-studio.git",
+            "branch": "0fb8bb4b1e18ee1c870c48d35ab5b598af3b59e9",
+            "hash": "0fb8bb4b1e18ee1c870c48d35ab5b598af3b59e9"
+        },
+        "prebuilt": {
+            "version": "2023-01-06",
+            "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
+            "label": "Pre-built obs-deps",
+            "hashes": {
+                "macos-x86_64": "67d1080536efb4e47a5f4fcf47d07680ef5847d72a1170cb917fc65698b628b0",
+                "macos-arm64": "06b363a842de8d470d4fcae68823178574905de6c98c5dd21052b8a96fc9a0a3",
+                "macos-universal": "811c022a178230d3b9ad1eeb8ae9e1de0e6017b69364f50b183e36246509e0e8",
+                "windows-x64": "1026a72af2548d589e30d58edf2b3c7f2f6a16d8fd481ab33aab64d8181b1556",
+                "windows-x86": "315a9e445d518503bdd36d9fdfee2b2ba1f791355420055c0ef97cd54897a754"
+            }
+        },
+        "qt5": {
+            "version": "2022-08-02",
+            "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
+            "label": "Pre-built Qt5",
+            "hashes": {
+                "macos-x86_64": "5894ac8a7e3f1fd0035d87a5679eaad08b2193d771124eeb506bc5e54fb7c411",
+                "macos-arm64": "a32a30cf7d9efe0a08f0d58355a17be4ec9fecc9b1a7dc958ff1c16e0a73e14d",
+                "macos-universal": "b06f947cda11452cd6e7d28ae29bb6eb7e61be15445e260d49e21f555f55bd6e",
+                "windows-x64": "4ac110d268272ff073957493d9d84cfec75939b6e3d845bc3b17d9d7620d869a",
+                "windows-x86": "6c1d7dfb23fbb7a32bcbf6e963db61d408be91db56a2e2dae5f7905173445fe2"
+            },
+            "pdb-hashes": {
+                "windows-x64": "29edaf1b9442b374a2d8252d4d0936424e353e91a59fff4265cd13bb2ae71e7a",
+                "windows-x86": "67044abd25420c2e77c57f0270940df06092a2f271982a399c254e3af278bff1"
+            }
+        },
+        "qt6": {
+            "version": "2023-01-06",
+            "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
+            "label": "Pre-built Qt6",
+            "hashes": {
+                "macos-x86_64": "d6b1055e16a5569fcbee3076488bbaf0ea7323632d6ea978937b70f10cd1a50d",
+                "macos-arm64": "39980aed1e2cd82b791f3d8329f0445f01754e4af762724efbd5301ab2128af8",
+                "macos-universal": "dfa3c48ee46765029d06773ba08d84b3f11360547171c8e736019c77fabff80d",
+                "windows-x64": "525370749446703f165b9c538d94a4f7badb2715cbe3360975ca5579300f2c3c",
+                "windows-x86": "799cea49fcfeab602aefb813bc40a2673a8fd4404e4c7c142e513928ce0ccf4b"
+            },
+            "pdb-hashes": {
+                "windows-x64": "8d3e4f09042bd987b417c3b0ca9d1dcd46f11f7c62de10566dfaf72cf93eeefe",
+                "windows-x86": "0a01ed741987ee46cc7b489c82d95fb806072accac2b42a5997a5664c0b90492"
+            }
+        }
+    },
+    "platformConfig": {
+        "macos-x86_64": {
+            "qtVersion": 6,
+            "deploymentTarget": "10.15"
+        },
+        "macos-arm64": {
+            "qtVersion": 6,
+            "deploymentTarget": "11.0"
+        },
+        "macos-universal": {
+            "qtVersion": 6,
+            "deploymentTarget": "10.15"
+        },
+        "windows-x64": {
+            "qtVersion": 6,
+            "visualStudio": "Visual Studio 17 2022",
+            "platformSDK": "10.0.20348.0"
+        },
+        "windows-x86": {
+            "qtVersion": 6,
+            "visualStudio": "Visual Studio 17 2022",
+            "platformSDK": "10.0.20348.0"
+        },
+        "linux-x86_64": {
+            "qtVersion": 6
+        },
+        "linux-aarch64": {
+            "qtVersion": 6
+        }
+    },
+    "name": "obs-backgroundremoval",
+    "version": "0.5.0"
+}

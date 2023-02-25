@@ -14,7 +14,7 @@ fi
 
 cd $WORK_DIR
 
-ONNXRT_VER=1.7.2
+ONNXRT_VER=1.14.0
 ONNXRT_DIR=$WORK_DIR/onnxruntime-$ONNXRT_VER
 
 if [[ ! -d $ONNXRT_DIR ]]; then

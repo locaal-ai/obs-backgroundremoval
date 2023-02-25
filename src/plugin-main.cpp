@@ -25,19 +25,19 @@ OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 
 MODULE_EXPORT const char *obs_module_description(void)
 {
-	return "Portrait background filter plugin";
+  return "Portrait background filter plugin";
 }
 
 extern struct obs_source_info background_removal_filter_info;
 
 bool obs_module_load(void)
 {
-    obs_register_source(&background_removal_filter_info);
-    blog(LOG_INFO, "plugin loaded successfully (version %s)", PLUGIN_VERSION);
-    return true;
+  obs_register_source(&background_removal_filter_info);
+  blog(LOG_INFO, "plugin loaded successfully (version %s)", PLUGIN_VERSION);
+  return true;
 }
 
 void obs_module_unload()
 {
-    blog(LOG_INFO, "plugin unloaded");
+  blog(LOG_INFO, "plugin unloaded");
 }
