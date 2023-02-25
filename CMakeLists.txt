@@ -105,11 +105,13 @@ add_library(${CMAKE_PROJECT_NAME} MODULE ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
 
 if (UNIX)
     find_package(LibObs REQUIRED)
+    set(ADDITIONAL_INCLUDE_DIRS ${LibObs_INCLUDE_DIR} ${LibObs_INCLUDE_DIRS})
+    set(ADDITIONAL_LINK_LIBRARIES ${LibObs_LIB} ${LibObs_LIBRARIES})
 else()
     find_package(libobs REQUIRED)
     find_package(obs-frontend-api REQUIRED)
     set(ADDITIONAL_INCLUDE_DIRS ${LIBOBS_INCLUDE_DIR}/../UI/obs-frontend-api)
-    set(ADDITIONAL_LINK_LIBRARIES OBS::obs-frontend-api)
+    set(ADDITIONAL_LINK_LIBRARIES OBS::obs-frontend-api OBS::libobs)
 endif()
 
 include(external/ObsPluginHelpers.cmake)
@@ -127,7 +129,6 @@ include_directories(
 )
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
-    OBS::libobs
     ${ADDITIONAL_LINK_LIBRARIES}
     ${Onnxruntime_LIBRARIES}
     ${OpenCV_LIBRARIES}
