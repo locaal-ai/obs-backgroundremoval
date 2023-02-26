@@ -4,8 +4,8 @@ set -e
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 WORK_DIR="${SCRIPT_DIR}/../build"
-# use realpath to get absolute path
-WORK_DIR=$(realpath $WORK_DIR)
+# get absolute path, without realpath
+WORK_DIR=$(cd $WORK_DIR && pwd)
 CURRENT_DIR=$(pwd)
 OUTPUT_DIR=$WORK_DIR/opencv
 
