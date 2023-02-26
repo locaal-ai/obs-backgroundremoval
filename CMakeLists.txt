@@ -70,6 +70,9 @@ if(UNIX)
       ${CMAKE_MODULE_PATH}
       "${CMAKE_SOURCE_DIR}/obs-build-dependencies/plugin-deps-2023-01-06-qt6-x86_64/lib/cmake/libobs/"
   )
+  set(OpenCV_DIR "${CMAKE_SOURCE_DIR}/build/opencv/lib/cmake/opencv4")
+  # add -framework Foundation to the target
+  set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES LINK_FLAGS "-framework Foundation")
 endif()
 
 # Import libobs as main plugin dependency
