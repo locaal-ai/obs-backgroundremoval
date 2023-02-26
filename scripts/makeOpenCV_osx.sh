@@ -4,8 +4,6 @@ set -e
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 WORK_DIR="${SCRIPT_DIR}/../build"
-# get absolute path, without realpath
-WORK_DIR=$(cd $WORK_DIR && pwd)
 CURRENT_DIR=$(pwd)
 OUTPUT_DIR=$WORK_DIR/opencv
 
@@ -46,6 +44,7 @@ if verify_opencv_exists; then
 fi
 
 # try to download opencv from s3 if not already downloaded, use wget if available
+echo "downloading opencv from s3"
 if [[ ! $( which wget ) ]]; then
     echo "wget is not available, please install it e.g. `$ brew install wget`"
     exit 1
@@ -54,6 +53,13 @@ OPENCV_TAR_FILENAME="opencv-4.5.2-x86_64.tar.gz"
 OPENCV_TAR_LOCATION="${WORK_DIR}/${OPENCV_TAR_FILENAME}"
 wget https://obs-backgroundremoval-build.s3.amazonaws.com/opencv-4.5.2-x86_64.tar.gz -O ${OPENCV_TAR_LOCATION}
 
+if [[ ! -f $OPENCV_TAR_LOCATION ]]; then
+    echo "failed to download opencv from s3"
+    exit 1
+fi
+
+# extract opencv if downloaded
+echo "extracting opencv"
 cd "${SCRIPT_DIR}/../"
 tar xzf ${OPENCV_TAR_LOCATION}
 rm ${OPENCV_TAR_LOCATION}
