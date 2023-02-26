@@ -80,7 +80,15 @@ configure_file(src/plugin-macros.h.in ${CMAKE_SOURCE_DIR}/src/plugin-macros.gene
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin-macros.generated.h)
 
 # Import libobs as main plugin dependency
-find_package(libobs REQUIRED)
+find_package(libobs)
+if(${libobs_FOUND})
+  message(STATUS "Found libobs")
+else(${libobs_FOUND})
+  message(STATUS "Didn't find libobs, looking for LibObs")
+  find_package(LibObs REQUIRED)
+  add_library(LibObs ALIAS libobs)
+endif()
+
 include(cmake/ObsPluginHelpers.cmake)
 
 find_package(Onnxruntime REQUIRED)
