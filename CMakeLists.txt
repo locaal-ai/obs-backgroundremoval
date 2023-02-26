@@ -50,20 +50,6 @@ elseif(APPLE)
   endif()
 endif()
 
-if(UNIX)
-  set(Onnxruntime_INCLUDE_HINT /usr/local/include/)
-endif()
-
-if(APPLE)
-  set(OpenCV_DIR ${CMAKE_BINARY_DIR}/opencv/lib/cmake/opencv4)
-endif()
-
-set(RELEASE_DIR
-    "${PROJECT_SOURCE_DIR}/release"
-    CACHE STRING "Directory for building release packages")
-
-set(CMAKE_PREFIX_PATH "${QTDIR}")
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/cmake")
 
 # In case you need C++
@@ -79,15 +65,15 @@ configure_file(src/plugin-macros.h.in ${CMAKE_SOURCE_DIR}/src/plugin-macros.gene
 
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin-macros.generated.h)
 
-# Import libobs as main plugin dependency
-find_package(libobs)
-if(${libobs_FOUND})
-  message(STATUS "Found libobs")
-else(${libobs_FOUND})
-  message(STATUS "Didn't find libobs, looking for LibObs")
-  find_package(LibObs REQUIRED)
-  add_library(LibObs ALIAS libobs)
+if(UNIX)
+  set(CMAKE_MODULE_PATH
+      ${CMAKE_MODULE_PATH}
+      "${CMAKE_SOURCE_DIR}/obs-build-dependencies/plugin-deps-2023-01-06-qt6-x86_64/lib/cmake/libobs/"
+  )
 endif()
+
+# Import libobs as main plugin dependency
+find_package(libobs REQUIRED)
 
 include(cmake/ObsPluginHelpers.cmake)
 
