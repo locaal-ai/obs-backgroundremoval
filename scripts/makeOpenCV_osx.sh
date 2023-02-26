@@ -1,6 +1,7 @@
 #!/bin/bash
 
-WORK_DIR=$(git rev-parse --show-toplevel)/build
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+WORK_DIR="${SCRIPT_DIR}/../build"
 CURRENT_DIR=$(pwd)
 OUTPUT_DIR=$WORK_DIR/opencv
 
