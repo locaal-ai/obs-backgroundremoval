@@ -33,6 +33,11 @@ runs:
       env:
         CODESIGN_IDENT: ${{ inputs.codesignIdent }}
       run: |
+        set -e
+
+        ${{ inputs.workingDirectory }}/scripts/makeOnnxruntime_osx.sh
+        ${{ inputs.workingDirectory }}/scripts/makeOpenCV_osx.sh
+
         build_args=(
           -c ${{ inputs.config }}
           -t macos-${{ inputs.target }}
@@ -41,8 +46,6 @@ runs:
         if [[ '${{ inputs.codesign }}' == 'true' ]] build_args+=(-s)
         if (( ${+CI} && ${+RUNNER_DEBUG} )) build_args+=(--debug)
 
-        ${{ inputs.workingDirectory }}/scripts/makeOnnxruntime_osx.sh
-        ${{ inputs.workingDirectory }}/scripts/makeOpenCV_osx.sh
         ${{ inputs.workingDirectory }}/.github/scripts/build-macos.zsh ${build_args}
 
     - name: Run Linux Build
