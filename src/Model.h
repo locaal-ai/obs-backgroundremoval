@@ -77,17 +77,16 @@ class Model {
 #endif
   }
 
-  virtual void populateInputOutputNames(
-    const std::unique_ptr<Ort::Session>& session,
-    std::vector<Ort::AllocatedStringPtr>& inputNames,
-	  std::vector<Ort::AllocatedStringPtr>& outputNames
-  ) {
+  virtual void populateInputOutputNames(const std::unique_ptr<Ort::Session> &session,
+                                        std::vector<Ort::AllocatedStringPtr> &inputNames,
+                                        std::vector<Ort::AllocatedStringPtr> &outputNames)
+  {
     Ort::AllocatorWithDefaultOptions allocator;
 
     inputNames.clear();
     outputNames.clear();
-	  inputNames.push_back(session->GetInputNameAllocated(0, allocator));
-  	outputNames.push_back(session->GetOutputNameAllocated(0, allocator));
+    inputNames.push_back(session->GetInputNameAllocated(0, allocator));
+    outputNames.push_back(session->GetOutputNameAllocated(0, allocator));
   }
 
   virtual bool populateInputOutputShapes(const std::unique_ptr<Ort::Session> &session,
@@ -197,35 +196,33 @@ class Model {
   {
   }
 
-  virtual void runNetworkInference(
-    const std::unique_ptr<Ort::Session>& session,
-    const std::vector<Ort::AllocatedStringPtr>& inputNames,
-	  const std::vector<Ort::AllocatedStringPtr>& outputNames,
-    const std::vector<Ort::Value>& inputTensor,
-    std::vector<Ort::Value>& outputTensor
-  ) {
-    if (inputNames.size() == 0 || outputNames.size() == 0 || inputTensor.size() == 0 || outputTensor.size() == 0) {
+  virtual void runNetworkInference(const std::unique_ptr<Ort::Session> &session,
+                                   const std::vector<Ort::AllocatedStringPtr> &inputNames,
+                                   const std::vector<Ort::AllocatedStringPtr> &outputNames,
+                                   const std::vector<Ort::Value> &inputTensor,
+                                   std::vector<Ort::Value> &outputTensor)
+  {
+    if (inputNames.size() == 0 || outputNames.size() == 0 || inputTensor.size() == 0 ||
+        outputTensor.size() == 0) {
       blog(LOG_INFO, "Skip network inference. Inputs or outputs are null.");
       return;
     }
 
-    std::vector<const char*> rawInputNames;
+    std::vector<const char *> rawInputNames;
     for (auto &inputName : inputNames) {
       rawInputNames.push_back(inputName.get());
     }
 
-    std::vector<const char*> rawOutputNames;
+    std::vector<const char *> rawOutputNames;
     for (auto &outputName : outputNames) {
       rawOutputNames.push_back(outputName.get());
     }
 
-    session->Run(
-      Ort::RunOptions{nullptr},
-      // inputNames.data(), &(inputTensor[0]), 1,
-      // outputNames.data(), &(outputTensor[0]), 1
-      rawInputNames.data(), inputTensor.data(), inputNames.size(),
-      rawOutputNames.data(), outputTensor.data(), outputNames.size()
-    );
+    session->Run(Ort::RunOptions{nullptr},
+                 // inputNames.data(), &(inputTensor[0]), 1,
+                 // outputNames.data(), &(outputTensor[0]), 1
+                 rawInputNames.data(), inputTensor.data(), inputNames.size(), rawOutputNames.data(),
+                 outputTensor.data(), outputNames.size());
   }
 };
 
@@ -346,21 +343,20 @@ class ModelRVM : public ModelBCHW {
     hwc_to_chw(resizedImage, preprocessedImage);
   }
 
-  virtual void populateInputOutputNames(
-    const std::unique_ptr<Ort::Session>& session,
-    std::vector<Ort::AllocatedStringPtr>& inputNames,
-	  std::vector<Ort::AllocatedStringPtr>& outputNames
-  ) {
+  virtual void populateInputOutputNames(const std::unique_ptr<Ort::Session> &session,
+                                        std::vector<Ort::AllocatedStringPtr> &inputNames,
+                                        std::vector<Ort::AllocatedStringPtr> &outputNames)
+  {
     Ort::AllocatorWithDefaultOptions allocator;
 
     inputNames.clear();
     outputNames.clear();
 
     for (size_t i = 0; i < session->GetInputCount(); i++) {
-  	  inputNames.push_back(session->GetInputNameAllocated(i, allocator));
+      inputNames.push_back(session->GetInputNameAllocated(i, allocator));
     }
     for (size_t i = 1; i < session->GetOutputCount(); i++) {
-  	  outputNames.push_back(session->GetOutputNameAllocated(i, allocator));
+      outputNames.push_back(session->GetOutputNameAllocated(i, allocator));
     }
   }
 

@@ -30,36 +30,36 @@
 #include "plugin-macros.generated.h"
 #include "Model.h"
 
-const char* MODEL_SINET = "models/SINet_Softmax_simple.onnx";
-const char* MODEL_MODNET = "models/modnet_simple.onnx";
-const char* MODEL_MEDIAPIPE = "models/mediapipe.onnx";
-const char* MODEL_SELFIE = "models/selfie_segmentation.onnx";
-const char* MODEL_RVM = "models/rvm_mobilenetv3_fp32.onnx";
+const char *MODEL_SINET = "models/SINet_Softmax_simple.onnx";
+const char *MODEL_MODNET = "models/modnet_simple.onnx";
+const char *MODEL_MEDIAPIPE = "models/mediapipe.onnx";
+const char *MODEL_SELFIE = "models/selfie_segmentation.onnx";
+const char *MODEL_RVM = "models/rvm_mobilenetv3_fp32.onnx";
 
-const char* USEGPU_CPU = "cpu";
-const char* USEGPU_DML = "dml";
-const char* USEGPU_CUDA = "cuda";
+const char *USEGPU_CPU = "cpu";
+const char *USEGPU_DML = "dml";
+const char *USEGPU_CUDA = "cuda";
 
 struct background_removal_filter {
-	std::unique_ptr<Ort::Session> session;
-	std::unique_ptr<Ort::Env> env;
-	std::vector<Ort::AllocatedStringPtr> inputNames;
-	std::vector<Ort::AllocatedStringPtr> outputNames;
-	std::vector<Ort::Value> inputTensor;
-	std::vector<Ort::Value> outputTensor;
-	std::vector<std::vector<int64_t> > inputDims;
-	std::vector<std::vector<int64_t> > outputDims;
-	std::vector<std::vector<float> > outputTensorValues;
-	std::vector<std::vector<float> > inputTensorValues;
-	Ort::MemoryInfo memoryInfo;
-	float threshold = 0.5f;
-	cv::Scalar backgroundColor{0, 0, 0};
-	float contourFilter = 0.05f;
-	float smoothContour = 0.5f;
-	float feather = 0.0f;
-	std::string useGPU;
-	std::string modelSelection;
-	std::unique_ptr<Model> model;
+  std::unique_ptr<Ort::Session> session;
+  std::unique_ptr<Ort::Env> env;
+  std::vector<Ort::AllocatedStringPtr> inputNames;
+  std::vector<Ort::AllocatedStringPtr> outputNames;
+  std::vector<Ort::Value> inputTensor;
+  std::vector<Ort::Value> outputTensor;
+  std::vector<std::vector<int64_t>> inputDims;
+  std::vector<std::vector<int64_t>> outputDims;
+  std::vector<std::vector<float>> outputTensorValues;
+  std::vector<std::vector<float>> inputTensorValues;
+  Ort::MemoryInfo memoryInfo;
+  float threshold = 0.5f;
+  cv::Scalar backgroundColor{0, 0, 0};
+  float contourFilter = 0.05f;
+  float smoothContour = 0.5f;
+  float feather = 0.0f;
+  std::string useGPU;
+  std::string modelSelection;
+  std::unique_ptr<Model> model;
 
   // Use the media-io converter to both scale and convert the colorspace
   video_scaler_t *scalerToBGR;
