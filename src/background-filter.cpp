@@ -30,11 +30,11 @@
 #include "plugin-macros.generated.h"
 #include "Model.h"
 
-const char* MODEL_SINET = "model/SINet_Softmax_simple.onnx";
-const char* MODEL_MODNET = "model/modnet_simple.onnx";
-const char* MODEL_MEDIAPIPE = "model/mediapipe.onnx";
-const char* MODEL_SELFIE = "model/selfie_segmentation.onnx";
-const char* MODEL_RVM = "model/rvm_mobilenetv3_fp32.onnx";
+const char* MODEL_SINET = "models/SINet_Softmax_simple.onnx";
+const char* MODEL_MODNET = "models/modnet_simple.onnx";
+const char* MODEL_MEDIAPIPE = "models/mediapipe.onnx";
+const char* MODEL_SELFIE = "models/selfie_segmentation.onnx";
+const char* MODEL_RVM = "models/rvm_mobilenetv3_fp32.onnx";
 
 const char* USEGPU_CPU = "cpu";
 const char* USEGPU_DML = "dml";
