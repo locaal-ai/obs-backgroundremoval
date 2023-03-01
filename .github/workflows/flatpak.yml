@@ -1,0 +1,54 @@
+# This is a basic workflow that is manually triggered
+
+name: Build flatpak
+
+# Controls when the action will run. Workflow runs when manually triggered using the UI
+# or API.
+on:
+  workflow_dispatch: {}
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "greet"
+  build:
+    name: Build flatpak
+    runs-on: [ubuntu-latest]
+    strategy:
+      matrix:
+        arch: [x86_64]
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:kde-6.4
+      options: --privileged
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+
+      - name: 'Setup build environment'
+        id: setup
+        run: |
+          git config --global --add safe.directory $GITHUB_WORKSPACE
+          echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build Flatpak Manifest
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v5
+        with:
+          arch: ${{ matrix.arch }}
+          bundle: obs-studio-plugin-background-removal-${{ steps.setup.outputs.commitHash }}.flatpak
+          build-bundle: false
+          manifest-path: ci/flatpak/com.obsproject.Studio.Plugin.backgroundremoval.yaml
+          cache-key: flatpak-builder-${{ hashFiles('ci/flatpak/com.obsproject.Studio.Plugin.backgroundremoval.yaml') }}
+          branch: stable
+
+      # /__w/obs-backgroundremoval/obs-backgroundremoval/
+      - name: Build Bundle
+        shell: bash
+        run: |
+          flatpak build-bundle --runtime repo com.obs.Studio.Plugin.backgroundremoval-${{ steps.setup.outputs.commitHash }}.flatpak com.obsproject.Studio.Plugin.backgroundremoval stable
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: com.obs.Studio.Plugin.backgroundremoval-${{ steps.setup.outputs.commitHash }}.flatpak
+          path: com.obs.Studio.Plugin.backgroundremoval-${{ steps.setup.outputs.commitHash }}.flatpak

@@ -2,8 +2,8 @@
 #define MODEL_H
 
 #if defined(__APPLE__)
-#include <onnxruntime/core/session/onnxruntime_cxx_api.h>
-#include <onnxruntime/core/providers/cpu/cpu_provider_factory.h>
+#include <core/session/onnxruntime_cxx_api.h>
+#include <core/providers/cpu/cpu_provider_factory.h>
 #else
 #include <onnxruntime_cxx_api.h>
 #include <cpu_provider_factory.h>
@@ -19,14 +19,13 @@
 #include <wchar.h>
 #endif
 
-template <typename T>
-T vectorProduct(const std::vector<T>& v)
+template<typename T> T vectorProduct(const std::vector<T> &v)
 {
   return accumulate(v.begin(), v.end(), (T)1, std::multiplies<T>());
 }
 
-
-static void hwc_to_chw(cv::InputArray src, cv::OutputArray dst) {
+static void hwc_to_chw(cv::InputArray src, cv::OutputArray dst)
+{
   std::vector<cv::Mat> channels;
   cv::split(src, channels);
 
@@ -36,27 +35,30 @@ static void hwc_to_chw(cv::InputArray src, cv::OutputArray dst) {
   }
 
   // Concatenate three vectors to one
-  cv::hconcat( channels, dst );
+  cv::hconcat(channels, dst);
 }
 
-
-class Model
-{
-private:
+/**
+  * @brief Base class for all models
+  *
+*/
+class Model {
+  private:
   /* data */
-public:
-  Model(/* args */) {};
-  ~Model() {};
+  public:
+  Model(/* args */){};
+  virtual ~Model(){};
 
-  const char* name;
+  const char *name;
 
 #if _WIN32
   const std::wstring
 #else
   const std::string
 #endif
-  getModelFilepath(const std::string& modelSelection) {
-    char* modelFilepath_rawPtr = obs_module_file(modelSelection.c_str());
+  getModelFilepath(const std::string &modelSelection)
+  {
+    char *modelFilepath_rawPtr = obs_module_file(modelSelection.c_str());
 
     if (modelFilepath_rawPtr == nullptr) {
       blog(LOG_ERROR, "Unable to get model filename %s from plugin.", modelSelection.c_str());
@@ -71,10 +73,9 @@ public:
     std::copy(modelFilepath_s.begin(), modelFilepath_s.end(), modelFilepath_ws.begin());
     return modelFilepath_ws;
 #else
-	  return modelFilepath_s;
+    return modelFilepath_s;
 #endif
   }
-
 
   virtual void populateInputOutputNames(
     const std::unique_ptr<Ort::Session>& session,
@@ -89,12 +90,10 @@ public:
   	outputNames.push_back(session->GetOutputNameAllocated(0, allocator));
   }
 
-
-  virtual bool populateInputOutputShapes(
-    const std::unique_ptr<Ort::Session>& session,
-    std::vector<std::vector<int64_t> >& inputDims,
-    std::vector<std::vector<int64_t> >& outputDims
-  ) {
+  virtual bool populateInputOutputShapes(const std::unique_ptr<Ort::Session> &session,
+                                         std::vector<std::vector<int64_t>> &inputDims,
+                                         std::vector<std::vector<int64_t>> &outputDims)
+  {
     // Assuming model only has one input and one output image
 
     inputDims.clear();
@@ -115,21 +114,20 @@ public:
 
     if (inputDims[0].size() < 3 || outputDims[0].size() < 3) {
       blog(LOG_ERROR, "Input or output tensor dims are < 3. input = %d, output = %d",
-        (int)inputDims.size(), (int)outputDims.size());
+           (int)inputDims.size(), (int)outputDims.size());
       return false;
     }
 
     return true;
   }
 
-  virtual void allocateTensorBuffers(
-    const std::vector<std::vector<int64_t> >& inputDims,
-    const std::vector<std::vector<int64_t> >& outputDims,
-    std::vector<std::vector<float> >& outputTensorValues,
-  	std::vector<std::vector<float> >& inputTensorValues,
-    std::vector<Ort::Value>& inputTensor,
-    std::vector<Ort::Value>& outputTensor
-  ) {
+  virtual void allocateTensorBuffers(const std::vector<std::vector<int64_t>> &inputDims,
+                                     const std::vector<std::vector<int64_t>> &outputDims,
+                                     std::vector<std::vector<float>> &outputTensorValues,
+                                     std::vector<std::vector<float>> &inputTensorValues,
+                                     std::vector<Ort::Value> &inputTensor,
+                                     std::vector<Ort::Value> &outputTensor)
+  {
     // Assuming model only has one input and one output images
 
     outputTensorValues.clear();
@@ -138,62 +136,54 @@ public:
     inputTensorValues.clear();
     inputTensor.clear();
 
-    Ort::MemoryInfo memoryInfo = Ort::MemoryInfo::CreateCpu(
-      OrtAllocatorType::OrtDeviceAllocator, OrtMemType::OrtMemTypeDefault);
+    Ort::MemoryInfo memoryInfo = Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtDeviceAllocator,
+                                                            OrtMemType::OrtMemTypeDefault);
 
     // Allocate buffers and build input and output tensors
 
     for (size_t i = 0; i < inputDims.size(); i++) {
       inputTensorValues.push_back(std::vector<float>(vectorProduct(inputDims[i]), 0.0f));
-      blog(LOG_INFO, "Allocated %d sized float-array for input %d", (int)inputTensorValues[i].size(), (int)i);
+      blog(LOG_INFO, "Allocated %d sized float-array for input %d",
+           (int)inputTensorValues[i].size(), (int)i);
       inputTensor.push_back(Ort::Value::CreateTensor<float>(
-        memoryInfo,
-        inputTensorValues[i].data(),
-        inputTensorValues[i].size(),
-        inputDims[i].data(),
+        memoryInfo, inputTensorValues[i].data(), inputTensorValues[i].size(), inputDims[i].data(),
         inputDims[i].size()));
     }
 
     for (size_t i = 0; i < outputDims.size(); i++) {
       outputTensorValues.push_back(std::vector<float>(vectorProduct(outputDims[i]), 0.0f));
-      blog(LOG_INFO, "Allocated %d sized float-array for output %d", (int)outputTensorValues[i].size(), (int)i);
+      blog(LOG_INFO, "Allocated %d sized float-array for output %d",
+           (int)outputTensorValues[i].size(), (int)i);
       outputTensor.push_back(Ort::Value::CreateTensor<float>(
-        memoryInfo,
-        outputTensorValues[i].data(),
-        outputTensorValues[i].size(),
-        outputDims[i].data(),
-        outputDims[i].size()));
+        memoryInfo, outputTensorValues[i].data(), outputTensorValues[i].size(),
+        outputDims[i].data(), outputDims[i].size()));
     }
   }
 
-  virtual void getNetworkInputSize(
-    const std::vector<std::vector<int64_t> >& inputDims,
-    uint32_t& inputWidth, uint32_t& inputHeight
-  ) {
+  virtual void getNetworkInputSize(const std::vector<std::vector<int64_t>> &inputDims,
+                                   uint32_t &inputWidth, uint32_t &inputHeight)
+  {
     // BHWC
-    inputWidth  = (int)inputDims[0][2];
+    inputWidth = (int)inputDims[0][2];
     inputHeight = (int)inputDims[0][1];
   }
 
-  virtual void prepareInputToNetwork(cv::Mat& resizedImage, cv::Mat& preprocessedImage) {
+  virtual void prepareInputToNetwork(cv::Mat &resizedImage, cv::Mat &preprocessedImage)
+  {
     preprocessedImage = resizedImage / 255.0;
   }
 
-  virtual void loadInputToTensor(
-    const cv::Mat& preprocessedImage,
-    uint32_t inputWidth,
-    uint32_t inputHeight,
-    std::vector<std::vector<float> >& inputTensorValues
-  ) {
-    preprocessedImage.copyTo(cv::Mat(inputHeight, inputWidth, CV_32FC3, &(inputTensorValues[0][0])));
+  virtual void loadInputToTensor(const cv::Mat &preprocessedImage, uint32_t inputWidth,
+                                 uint32_t inputHeight,
+                                 std::vector<std::vector<float>> &inputTensorValues)
+  {
+    preprocessedImage.copyTo(
+      cv::Mat(inputHeight, inputWidth, CV_32FC3, &(inputTensorValues[0][0])));
   }
 
-  virtual cv::Mat getNetworkOutput(
-    const std::vector<std::vector<int64_t> >& outputDims,
-    std::vector<std::vector<float> >& outputTensorValues,
-    std::vector<std::vector<int64_t> >& inputDims,
-    std::vector<std::vector<float> >& inputTensorValues
-  ) {
+  virtual cv::Mat getNetworkOutput(const std::vector<std::vector<int64_t>> &outputDims,
+                                   std::vector<std::vector<float>> &outputTensorValues)
+  {
     // BHWC
     uint32_t outputWidth = (int)outputDims[0].at(2);
     uint32_t outputHeight = (int)outputDims[0].at(1);
@@ -202,7 +192,10 @@ public:
     return cv::Mat(outputHeight, outputWidth, outputChannels, outputTensorValues[0].data());
   }
 
-  virtual void postprocessOutput(cv::Mat& outputImage) {}
+  virtual void assignOutputToInput(std::vector<std::vector<float>> &,
+                                   std::vector<std::vector<float>> &)
+  {
+  }
 
   virtual void runNetworkInference(
     const std::unique_ptr<Ort::Session>& session,
@@ -236,35 +229,29 @@ public:
   }
 };
 
-
-class ModelSelfie : public Model
-{
-private:
+class ModelSelfie : public Model {
+  private:
   /* data */
-public:
+  public:
   ModelSelfie(/* args */) {}
   ~ModelSelfie() {}
 
-  virtual void postprocessOutput(cv::Mat& outputImage) {
+  virtual void postprocessOutput(cv::Mat &outputImage)
+  {
     cv::normalize(outputImage, outputImage, 1.0, 0.0, cv::NORM_MINMAX);
   }
 };
 
-
-class ModelMediaPipe : public Model
-{
-private:
+class ModelMediaPipe : public Model {
+  private:
   /* data */
-public:
+  public:
   ModelMediaPipe(/* args */) {}
   ~ModelMediaPipe() {}
 
-  virtual cv::Mat getNetworkOutput(
-    const std::vector<std::vector<int64_t> >& outputDims,
-    std::vector<std::vector<float> >& outputTensorValues,
-    std::vector<std::vector<int64_t> >& inputDims,
-    std::vector<std::vector<float> >& inputTensorValues
-  ) {
+  virtual cv::Mat getNetworkOutput(const std::vector<std::vector<int64_t>> &outputDims,
+                                   std::vector<std::vector<float>> &outputTensorValues)
+  {
     uint32_t outputWidth = (int)outputDims[0].at(2);
     uint32_t outputHeight = (int)outputDims[0].at(1);
     int32_t outputChannels = CV_32FC2;
@@ -272,7 +259,8 @@ public:
     return cv::Mat(outputHeight, outputWidth, outputChannels, outputTensorValues[0].data());
   }
 
-  virtual void postprocessOutput(cv::Mat& outputImage) {
+  virtual void postprocessOutput(cv::Mat &outputImage)
+  {
     // take 1st channel
     std::vector<cv::Mat> outputImageSplit;
     cv::split(outputImage, outputImageSplit);
@@ -287,28 +275,22 @@ public:
   }
 };
 
-
-class ModelBCHW : public Model
-{
-public:
+class ModelBCHW : public Model {
+  public:
   ModelBCHW(/* args */) {}
   ~ModelBCHW() {}
 
-  virtual void getNetworkInputSize(
-    const std::vector<std::vector<int64_t> >& inputDims,
-    uint32_t& inputWidth, uint32_t& inputHeight
-  ) {
+  virtual void getNetworkInputSize(const std::vector<std::vector<int64_t>> &inputDims,
+                                   uint32_t &inputWidth, uint32_t &inputHeight)
+  {
     // BCHW
-    inputWidth  = (int)inputDims[0][3];
+    inputWidth = (int)inputDims[0][3];
     inputHeight = (int)inputDims[0][2];
   }
 
-  virtual cv::Mat getNetworkOutput(
-    const std::vector<std::vector<int64_t> >& outputDims,
-    std::vector<std::vector<float> >& outputTensorValues,
-    std::vector<std::vector<int64_t> >& inputDims,
-    std::vector<std::vector<float> >& inputTensorValues
-  ) {
+  virtual cv::Mat getNetworkOutput(const std::vector<std::vector<int64_t>> &outputDims,
+                                   std::vector<std::vector<float>> &outputTensorValues)
+  {
     // BCHW
     uint32_t outputWidth = (int)outputDims[0].at(3);
     uint32_t outputHeight = (int)outputDims[0].at(2);
@@ -317,56 +299,49 @@ public:
     return cv::Mat(outputHeight, outputWidth, outputChannels, outputTensorValues[0].data());
   }
 
-  virtual void loadInputToTensor(
-    const cv::Mat& preprocessedImage,
-    uint32_t inputWidth,
-    uint32_t inputHeight,
-    std::vector<std::vector<float> >& inputTensorValues
-  ) {
-    inputTensorValues[0].assign(
-      preprocessedImage.begin<float>(),
-      preprocessedImage.end<float>()
-    );
+  virtual void loadInputToTensor(const cv::Mat &preprocessedImage, uint32_t, uint32_t,
+                                 std::vector<std::vector<float>> &inputTensorValues)
+  {
+    inputTensorValues[0].assign(preprocessedImage.begin<float>(), preprocessedImage.end<float>());
   }
 };
 
-
-class ModelSINET : public ModelBCHW
-{
-public:
+class ModelSINET : public ModelBCHW {
+  public:
   ModelSINET(/* args */) {}
   ~ModelSINET() {}
 
-  virtual void prepareInputToNetwork(cv::Mat& resizedImage, cv::Mat& preprocessedImage) {
+  virtual void prepareInputToNetwork(cv::Mat &resizedImage, cv::Mat &preprocessedImage)
+  {
     cv::subtract(resizedImage, cv::Scalar(102.890434, 111.25247, 126.91212), resizedImage);
-    cv::multiply(resizedImage, cv::Scalar(1.0 / 62.93292,  1.0 / 62.82138, 1.0 / 66.355705) / 255.0, resizedImage);
+    cv::multiply(resizedImage, cv::Scalar(1.0 / 62.93292, 1.0 / 62.82138, 1.0 / 66.355705) / 255.0,
+                 resizedImage);
     hwc_to_chw(resizedImage, preprocessedImage);
   }
 };
 
-
-class ModelMODNET : public ModelBCHW
-{
-public:
+class ModelMODNET : public ModelBCHW {
+  public:
   ModelMODNET(/* args */) {}
   ~ModelMODNET() {}
 
-  virtual void prepareInputToNetwork(cv::Mat& resizedImage, cv::Mat& preprocessedImage) {
+  virtual void prepareInputToNetwork(cv::Mat &resizedImage, cv::Mat &preprocessedImage)
+  {
     cv::subtract(resizedImage, cv::Scalar::all(127.5), resizedImage);
     resizedImage = resizedImage / 127.5;
     hwc_to_chw(resizedImage, preprocessedImage);
   }
 };
 
-class ModelRVM : public ModelBCHW
-{
-private:
+class ModelRVM : public ModelBCHW {
+  private:
   /* data */
-public:
+  public:
   ModelRVM(/* args */) {}
   ~ModelRVM() {}
 
-  virtual void prepareInputToNetwork(cv::Mat& resizedImage, cv::Mat& preprocessedImage) {
+  virtual void prepareInputToNetwork(cv::Mat &resizedImage, cv::Mat &preprocessedImage)
+  {
     resizedImage = resizedImage / 256.0;
     hwc_to_chw(resizedImage, preprocessedImage);
   }
@@ -389,11 +364,10 @@ public:
     }
   }
 
-  virtual bool populateInputOutputShapes(
-    const std::unique_ptr<Ort::Session>& session,
-    std::vector<std::vector<int64_t> >& inputDims,
-    std::vector<std::vector<int64_t> >& outputDims
-  ) {
+  virtual bool populateInputOutputShapes(const std::unique_ptr<Ort::Session> &session,
+                                         std::vector<std::vector<int64_t>> &inputDims,
+                                         std::vector<std::vector<int64_t>> &outputDims)
+  {
     // Assuming model only has one input and one output image
 
     inputDims.clear();
@@ -432,37 +406,32 @@ public:
       outputDims[i][3] = 192 / std::pow(2, i);
     }
     return true;
-	}
+  }
 
-  virtual void loadInputToTensor(
-    const cv::Mat& preprocessedImage,
-    uint32_t inputWidth,
-    uint32_t inputHeight,
-    std::vector<std::vector<float> >& inputTensorValues
-  ) {
-    inputTensorValues[0].assign(
-      preprocessedImage.begin<float>(),
-      preprocessedImage.end<float>()
-    );
+  virtual void loadInputToTensor(const cv::Mat &preprocessedImage, uint32_t, uint32_t,
+                                 std::vector<std::vector<float>> &inputTensorValues)
+  {
+    inputTensorValues[0].assign(preprocessedImage.begin<float>(), preprocessedImage.end<float>());
     inputTensorValues[5][0] = 1.0f;
   }
 
-  virtual cv::Mat getNetworkOutput(
-    const std::vector<std::vector<int64_t> >& outputDims,
-    std::vector<std::vector<float> >& outputTensorValues,
-    std::vector<std::vector<int64_t> >& inputDims,
-    std::vector<std::vector<float> >& inputTensorValues
-  ) {
+  virtual cv::Mat getNetworkOutput(const std::vector<std::vector<int64_t>> &outputDims,
+                                   std::vector<std::vector<float>> &outputTensorValues)
+  {
     // BCHW
     uint32_t outputWidth = (int)outputDims[0].at(3);
     uint32_t outputHeight = (int)outputDims[0].at(2);
     int32_t outputChannels = CV_32FC1;
 
+    return cv::Mat(outputHeight, outputWidth, outputChannels, outputTensorValues[0].data());
+  }
+
+  virtual void assignOutputToInput(std::vector<std::vector<float>> &outputTensorValues,
+                                   std::vector<std::vector<float>> &inputTensorValues)
+  {
     for (size_t i = 1; i < 5; i++) {
       inputTensorValues[i].assign(outputTensorValues[i].begin(), outputTensorValues[i].end());
     }
-
-    return cv::Mat(outputHeight, outputWidth, outputChannels, outputTensorValues[0].data());
   }
 };
 

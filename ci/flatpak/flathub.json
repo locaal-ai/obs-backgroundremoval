@@ -1,0 +1,4 @@
+{
+    "skip-icons-check": true,
+    "only-arches": ["x86_64"]
+}
