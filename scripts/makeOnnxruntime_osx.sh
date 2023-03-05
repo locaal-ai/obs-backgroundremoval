@@ -57,7 +57,7 @@ ONNXRT_TAR_FILENAME="onnxruntime-$ONNXRT_VER-$TARGET_ARCH.tar.gz"
 ONNXRT_TAR_LOCATION="${WORK_DIR}/${ONNXRT_TAR_FILENAME}"
 if [[ ! -f $ONNXRT_TAR_LOCATION ]]; then
     echo "onnxruntime tar file not found in $ONNXRT_TAR_LOCATION, downloading from s3"
-    wget -q -O $ONNXRT_TAR_LOCATION https://obs-backgroundremoval-build.s3.amazonaws.com/$ONNXRT_TAR_FILENAME
+    wget -q -O $ONNXRT_TAR_LOCATION https://obs-backgroundremoval-build.s3.amazonaws.com/$ONNXRT_TAR_FILENAME || true
 fi
 if [[ ! -f $ONNXRT_TAR_LOCATION ]]; then
     echo "onnxruntime tar file not found in $ONNXRT_TAR_LOCATION, cannot download from s3"

@@ -62,7 +62,7 @@ OPENCV_TAR_LOCATION="${WORK_DIR}/${OPENCV_TAR_FILENAME}"
 
 if [[ ! -f $OPENCV_TAR_LOCATION ]]; then
     echo "downloading opencv from s3"
-    wget -q "https://obs-backgroundremoval-build.s3.amazonaws.com/$OPENCV_TAR_FILENAME" -O ${OPENCV_TAR_LOCATION}
+    wget -q "https://obs-backgroundremoval-build.s3.amazonaws.com/$OPENCV_TAR_FILENAME" -O ${OPENCV_TAR_LOCATION} || true
 fi
 if [[ ! -f $OPENCV_TAR_LOCATION ]]; then
     echo "failed to download opencv from s3"
