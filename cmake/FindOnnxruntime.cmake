@@ -50,7 +50,8 @@ if(Onnxruntime_FOUND)
       CACHE STRING "Onnxruntime include directories")
   if(APPLE)
     set(Onnxruntime_INCLUDE_DIRS ${Onnxruntime_INCLUDE_DIRS}
-                                 ${Onnxruntime_INCLUDE_DIR}/core/session)
+                                 ${Onnxruntime_INCLUDE_DIR}/onnxruntime
+                                 ${Onnxruntime_INCLUDE_DIR}/onnxruntime/core/session)
   endif()
   list(GET Onnxruntime_LIBRARIES 0 Onnxruntime_LIBRARY)
   get_filename_component(Onnxruntime_LIBRARY_DIR_EX ${Onnxruntime_LIBRARY} DIRECTORY)

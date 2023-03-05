@@ -49,9 +49,15 @@ if [[ ! $( which wget ) ]]; then
     echo "wget is not available, please install it e.g. `$ brew install wget`"
     exit 1
 fi
+
+if [[ ! -d $WORK_DIR ]]; then
+    echo "creating work directory $WORK_DIR"
+    mkdir -p $WORK_DIR
+fi
+
 OPENCV_TAR_FILENAME="opencv-4.5.2-x86_64.tar.gz"
 OPENCV_TAR_LOCATION="${WORK_DIR}/${OPENCV_TAR_FILENAME}"
-wget https://obs-backgroundremoval-build.s3.amazonaws.com/opencv-4.5.2-x86_64.tar.gz -O ${OPENCV_TAR_LOCATION}
+wget -q https://obs-backgroundremoval-build.s3.amazonaws.com/opencv-4.5.2-x86_64.tar.gz -O ${OPENCV_TAR_LOCATION}
 
 if [[ ! -f $OPENCV_TAR_LOCATION ]]; then
     echo "failed to download opencv from s3"
@@ -75,10 +81,6 @@ echo "building opencv from source"
 
 if [[ -d $OUTPUT_DIR ]]; then
     rm -rf $OUTPUT_DIR
-fi
-
-if [[ ! -d $WORK_DIR ]]; then
-    mkdir -p $WORK_DIR
 fi
 
 cd $WORK_DIR
