@@ -6,6 +6,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 WORK_DIR="${SCRIPT_DIR}/../build"
 CURRENT_DIR=$(pwd)
 OUTPUT_DIR=$WORK_DIR/opencv
+TARGET_ARCH=$1
+OPENCV_VER=4.5.2
 
 function verify_opencv_exists() {
     # check that opencv libraries and include files exist
@@ -55,25 +57,28 @@ if [[ ! -d $WORK_DIR ]]; then
     mkdir -p $WORK_DIR
 fi
 
-OPENCV_TAR_FILENAME="opencv-4.5.2-x86_64.tar.gz"
+OPENCV_TAR_FILENAME="opencv-$OPENCV_VER-$TARGET_ARCH.tar.gz"
 OPENCV_TAR_LOCATION="${WORK_DIR}/${OPENCV_TAR_FILENAME}"
-wget -q https://obs-backgroundremoval-build.s3.amazonaws.com/opencv-4.5.2-x86_64.tar.gz -O ${OPENCV_TAR_LOCATION}
 
 if [[ ! -f $OPENCV_TAR_LOCATION ]]; then
-    echo "failed to download opencv from s3"
-    exit 1
+    echo "downloading opencv from s3"
+    wget -q "https://obs-backgroundremoval-build.s3.amazonaws.com/$OPENCV_TAR_FILENAME" -O ${OPENCV_TAR_LOCATION}
 fi
+if [[ ! -f $OPENCV_TAR_LOCATION ]]; then
+    echo "failed to download opencv from s3"
+else
+    # extract opencv if downloaded
+    echo "downloaded opencv from s3"
+    echo "extracting opencv"
+    cd "${SCRIPT_DIR}/../"
+    tar xzf ${OPENCV_TAR_LOCATION}
+    rm ${OPENCV_TAR_LOCATION}
+    cd "${CURRENT_DIR}"
 
-# extract opencv if downloaded
-echo "extracting opencv"
-cd "${SCRIPT_DIR}/../"
-tar xzf ${OPENCV_TAR_LOCATION}
-rm ${OPENCV_TAR_LOCATION}
-cd "${CURRENT_DIR}"
-
-if verify_opencv_exists; then
-    echo "opencv successfully downloaded from s3"
-    exit 0
+    if verify_opencv_exists; then
+        echo "opencv successfully downloaded from s3"
+        exit 0
+    fi
 fi
 
 # build opencv from source
@@ -86,17 +91,17 @@ fi
 cd $WORK_DIR
 
 # download opencv if not already downloaded
-if [[ ! -d opencv-4.5.2 ]]; then
+if [[ ! -d opencv-$OPENCV_VER ]]; then
     if [[ ! $( which wget ) ]]; then
         echo "wget is not available, please install it e.g. `$ brew install wget`"
         exit 1
     fi
-    wget https://github.com/opencv/opencv/archive/refs/tags/4.5.2.tar.gz
-    tar xzf 4.5.2.tar.gz
-    rm 4.5.2.tar.gz
+    wget https://github.com/opencv/opencv/archive/refs/tags/$OPENCV_VER.tar.gz
+    tar xzf $OPENCV_VER.tar.gz
+    rm $OPENCV_VER.tar.gz
 fi
 
-cd opencv-4.5.2/
+cd opencv-$OPENCV_VER/
 
 if [[ ! -d build ]]; then
     mkdir build
@@ -174,5 +179,9 @@ cmake .. \
     -DWITH_ADE=OFF \
     && \
     cmake --build . --target install -- -j8
+
+# tar opencv
+cd "${SCRIPT_DIR}/../"
+tar czf $OPENCV_TAR_LOCATION opencv-$OPENCV_VER
 
 cd "$CURRENT_DIR"

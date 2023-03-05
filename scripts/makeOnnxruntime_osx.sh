@@ -7,6 +7,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 WORK_DIR="${SCRIPT_DIR}/../build"
 CURRENT_DIR=$(pwd)
 OUTPUT_DIR=$WORK_DIR/onnxruntime
+TARGET_ARCH=$1
+ONNXRT_VER=1.14.0
 
 function verify_onnxruntime_exists() {
     # check that onnxruntime libraries and include files exist
@@ -41,7 +43,6 @@ if verify_onnxruntime_exists; then
 fi
 
 # try to download onnxruntime from s3 if not already downloaded, use wget if available
-# https://obs-backgroundremoval-build.s3.amazonaws.com/onnxruntime-1.14.0-x86_64.tar.gz
 if [[ ! $( which wget ) ]]; then
     echo "wget is not available, please install it e.g. `$ brew install wget`"
     exit 1
@@ -52,28 +53,27 @@ if [[ ! -d $WORK_DIR ]]; then
     mkdir -p $WORK_DIR
 fi
 
-ONNXRT_TAR_FILENAME="onnxruntime-1.14.0-x86_64.tar.gz"
+ONNXRT_TAR_FILENAME="onnxruntime-$ONNXRT_VER-$TARGET_ARCH.tar.gz"
 ONNXRT_TAR_LOCATION="${WORK_DIR}/${ONNXRT_TAR_FILENAME}"
 if [[ ! -f $ONNXRT_TAR_LOCATION ]]; then
     echo "onnxruntime tar file not found in $ONNXRT_TAR_LOCATION, downloading from s3"
     wget -q -O $ONNXRT_TAR_LOCATION https://obs-backgroundremoval-build.s3.amazonaws.com/$ONNXRT_TAR_FILENAME
 fi
 if [[ ! -f $ONNXRT_TAR_LOCATION ]]; then
-    echo "onnxruntime tar file not found in $ONNXRT_TAR_LOCATION"
-    exit 1
-fi
-echo "onnxruntime tar file found in $ONNXRT_TAR_LOCATION"
+    echo "onnxruntime tar file not found in $ONNXRT_TAR_LOCATION, cannot download from s3"
+else
+    echo "onnxruntime tar file found in $ONNXRT_TAR_LOCATION"
+    cd "${WORK_DIR}/.."
+    echo "extracting onnxruntime tar file"
+    tar -xzf $ONNXRT_TAR_LOCATION
+    rm $ONNXRT_TAR_LOCATION
+    cd $CURRENT_DIR
 
-cd "${WORK_DIR}/.."
-echo "extracting onnxruntime tar file"
-tar -xzf $ONNXRT_TAR_LOCATION
-rm $ONNXRT_TAR_LOCATION
-cd $CURRENT_DIR
-
-# verify onnxruntime exists
-if verify_onnxruntime_exists; then
-    echo "onnxruntime successfully downloaded and extracted"
-    exit 0
+    # verify onnxruntime exists
+    if verify_onnxruntime_exists; then
+        echo "onnxruntime successfully downloaded and extracted"
+        exit 0
+    fi
 fi
 
 # build onnxruntime from source
@@ -85,7 +85,6 @@ fi
 
 cd $WORK_DIR
 
-ONNXRT_VER=1.14.0
 ONNXRT_DIR=$WORK_DIR/onnxruntime-$ONNXRT_VER
 
 if [[ ! -d $ONNXRT_DIR ]]; then
@@ -105,5 +104,9 @@ mkdir -p $OUTPUT_DIR/lib
 for f in $( find . -name "lib*.a" ); do
     cp $f $OUTPUT_DIR/lib
 done
+
+# tar onnxruntime
+cd "${WORK_DIR}/.."
+tar -czf $ONNXRT_TAR_LOCATION onnxruntime
 
 cd $CURRENT_DIR

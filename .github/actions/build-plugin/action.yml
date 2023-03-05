@@ -35,8 +35,8 @@ runs:
       run: |
         set -e
 
-        ${{ inputs.workingDirectory }}/scripts/makeOnnxruntime_osx.sh
-        ${{ inputs.workingDirectory }}/scripts/makeOpenCV_osx.sh
+        ${{ inputs.workingDirectory }}/scripts/makeOnnxruntime_osx.sh ${{ inputs.target }}
+        ${{ inputs.workingDirectory }}/scripts/makeOpenCV_osx.sh ${{ inputs.target }}
 
         build_args=(
           -c ${{ inputs.config }}

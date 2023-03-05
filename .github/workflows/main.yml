@@ -47,7 +47,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        arch: [x86_64] # arm64, universal
+        arch: [x86_64, arm64] # universal
     if: always()
     needs: [clang_check]
     outputs:
@@ -169,7 +169,9 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ env.PLUGIN_NAME }}-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}
-          path: ${{ github.workspace }}/plugin/release/${{ env.PLUGIN_NAME }}-*-macos-${{ matrix.arch }}.pkg
+          path: |
+            ${{ github.workspace }}/plugin/release/${{ env.PLUGIN_NAME }}-*-macos-${{ matrix.arch }}.pkg
+            ${{ github.workspace }}/plugin/build/*.tar.gz
 
   linux_build:
     name: 02 - Linux
