@@ -46,6 +46,12 @@ if [[ ! $( which wget ) ]]; then
     echo "wget is not available, please install it e.g. `$ brew install wget`"
     exit 1
 fi
+
+if [[ ! -d $WORK_DIR ]]; then
+    echo "creating work directory $WORK_DIR"
+    mkdir -p $WORK_DIR
+fi
+
 ONNXRT_TAR_FILENAME="onnxruntime-1.14.0-x86_64.tar.gz"
 ONNXRT_TAR_LOCATION="${WORK_DIR}/${ONNXRT_TAR_FILENAME}"
 if [[ ! -f $ONNXRT_TAR_LOCATION ]]; then
@@ -75,10 +81,6 @@ echo "building onnxruntime from source"
 
 if [[ -d $OUTPUT_DIR ]]; then
     rm -rf $OUTPUT_DIR
-fi
-
-if [[ ! -d $WORK_DIR ]]; then
-    mkdir -p $WORK_DIR
 fi
 
 cd $WORK_DIR
