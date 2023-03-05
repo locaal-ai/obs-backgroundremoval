@@ -116,6 +116,7 @@ add_dependencies(Onnxruntime Ort)
 target_include_directories(
   Onnxruntime
   INTERFACE ${INSTALL_DIR}/include
+            ${INSTALL_DIR}/include/onnxruntime
             ${INSTALL_DIR}/include/onnxruntime/core/session
             ${INSTALL_DIR}/include/onnxruntime/core/providers/cpu
             ${INSTALL_DIR}/include/onnxruntime/core/providers/cuda
