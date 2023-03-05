@@ -18,7 +18,6 @@ on:
 
 env:
   PLUGIN_NAME: 'obs-backgroundremoval'
-  CCACHE_SIZE: '4096M'
 
 jobs:
   clang_check:

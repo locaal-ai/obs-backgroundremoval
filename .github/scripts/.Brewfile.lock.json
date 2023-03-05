@@ -393,7 +393,7 @@
   "system": {
     "macos": {
       "ventura": {
-        "HOMEBREW_VERSION": "4.0.3-142-g0172ad1",
+        "HOMEBREW_VERSION": "4.0.3-149-g66303bd",
         "HOMEBREW_PREFIX": "/usr/local",
         "Homebrew/homebrew-core": "api",
         "CLT": "14.2.0.0.1.1668646533",

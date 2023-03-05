@@ -1,15 +1,86 @@
 #!/bin/bash
 
-WORK_DIR=$(git rev-parse --show-toplevel)/build
+set -e
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+WORK_DIR="${SCRIPT_DIR}/../build"
 CURRENT_DIR=$(pwd)
 OUTPUT_DIR=$WORK_DIR/opencv
 
-if [[ -d $OUTPUT_DIR ]]; then
-    rm -rf $OUTPUT_DIR
+function verify_opencv_exists() {
+    # check that opencv libraries and include files exist
+    if [[ ! -d $OUTPUT_DIR ]]; then
+        echo "opencv not found in $OUTPUT_DIR"
+        return 1
+    fi
+    if [[ ! -d $OUTPUT_DIR/include ]]; then
+        echo "opencv include files not found in $OUTPUT_DIR/include"
+        return 1
+    fi
+    if [[ ! -d $OUTPUT_DIR/lib ]]; then
+        echo "opencv libraries not found in $OUTPUT_DIR/lib"
+        return 1
+    fi
+    if [[ ! -f $OUTPUT_DIR/lib/libopencv_core.a ]]; then
+        echo "opencv core library not found in $OUTPUT_DIR/lib/libopencv_core.a"
+        return 1
+    fi
+    if [[ ! -f $OUTPUT_DIR/lib/libopencv_imgproc.a ]]; then
+        echo "opencv imgproc library not found in $OUTPUT_DIR/lib/libopencv_imgproc.a"
+        return 1
+    fi
+    if [[ ! -f $OUTPUT_DIR/include/opencv4/opencv2/opencv.hpp ]]; then
+        echo "opencv includes not found in $OUTPUT_DIR/include/opencv4/opencv2/opencv.hpp"
+        return 1
+    fi
+    echo "opencv found in $OUTPUT_DIR"
+    return 0
+}
+
+# check if opencv is already built using verify_opencv_exists
+if verify_opencv_exists; then
+    echo "opencv already built"
+    exit 0
+fi
+
+# try to download opencv from s3 if not already downloaded, use wget if available
+echo "downloading opencv from s3"
+if [[ ! $( which wget ) ]]; then
+    echo "wget is not available, please install it e.g. `$ brew install wget`"
+    exit 1
 fi
 
 if [[ ! -d $WORK_DIR ]]; then
+    echo "creating work directory $WORK_DIR"
     mkdir -p $WORK_DIR
+fi
+
+OPENCV_TAR_FILENAME="opencv-4.5.2-x86_64.tar.gz"
+OPENCV_TAR_LOCATION="${WORK_DIR}/${OPENCV_TAR_FILENAME}"
+wget -q https://obs-backgroundremoval-build.s3.amazonaws.com/opencv-4.5.2-x86_64.tar.gz -O ${OPENCV_TAR_LOCATION}
+
+if [[ ! -f $OPENCV_TAR_LOCATION ]]; then
+    echo "failed to download opencv from s3"
+    exit 1
+fi
+
+# extract opencv if downloaded
+echo "extracting opencv"
+cd "${SCRIPT_DIR}/../"
+tar xzf ${OPENCV_TAR_LOCATION}
+rm ${OPENCV_TAR_LOCATION}
+cd "${CURRENT_DIR}"
+
+if verify_opencv_exists; then
+    echo "opencv successfully downloaded from s3"
+    exit 0
+fi
+
+# build opencv from source
+echo "building opencv from source"
+
+if [[ -d $OUTPUT_DIR ]]; then
+    rm -rf $OUTPUT_DIR
 fi
 
 cd $WORK_DIR

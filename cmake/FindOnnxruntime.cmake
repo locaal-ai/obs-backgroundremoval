@@ -4,21 +4,17 @@
 # directory of onnxruntime libraries
 
 if(APPLE)
-  # use pkg-config to find the onnxruntime library
-  find_package(PkgConfig REQUIRED)
+  set(Onnxruntime_DIR_BUILD ${CMAKE_SOURCE_DIR}/build/onnxruntime)
+  file(GLOB Onnxruntime_LIBRARIES_EX ${Onnxruntime_DIR_BUILD}/lib/lib*.a)
 
-  pkg_check_modules(Onnxruntime REQUIRED IMPORTED_TARGET libonnxruntime)
-  if(NOT Onnxruntime_FOUND)
-    message(FATAL_ERROR "Onnxruntime not found by pkg-config (as expected from homebrew install)")
-  endif()
-  message(STATUS "Onnxruntime found by pkg-config")
+  find_package(Protobuf REQUIRED)
+
+  set(Onnxruntime_LIBRARIES
+      ${Onnxruntime_LIBRARIES_EX} ${Protobuf_LIBRARIES}
+      CACHE STRING "Onnxruntime libraries")
   set(Onnxruntime_INCLUDE_DIR
-      ${Onnxruntime_INCLUDE_DIRS}
+      ${Onnxruntime_DIR_BUILD}/include
       CACHE STRING "Onnxruntime include directory")
-  set(Onnxruntime_LIBRARY_DIR
-      ${Onnxruntime_LIBRARY_DIRS}
-      CACHE STRING "Onnxruntime library directory")
-  set(Onnxruntime_LIBRARIES "${pkgcfg_lib_Onnxruntime_onnxruntime}")
   message(STATUS "Onnxruntime_INCLUDE_DIRS: ${Onnxruntime_INCLUDE_DIRS}")
   message(STATUS "Onnxruntime_LIBRARY_DIRS: ${Onnxruntime_LIBRARY_DIRS}")
   message(STATUS "Onnxruntime_LIBRARIES: ${Onnxruntime_LIBRARIES}")
@@ -53,8 +49,8 @@ if(Onnxruntime_FOUND)
       ${Onnxruntime_INCLUDE_DIR}
       CACHE STRING "Onnxruntime include directories")
   if(APPLE)
-    set(Onnxruntime_INCLUDE_DIRS ${Onnxruntime_INCLUDE_DIRS}
-                                 ${Onnxruntime_INCLUDE_DIR}/core/session)
+    set(Onnxruntime_INCLUDE_DIRS ${Onnxruntime_INCLUDE_DIRS} ${Onnxruntime_INCLUDE_DIR}/onnxruntime
+                                 ${Onnxruntime_INCLUDE_DIR}/onnxruntime/core/session)
   endif()
   list(GET Onnxruntime_LIBRARIES 0 Onnxruntime_LIBRARY)
   get_filename_component(Onnxruntime_LIBRARY_DIR_EX ${Onnxruntime_LIBRARY} DIRECTORY)
