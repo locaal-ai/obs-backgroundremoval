@@ -107,6 +107,6 @@ done
 
 # tar onnxruntime
 cd "${WORK_DIR}/.."
-tar -czf $ONNXRT_TAR_LOCATION onnxruntime
+tar -czf $ONNXRT_TAR_LOCATION $OUTPUT_DIR
 
 cd $CURRENT_DIR

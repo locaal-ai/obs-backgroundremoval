@@ -182,6 +182,6 @@ cmake .. \
 
 # tar opencv
 cd "${SCRIPT_DIR}/../"
-tar czf $OPENCV_TAR_LOCATION opencv-$OPENCV_VER
+tar czf $OPENCV_TAR_LOCATION $OUTPUT_DIR
 
 cd "$CURRENT_DIR"
