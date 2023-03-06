@@ -120,8 +120,6 @@ set(Onnxruntime_INCLUDE_PATH
     ${INSTALL_DIR}/include/onnxruntime/core/providers/cpu
     ${INSTALL_DIR}/include/onnxruntime/core/providers/cuda
     ${INSTALL_DIR}/include/onnxruntime/core/providers/dml)
-set_target_properties(Onnxruntime PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                             "${Onnxruntime_INCLUDE_PATH}")
 if(OS_MACOS)
   target_link_libraries(Onnxruntime INTERFACE "-framework Foundation")
 endif()
@@ -142,6 +140,8 @@ foreach(lib_name IN LISTS Onnxruntime_LIB_NAMES)
       IMPORTED_LOCATION
       ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
   )
+  set_target_properties(Onnxruntime::${lib_name} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                            "${Onnxruntime_INCLUDE_PATH}")
 
   target_link_libraries(Onnxruntime INTERFACE Onnxruntime::${lib_name})
 endforeach()
