@@ -113,14 +113,13 @@ ExternalProject_Get_Property(Ort INSTALL_DIR)
 
 add_library(Onnxruntime INTERFACE)
 add_dependencies(Onnxruntime Ort)
-target_include_directories(
+set_target_properties(
   Onnxruntime
-  INTERFACE ${INSTALL_DIR}/include
-            ${INSTALL_DIR}/include/onnxruntime
-            ${INSTALL_DIR}/include/onnxruntime/core/session
-            ${INSTALL_DIR}/include/onnxruntime/core/providers/cpu
-            ${INSTALL_DIR}/include/onnxruntime/core/providers/cuda
-            ${INSTALL_DIR}/include/onnxruntime/core/providers/dml)
+  PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${INSTALL_DIR}/include
+             ${INSTALL_DIR}/include/onnxruntime ${INSTALL_DIR}/include/onnxruntime/core/session
+             ${INSTALL_DIR}/include/onnxruntime/core/providers/cpu
+             ${INSTALL_DIR}/include/onnxruntime/core/providers/cuda
+             ${INSTALL_DIR}/include/onnxruntime/core/providers/dml)
 if(OS_MACOS)
   target_link_libraries(Onnxruntime INTERFACE "-framework Foundation")
 endif()
