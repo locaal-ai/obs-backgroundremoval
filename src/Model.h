@@ -196,6 +196,8 @@ class Model {
   {
   }
 
+  virtual void postprocessOutput(cv::Mat &) {}
+
   virtual void runNetworkInference(const std::unique_ptr<Ort::Session> &session,
                                    const std::vector<Ort::AllocatedStringPtr> &inputNames,
                                    const std::vector<Ort::AllocatedStringPtr> &outputNames,
