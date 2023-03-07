@@ -1,8 +1,10 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.16...3.21)
+
+set(CMAKE_CXX_STANDARD 20)
 
 # Change obs-plugintemplate to your plugin's name in a machine-readable format (e.g.:
 # obs-myawesomeplugin) and set
-project(obs-backgroundremoval VERSION 0.5.0)
+project(obs-backgroundremoval VERSION 0.5.12)
 add_library(${CMAKE_PROJECT_NAME} MODULE)
 
 # Replace `Your Name Here` with the name (yours or your organization's) you want to see as the
@@ -16,80 +18,54 @@ set(MACOS_BUNDLEID "com.royshilkrot.obs-backgroundremoval")
 # Replace `me@contoso.com` with the maintainer email address you want to put in Linux packages
 set(LINUX_MAINTAINER_EMAIL "roy.shil@gmail.com")
 
-option(WITH_CUDA "Build with CUDA support." OFF)
-if(WITH_CUDA)
-  add_compile_definitions("WITH_CUDA=1")
-endif()
+# Add your custom source files here - header files are optional and only required for visibility
+# e.g. in Xcode or Visual Studio
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin-main.cpp src/background-filter.cpp)
 
-if(WIN32 OR MSVC)
-  set(VCPKG_DIR ${CMAKE_BINARY_DIR}/vcpkg)
-  set(VCPKG_INSTALLED_DIR ${VCPKG_DIR}/installed/x64-windows-static)
-  set(CMAKE_TOOLCHAIN_FILE ${VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake)
+# Import libobs as main plugin dependency
+find_package(libobs REQUIRED)
+include(cmake/ObsPluginHelpers.cmake)
 
-  set(OpenCV_DIR ${VCPKG_INSTALLED_DIR}/share/opencv)
-  set(Protobuf_DIR ${VCPKG_INSTALLED_DIR}/share/protobuf)
-  set(LibLZMA_DIR ${VCPKG_INSTALLED_DIR}/share/liblzma)
-  set(quirc_DIR ${VCPKG_INSTALLED_DIR}/share/quirc)
+# Uncomment these lines if you want to use the OBS Frontend API in your plugin
+find_package(obs-frontend-api REQUIRED)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::obs-frontend-api)
 
-  if(NOT ${libobs_DIR})
-    message(FATAL "Please provide libobs_DIR to CMake.")
-  endif(NOT ${libobs_DIR})
-
-  set(w32-pthreads_DIR ${libobs_DIR}/../deps/w32-pthreads)
-  set(obs-frontend-api_DIR ${libobs_DIR}/../UI/obs-frontend-api)
-
-  # Find lib TIFF
-  find_library(TIFF_LIBRARY tiff PATHS ${VCPKG_INSTALLED_DIR}/lib)
-  find_path(TIFF_INCLUDE_DIR tiff.h PATHS ${VCPKG_INSTALLED_DIR}/include)
-
-  find_file(Protobuf_PROTOC_EXECUTABLE protoc.exe PATHS ${VCPKG_INSTALLED_DIR}/tools/protobuf)
-elseif(APPLE)
-  # Apple
-  if(WITH_CUDA)
-    message(FATAL "Cannot use CUDA on Apple builds")
-  endif()
-endif()
-
-set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/cmake")
-
-# In case you need C++
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-set(PLUGIN_SOURCES ${CMAKE_SOURCE_DIR}/src/background-filter.cpp
-                   ${CMAKE_SOURCE_DIR}/src/plugin-main.cpp)
-
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${PLUGIN_SOURCES})
+# Uncomment those lines if you want to use Qt in your plugin
+#[[
+find_qt(COMPONENTS Widgets Core)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Qt::Core Qt::Widgets)
+set_target_properties(
+  ${CMAKE_PROJECT_NAME}
+  PROPERTIES AUTOMOC ON
+             AUTOUIC ON
+             AUTORCC ON)
+#]]
 
 configure_file(src/plugin-macros.h.in ${CMAKE_SOURCE_DIR}/src/plugin-macros.generated.h)
 
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin-macros.generated.h)
 
-if(UNIX)
-  set(CMAKE_MODULE_PATH
-      ${CMAKE_MODULE_PATH}
-      "${CMAKE_SOURCE_DIR}/obs-build-dependencies/plugin-deps-2023-01-06-qt6-x86_64/lib/cmake/libobs/"
-  )
-  set(OpenCV_DIR "${CMAKE_SOURCE_DIR}/build/opencv/lib/cmake/opencv4")
-  # add -framework Foundation to the target
-  set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES LINK_FLAGS "-framework Foundation")
+include(cmake/BuildMyOnnxruntime.cmake)
+include(cmake/BuildMyOpenCV.cmake)
+if(OS_WINDOWS)
+  install(IMPORTED_RUNTIME_ARTIFACTS Onnxruntime::DirectML DESTINATION "${OBS_PLUGIN_DESTINATION}")
+endif()
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Onnxruntime OpenCV)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin|iOS")
+  foreach(flags CMAKE_CXX_FLAGS CMAKE_OBJC_FLAGS CMAKE_OBJCXX_FLAGS)
+    string(APPEND ${flags} " -fvisibility=hidden -fvisibility-inlines-hidden")
+  endforeach()
 endif()
 
-# Import libobs as main plugin dependency
-find_package(libobs REQUIRED)
+# /!\ TAKE NOTE: No need to edit things past this point /!\
 
-include(cmake/ObsPluginHelpers.cmake)
+# --- Platform-independent build settings ---
 
-find_package(Onnxruntime REQUIRED)
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
-find_package(OpenCV 4.5 REQUIRED COMPONENTS core imgproc)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::libobs)
 
-target_include_directories(
-  ${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src ${Onnxruntime_INCLUDE_DIRS}
-                                ${OpenCV_INCLUDE_DIRS})
-
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::libobs ${Onnxruntime_LIBRARIES}
-                                                    ${OpenCV_LIBRARIES})
+# --- End of section ---
 
 # --- Windows-specific build settings and tasks ---
 if(OS_WINDOWS)
@@ -123,5 +99,3 @@ endif()
 # --- End of section ---
 
 setup_plugin_target(${CMAKE_PROJECT_NAME})
-
-# # --- End of section ---

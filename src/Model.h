@@ -78,15 +78,15 @@ class Model {
   }
 
   virtual void populateInputOutputNames(const std::unique_ptr<Ort::Session> &session,
-                                        std::vector<std::string> &inputNames,
-                                        std::vector<std::string> &outputNames)
+                                        std::vector<Ort::AllocatedStringPtr> &inputNames,
+                                        std::vector<Ort::AllocatedStringPtr> &outputNames)
   {
     Ort::AllocatorWithDefaultOptions allocator;
 
     inputNames.clear();
     outputNames.clear();
-    inputNames.push_back(session->GetInputNameAllocated(0, allocator).get());
-    outputNames.push_back(session->GetOutputNameAllocated(0, allocator).get());
+    inputNames.push_back(session->GetInputNameAllocated(0, allocator));
+    outputNames.push_back(session->GetOutputNameAllocated(0, allocator));
   }
 
   virtual bool populateInputOutputShapes(const std::unique_ptr<Ort::Session> &session,
@@ -199,8 +199,8 @@ class Model {
   virtual void postprocessOutput(cv::Mat &) {}
 
   virtual void runNetworkInference(const std::unique_ptr<Ort::Session> &session,
-                                   const std::vector<std::string> &inputNames,
-                                   const std::vector<std::string> &outputNames,
+                                   const std::vector<Ort::AllocatedStringPtr> &inputNames,
+                                   const std::vector<Ort::AllocatedStringPtr> &outputNames,
                                    const std::vector<Ort::Value> &inputTensor,
                                    std::vector<Ort::Value> &outputTensor)
   {
@@ -210,22 +210,21 @@ class Model {
       return;
     }
 
-    // convert inputNames to array of char*
-    std::vector<const char *> inputNamesChar;
-    for (size_t i = 0; i < inputNames.size(); i++) {
-      inputNamesChar.push_back(inputNames[i].c_str());
+    std::vector<const char *> rawInputNames;
+    for (auto &inputName : inputNames) {
+      rawInputNames.push_back(inputName.get());
     }
-    // convert outputNames to array of char*
-    std::vector<const char *> outputNamesChar;
-    for (size_t i = 0; i < outputNames.size(); i++) {
-      outputNamesChar.push_back(outputNames[i].c_str());
+
+    std::vector<const char *> rawOutputNames;
+    for (auto &outputName : outputNames) {
+      rawOutputNames.push_back(outputName.get());
     }
 
     session->Run(Ort::RunOptions{nullptr},
                  // inputNames.data(), &(inputTensor[0]), 1,
                  // outputNames.data(), &(outputTensor[0]), 1
-                 inputNamesChar.data(), inputTensor.data(), inputNamesChar.size(),
-                 outputNamesChar.data(), outputTensor.data(), outputNamesChar.size());
+                 rawInputNames.data(), inputTensor.data(), inputNames.size(), rawOutputNames.data(),
+                 outputTensor.data(), outputNames.size());
   }
 };
 
@@ -347,8 +346,8 @@ class ModelRVM : public ModelBCHW {
   }
 
   virtual void populateInputOutputNames(const std::unique_ptr<Ort::Session> &session,
-                                        std::vector<std::string> &inputNames,
-                                        std::vector<std::string> &outputNames)
+                                        std::vector<Ort::AllocatedStringPtr> &inputNames,
+                                        std::vector<Ort::AllocatedStringPtr> &outputNames)
   {
     Ort::AllocatorWithDefaultOptions allocator;
 
@@ -356,10 +355,10 @@ class ModelRVM : public ModelBCHW {
     outputNames.clear();
 
     for (size_t i = 0; i < session->GetInputCount(); i++) {
-      inputNames.push_back(session->GetInputNameAllocated(i, allocator).get());
+      inputNames.push_back(session->GetInputNameAllocated(i, allocator));
     }
     for (size_t i = 1; i < session->GetOutputCount(); i++) {
-      outputNames.push_back(session->GetOutputNameAllocated(i, allocator).get());
+      outputNames.push_back(session->GetOutputNameAllocated(i, allocator));
     }
   }
 

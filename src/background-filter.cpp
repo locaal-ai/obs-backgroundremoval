@@ -43,8 +43,8 @@ const char *USEGPU_CUDA = "cuda";
 struct background_removal_filter {
   std::unique_ptr<Ort::Session> session;
   std::unique_ptr<Ort::Env> env;
-  std::vector<std::string> inputNames;
-  std::vector<std::string> outputNames;
+  std::vector<Ort::AllocatedStringPtr> inputNames;
+  std::vector<Ort::AllocatedStringPtr> outputNames;
   std::vector<Ort::Value> inputTensor;
   std::vector<Ort::Value> outputTensor;
   std::vector<std::vector<int64_t>> inputDims;
@@ -199,15 +199,15 @@ static void createOrtSession(struct background_removal_filter *tf)
 
   for (size_t i = 0; i < tf->inputNames.size(); i++) {
     blog(LOG_INFO, "Model %s input %d: name %s shape (%d dim) %d x %d x %d x %d",
-         tf->modelSelection.c_str(), (int)i, tf->inputNames[i].c_str(),
-         (int)tf->inputDims[i].size(), (int)tf->inputDims[i][0],
+         tf->modelSelection.c_str(), (int)i, tf->inputNames[i].get(), (int)tf->inputDims[i].size(),
+         (int)tf->inputDims[i][0],
          ((int)tf->inputDims[i].size() > 1) ? (int)tf->inputDims[i][1] : 0,
          ((int)tf->inputDims[i].size() > 2) ? (int)tf->inputDims[i][2] : 0,
          ((int)tf->inputDims[i].size() > 3) ? (int)tf->inputDims[i][3] : 0);
   }
   for (size_t i = 0; i < tf->outputNames.size(); i++) {
     blog(LOG_INFO, "Model %s output %d: name %s shape (%d dim) %d x %d x %d x %d",
-         tf->modelSelection.c_str(), (int)i, tf->outputNames[i].c_str(),
+         tf->modelSelection.c_str(), (int)i, tf->outputNames[i].get(),
          (int)tf->outputDims[i].size(), (int)tf->outputDims[i][0],
          ((int)tf->outputDims[i].size() > 1) ? (int)tf->outputDims[i][1] : 0,
          ((int)tf->outputDims[i].size() > 2) ? (int)tf->outputDims[i][2] : 0,
