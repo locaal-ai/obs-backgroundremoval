@@ -16,6 +16,8 @@ It is using a neural network to predict the mask of the portrait and remove the 
 It's easily composable with other OBS plugins to replace the background with e.g. an image or
 a transparent color.
 
+OBS Plugins forum: https://obsproject.com/forum/resources/background-removal-portrait-segmentation.1260/
+
 ![](demo.gif)
 
 The models used for background detection are SINet: https://arxiv.org/abs/1911.09099 and MODNet: https://arxiv.org/pdf/2011.11961.pdf
