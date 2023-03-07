@@ -23,12 +23,12 @@ runs:
     - name: Copy dependency build files to the storage with the AWS CLI
       shell: zsh {0}
       run: |
-        for f in "${{ inputs.workingDirectory }}/build/onnxruntime*.tar.gz";
+        for f in "${{ inputs.workingDirectory }}/build/onnxruntime*.tar.gz"; do
           if [[ -f $f ]]; then
             aws s3 cp "${{ inputs.workingDirectory }}/build/onnxruntime*.tar.gz" s3://obs-backgroundremoval-build/
           fi
         done
-        for f in "${{ inputs.workingDirectory }}/build/opencv*.tar.gz";
+        for f in "${{ inputs.workingDirectory }}/build/opencv*.tar.gz"; do
           if [[ -f $f ]]; then
             aws s3 cp "${{ inputs.workingDirectory }}/build/opencv*.tar.gz" s3://obs-backgroundremoval-build/
           fi
