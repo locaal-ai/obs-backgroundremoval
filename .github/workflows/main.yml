@@ -75,6 +75,7 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-duration-seconds: 1200
           role-session-name: MySessionName
+          role-skip-session-tagging: true
 
       - name: Build Dependencies
         uses: ./plugin/.github/actions/prebuild-dependencies
@@ -182,16 +183,6 @@ jobs:
         run: |
           print "CODESIGN_IDENT=${{ secrets.MACOS_SIGNING_APPLICATION_IDENTITY }}" >> $GITHUB_ENV
           print "CODESIGN_IDENT_INSTALLER=${{ secrets.MACOS_SIGNING_INSTALLER_IDENTITY }}" >> $GITHUB_ENV
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-2
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          role-duration-seconds: 1200
-          role-session-name: MySessionName
 
       - name: Build Plugin
         uses: ./plugin/.github/actions/build-plugin
