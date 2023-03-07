@@ -21,5 +21,6 @@ runs:
         ${{ inputs.workingDirectory }}/scripts/makeOpenCV_osx.sh ${{ inputs.target }}
 
     - name: Copy dependency build files to the storage with the AWS CLI
+      shell: zsh {0}
       run: |
         aws s3 cp ${{ inputs.workingDirectory }}/build/*.tar.gz s3://obs-backgroundremoval-build/

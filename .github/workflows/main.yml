@@ -50,11 +50,7 @@ jobs:
         arch: [x86_64, arm64] # universal
     if: always()
     needs: [clang_check]
-    outputs:
-      commitHash: ${{ steps.setup.outputs.commitHash }}
     env:
-      CODESIGN_IDENT: '-'
-      CODESIGN_IDENT_INSTALLER: ''
       MACOSX_DEPLOYMENT_TARGET: '10.15'
     defaults:
       run:
