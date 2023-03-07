@@ -1,0 +1,25 @@
+name: 'Prebuild plugin dependencies'
+description: 'Builds the plugin dependencies.'
+inputs:
+  target:
+    description: 'Build target for dependencies'
+    required: true
+  workingDirectory:
+    description: 'Working directory for packaging'
+    required: false
+    default: ${{ github.workspace }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Run macOS Build
+      if: ${{ runner.os == 'macOS' }}
+      shell: zsh {0}
+      run: |
+        set -e
+
+        ${{ inputs.workingDirectory }}/scripts/makeOnnxruntime_osx.sh ${{ inputs.target }}
+        ${{ inputs.workingDirectory }}/scripts/makeOpenCV_osx.sh ${{ inputs.target }}
+
+    - name: Copy dependency build files to the storage with the AWS CLI
+      run: |
+        aws s3 cp ${{ inputs.workingDirectory }}/build/*.tar.gz s3://obs-backgroundremoval-build/

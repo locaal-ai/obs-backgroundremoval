@@ -114,6 +114,7 @@ cd build
 # build opencv minimal (just core and imgproc)
 cmake .. \
     -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 \
+    -DCMAKE_OSX_ARCHITECTURES=$TARGET_ARCH \
     -DBUILD_SHARED_LIBS=OFF \
     -DBUILD_opencv_apps=OFF \
     -DBUILD_opencv_js=OFF \

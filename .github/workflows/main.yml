@@ -41,6 +41,47 @@ jobs:
       - name: Run cmake-format
         run: ./.github/scripts/check-cmake.sh
 
+  macos_prebuild:
+    name: 02 - macOS prebuild dependencies
+    runs-on: macos-12
+    strategy:
+      fail-fast: true
+      matrix:
+        arch: [x86_64, arm64] # universal
+    if: always()
+    needs: [clang_check]
+    outputs:
+      commitHash: ${{ steps.setup.outputs.commitHash }}
+    env:
+      CODESIGN_IDENT: '-'
+      CODESIGN_IDENT_INSTALLER: ''
+      MACOSX_DEPLOYMENT_TARGET: '10.15'
+    defaults:
+      run:
+        shell: zsh {0}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          path: plugin
+          submodules: recursive
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-duration-seconds: 1200
+          role-session-name: MySessionName
+
+      - name: Build Dependencies
+        uses: ./plugin/.github/actions/prebuild-dependencies
+        with:
+          workingDirectory: ${{ github.workspace }}/plugin
+          target: ${{ matrix.arch }}
+
   macos_build:
     name: 02 - macOS
     runs-on: macos-12
@@ -49,7 +90,7 @@ jobs:
       matrix:
         arch: [x86_64, arm64] # universal
     if: always()
-    needs: [clang_check]
+    needs: [clang_check, macos_prebuild]
     outputs:
       commitHash: ${{ steps.setup.outputs.commitHash }}
     env:
@@ -141,6 +182,16 @@ jobs:
         run: |
           print "CODESIGN_IDENT=${{ secrets.MACOS_SIGNING_APPLICATION_IDENTITY }}" >> $GITHUB_ENV
           print "CODESIGN_IDENT_INSTALLER=${{ secrets.MACOS_SIGNING_INSTALLER_IDENTITY }}" >> $GITHUB_ENV
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-duration-seconds: 1200
+          role-session-name: MySessionName
 
       - name: Build Plugin
         uses: ./plugin/.github/actions/build-plugin
