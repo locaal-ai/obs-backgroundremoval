@@ -5,9 +5,11 @@
 #include <core/session/onnxruntime_cxx_api.h>
 #include <core/providers/cpu/cpu_provider_factory.h>
 #include <core/providers/coreml/coreml_provider_factory.h>
+#include <core/providers/openvino/openvino_provider_factory.h>
 #else // __APPLE__
 #include <onnxruntime_cxx_api.h>
 #include <cpu_provider_factory.h>
+#include <openvino_provider_factory.h>
 #endif
 
 #ifdef WITH_CUDA
@@ -41,6 +43,7 @@ const char *USEGPU_CPU = "cpu";
 const char *USEGPU_DML = "dml";
 const char *USEGPU_CUDA = "cuda";
 const char *USEGPU_COREML = "coreml";
+const char *USEGPU_OPENVINO = "openvino";
 
 struct background_removal_filter {
   std::unique_ptr<Ort::Session> session;
@@ -118,6 +121,7 @@ static obs_properties_t *filter_properties(void *data)
 #if defined(__APPLE__)
   obs_property_list_add_string(p_use_gpu, obs_module_text("CoreML"), USEGPU_COREML);
 #endif
+  obs_property_list_add_string(p_use_gpu, obs_module_text("OpenVINO"), USEGPU_OPENVINO);
 
   obs_property_t *p_model_select =
     obs_properties_add_list(props, "model_select", obs_module_text("Segmentation model"),
@@ -197,6 +201,12 @@ static void createOrtSession(struct background_removal_filter *tf)
         OrtSessionOptionsAppendExecutionProvider_CoreML(sessionOptions, coreml_flags));
     }
 #endif
+    if (tf->useGPU == USEGPU_OPENVINO) {
+      OrtOpenVINOProviderOptions options;
+      options.device_type = "AUTO:GPU,CPU";
+      Ort::ThrowOnError(
+        OrtSessionOptionsAppendExecutionProvider_OpenVINO(sessionOptions, &options));
+    }
     tf->session.reset(new Ort::Session(*tf->env, tf->modelFilepath, sessionOptions));
   } catch (const std::exception &e) {
     blog(LOG_ERROR, "%s", e.what());
