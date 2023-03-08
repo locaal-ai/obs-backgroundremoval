@@ -191,7 +191,9 @@ static void createOrtSession(struct background_removal_filter *tf)
 #endif
 #if defined(__APPLE__)
     if (tf->useGPU == USEGPU_COREML) {
-      Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CoreML(sessionOptions, 0));
+      uint32_t coreml_flags = 0;
+      coreml_flags |= COREML_FLAG_ENABLE_ON_SUBGRAPH;
+      Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CoreML(sessionOptions, coreml_flags));
     }
 #endif
     tf->session.reset(new Ort::Session(*tf->env, tf->modelFilepath, sessionOptions));

@@ -22,7 +22,7 @@ OBS Plugins forum: https://obsproject.com/forum/resources/background-removal-por
 
 GPU support:
 * Currently on Windows we support DirectML, which should reduce CPU usage by 95% and effectively use the systems accelerators (GPUs if available).
-* On Mac we rely on CPU, but we are looking into CoreML for acceleration. Pure CPU inference will bring the CPU usage to ~40%, which may get the machine warm or spin the cooling fans.
+* On Mac we support CoreML for acceleration, which is available on M1 and M2 (not Intel, sorry). Pure CPU inference will bring the CPU usage to >40%, which may get the machine warm or spin the cooling fans.
 * CUDA is not directly supported in this plugin, however it is supported by ONNX Runtime which we use. Perhaps in the future we will add CUDA support.
 * The goal of this plugin is to be available for everyone on every system, even if they don't own a GPU.
 
