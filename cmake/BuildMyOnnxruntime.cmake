@@ -77,7 +77,8 @@ ExternalProject_Add(
   GIT_SHALLOW ON
   CONFIGURE_COMMAND "${Onnxruntime_PLATFORM_CONFIGURE}"
   BUILD_COMMAND ${PYTHON3} <SOURCE_DIR>/tools/ci_build/build.py --build_dir <BINARY_DIR> --config
-                ${Onnxruntime_BUILD_TYPE} --parallel --skip_tests ${Onnxruntime_PLATFORM_OPTIONS}
+                ${Onnxruntime_BUILD_TYPE} --parallel --skip_tests --use_openvino AUTO:GPU,CPU
+                ${Onnxruntime_PLATFORM_OPTIONS}
   BUILD_BYPRODUCTS
     <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_session${CMAKE_STATIC_LIBRARY_SUFFIX}
     <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_framework${CMAKE_STATIC_LIBRARY_SUFFIX}
