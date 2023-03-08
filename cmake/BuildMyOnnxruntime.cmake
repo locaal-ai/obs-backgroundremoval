@@ -43,11 +43,14 @@ elseif(OS_MACOS)
       ${CMAKE_OSX_DEPLOYMENT_TARGET}
       --osx_arch
       ${CMAKE_OSX_ARCHITECTURES}
+      --use_coreml
       --cmake_extra_defines
       CMAKE_C_COMPILER_LAUNCHER=ccache
       --cmake_extra_defines
       CMAKE_CXX_COMPILER_LAUNCHER=ccache)
   set(Onnxruntime_PLATFORM_BYPRODUCT
+      <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_providers_coreml${CMAKE_STATIC_LIBRARY_SUFFIX}
+      <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_coreml_proto${CMAKE_STATIC_LIBRARY_SUFFIX}
       <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX})
   set(Onnxruntime_PLATFORM_INSTALL_FILES
       <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/nsync/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX}
@@ -107,7 +110,9 @@ ExternalProject_Add(
     <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/abseil-cpp/absl/hash/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_city${CMAKE_STATIC_LIBRARY_SUFFIX}
     <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/abseil-cpp/absl/hash/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_low_level_hash${CMAKE_STATIC_LIBRARY_SUFFIX}
     <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/abseil-cpp/absl/container/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_raw_hash_set${CMAKE_STATIC_LIBRARY_SUFFIX}
-    ${Onnxruntime_PLATFORM_INSTALL_FILES} <INSTALL_DIR>/lib)
+    ${Onnxruntime_PLATFORM_INSTALL_FILES} <INSTALL_DIR>/lib && ${CMAKE_COMMAND} -E copy_directory
+    <SOURCE_DIR>/include/onnxruntime/core/providers/coreml
+    <INSTALL_DIR>/include/onnxruntime/core/providers/coreml)
 
 ExternalProject_Get_Property(Ort INSTALL_DIR)
 
@@ -119,19 +124,21 @@ set(Onnxruntime_INCLUDE_PATH
     ${INSTALL_DIR}/include/onnxruntime/core/session
     ${INSTALL_DIR}/include/onnxruntime/core/providers/cpu
     ${INSTALL_DIR}/include/onnxruntime/core/providers/cuda
+    ${INSTALL_DIR}/include/onnxruntime/core/providers/coreml
     ${INSTALL_DIR}/include/onnxruntime/core/providers/dml)
 if(OS_MACOS)
   target_link_libraries(Onnxruntime INTERFACE "-framework Foundation")
 endif()
 
+set(Onnxruntime_LIB_NAMES session;framework;mlas;common;graph;providers;optimizer;util;flatbuffers)
+
 if(OS_WINDOWS)
-  set(Onnxruntime_LIB_NAMES
-      session;framework;mlas;common;graph;providers;optimizer;util;flatbuffers;providers_shared;providers_dml
-  )
-else()
-  set(Onnxruntime_LIB_NAMES
-      session;framework;mlas;common;graph;providers;optimizer;util;flatbuffers)
+  set(Onnxruntime_LIB_NAMES ${Onnxruntime_LIB_NAMES};providers_shared;providers_dml)
 endif()
+if(OS_MACOS)
+  set(Onnxruntime_LIB_NAMES ${Onnxruntime_LIB_NAMES};providers_coreml;coreml_proto)
+endif()
+
 foreach(lib_name IN LISTS Onnxruntime_LIB_NAMES)
   add_library(Onnxruntime::${lib_name} STATIC IMPORTED)
   set_target_properties(
