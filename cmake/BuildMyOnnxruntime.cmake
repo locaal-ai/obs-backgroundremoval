@@ -120,19 +120,22 @@ set(Onnxruntime_INCLUDE_PATH
     ${INSTALL_DIR}/include/onnxruntime/core/session
     ${INSTALL_DIR}/include/onnxruntime/core/providers/cpu
     ${INSTALL_DIR}/include/onnxruntime/core/providers/cuda
+    ${INSTALL_DIR}/include/onnxruntime/core/providers/coreml
     ${INSTALL_DIR}/include/onnxruntime/core/providers/dml)
 if(OS_MACOS)
   target_link_libraries(Onnxruntime INTERFACE "-framework Foundation")
 endif()
 
+set(Onnxruntime_LIB_NAMES
+  session;framework;mlas;common;graph;providers;optimizer;util;flatbuffers)
+
 if(OS_WINDOWS)
-  set(Onnxruntime_LIB_NAMES
-      session;framework;mlas;common;graph;providers;optimizer;util;flatbuffers;providers_shared;providers_dml
-  )
-else()
-  set(Onnxruntime_LIB_NAMES
-      session;framework;mlas;common;graph;providers;optimizer;util;flatbuffers)
+  list(APPEND Onnxruntime_LIB_NAMES providers_shared;providers_dml)
 endif()
+if(OS_MACOS)
+  list(APPEND Onnxruntime_LIB_NAMES providers_coreml)
+endif()
+
 foreach(lib_name IN LISTS Onnxruntime_LIB_NAMES)
   add_library(Onnxruntime::${lib_name} STATIC IMPORTED)
   set_target_properties(
