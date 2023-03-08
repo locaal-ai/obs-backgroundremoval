@@ -391,8 +391,8 @@ class ModelRVM : public ModelBCHW {
     for (size_t i = 1; i < 5; i++) {
       inputDims[i][0] = 1;
       inputDims[i][1] = (i == 1) ? 16 : (i == 2) ? 20 : (i == 3) ? 40 : 64;
-      inputDims[i][2] = 192 / std::pow(2, i);
-      inputDims[i][3] = 192 / std::pow(2, i);
+      inputDims[i][2] = 192 / (2 << i);
+      inputDims[i][3] = 192 / (2 << i);
     }
 
     outputDims[0][0] = 1;
@@ -400,8 +400,8 @@ class ModelRVM : public ModelBCHW {
     outputDims[0][3] = 192;
     for (size_t i = 1; i < 5; i++) {
       outputDims[i][0] = 1;
-      outputDims[i][2] = 192 / std::pow(2, i);
-      outputDims[i][3] = 192 / std::pow(2, i);
+      outputDims[i][2] = 192 / (2 << i);
+      outputDims[i][3] = 192 / (2 << i);
     }
     return true;
   }
