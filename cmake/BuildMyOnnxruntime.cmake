@@ -43,6 +43,7 @@ elseif(OS_MACOS)
       ${CMAKE_OSX_DEPLOYMENT_TARGET}
       --osx_arch
       ${CMAKE_OSX_ARCHITECTURES}
+      --use_coreml
       --cmake_extra_defines
       CMAKE_C_COMPILER_LAUNCHER=ccache
       --cmake_extra_defines
