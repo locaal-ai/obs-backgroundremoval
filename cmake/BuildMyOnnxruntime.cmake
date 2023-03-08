@@ -49,6 +49,7 @@ elseif(OS_MACOS)
       --cmake_extra_defines
       CMAKE_CXX_COMPILER_LAUNCHER=ccache)
   set(Onnxruntime_PLATFORM_BYPRODUCT
+      <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_providers_coreml${CMAKE_STATIC_LIBRARY_SUFFIX}
       <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_coreml_proto${CMAKE_STATIC_LIBRARY_SUFFIX}
       <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX})
   set(Onnxruntime_PLATFORM_INSTALL_FILES
