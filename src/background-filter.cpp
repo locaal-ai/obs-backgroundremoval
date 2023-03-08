@@ -4,6 +4,7 @@
 #if defined(__APPLE__)
 #include <core/session/onnxruntime_cxx_api.h>
 #include <core/providers/cpu/cpu_provider_factory.h>
+#include <core/providers/coreml/coreml_provider_factory.h>
 #else // __APPLE__
 #include <onnxruntime_cxx_api.h>
 #include <cpu_provider_factory.h>
@@ -39,6 +40,7 @@ const char *MODEL_RVM = "models/rvm_mobilenetv3_fp32.onnx";
 const char *USEGPU_CPU = "cpu";
 const char *USEGPU_DML = "dml";
 const char *USEGPU_CUDA = "cuda";
+const char *USEGPU_COREML = "coreml";
 
 struct background_removal_filter {
   std::unique_ptr<Ort::Session> session;
@@ -109,8 +111,12 @@ static obs_properties_t *filter_properties(void *data)
   obs_property_list_add_string(p_use_gpu, obs_module_text("CPU"), USEGPU_CPU);
 #ifdef WITH_CUDA
   obs_property_list_add_string(p_use_gpu, obs_module_text("GPU - CUDA"), USEGPU_CUDA);
-#elif _WIN32
+#endif
+#if _WIN32
   obs_property_list_add_string(p_use_gpu, obs_module_text("GPU - DirectML"), USEGPU_DML);
+#endif
+#if APPLE
+  obs_property_list_add_string(p_use_gpu, obs_module_text("CoreML"), USEGPU_COREML);
 #endif
 
   obs_property_t *p_model_select =
@@ -177,9 +183,15 @@ static void createOrtSession(struct background_removal_filter *tf)
     if (tf->useGPU == USEGPU_CUDA) {
       Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0));
     }
-#elif _WIN32
+#endif
+#ifdef _WIN32
     if (tf->useGPU == USEGPU_DML) {
       Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
+    }
+#endif
+#if defined(__APPLE__)
+    if (tf->useGPU == USEGPU_COREML) {
+      Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CoreML(sessionOptions, 0));
     }
 #endif
     tf->session.reset(new Ort::Session(*tf->env, tf->modelFilepath, sessionOptions));
