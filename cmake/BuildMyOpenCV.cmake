@@ -34,6 +34,7 @@ endif()
 ExternalProject_Add(
   OpenCV_Build
   URL https://github.com/opencv/opencv/archive/refs/tags/4.7.0.tar.gz
+  DOWNLOAD_EXTRACT_TIMESTAMP true
   PATCH_COMMAND ${OpenCV_INSTALL_CCACHE}
   BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config ${OpenCV_BUILD_TYPE}
   BUILD_BYPRODUCTS
