@@ -193,7 +193,8 @@ static void createOrtSession(struct background_removal_filter *tf)
     if (tf->useGPU == USEGPU_COREML) {
       uint32_t coreml_flags = 0;
       coreml_flags |= COREML_FLAG_ENABLE_ON_SUBGRAPH;
-      Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CoreML(sessionOptions, coreml_flags));
+      Ort::ThrowOnError(
+        OrtSessionOptionsAppendExecutionProvider_CoreML(sessionOptions, coreml_flags));
     }
 #endif
     tf->session.reset(new Ort::Session(*tf->env, tf->modelFilepath, sessionOptions));
