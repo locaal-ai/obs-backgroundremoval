@@ -115,7 +115,7 @@ static obs_properties_t *filter_properties(void *data)
 #if _WIN32
   obs_property_list_add_string(p_use_gpu, obs_module_text("GPU - DirectML"), USEGPU_DML);
 #endif
-#if APPLE
+#if defined(__APPLE__)
   obs_property_list_add_string(p_use_gpu, obs_module_text("CoreML"), USEGPU_COREML);
 #endif
 

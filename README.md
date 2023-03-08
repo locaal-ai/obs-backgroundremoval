@@ -46,11 +46,17 @@ Start by cloning this repo to a directory of your choice.
 Using the CI pipeline scripts, locally you would just call the zsh script.
 
 ```sh
-$ ./.github/scripts/build-macosx.zsh
+$ ./.github/scripts/build-macosx.zsh -c Release -t macos-x86_64
 ```
 
 #### Install
 The above script should succeed and the plugin files will reside in the `./release` folder off of the root. Copy the files to the OBS directory e.g. `/Applications/OBS.app/Contents/`.
+
+To get `.pkg` installer file, run
+```sh
+$ ./.github/scripts/package-macosx.zsh -c Release -t macos-x86_64
+```
+(Note that maybe the outputs in the e.g. `build_x86_64` will be in the `Release` folder and not the `install` folder like `pakage-macos.zsh` expects, so you will need to rename the folder from `build_x86_64/Release` to `build_x86_64/install`)
 
 ### Linux
 
