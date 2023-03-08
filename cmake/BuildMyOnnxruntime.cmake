@@ -130,10 +130,10 @@ set(Onnxruntime_LIB_NAMES
   session;framework;mlas;common;graph;providers;optimizer;util;flatbuffers)
 
 if(OS_WINDOWS)
-  list(APPEND Onnxruntime_LIB_NAMES providers_shared;providers_dml)
+  set(Onnxruntime_LIB_NAMES ${Onnxruntime_LIB_NAMES};providers_shared;providers_dml)
 endif()
 if(OS_MACOS)
-  list(APPEND Onnxruntime_LIB_NAMES providers_coreml)
+  set(Onnxruntime_LIB_NAMES ${Onnxruntime_LIB_NAMES};providers_coreml)
 endif()
 
 foreach(lib_name IN LISTS Onnxruntime_LIB_NAMES)
