@@ -364,7 +364,7 @@ jobs:
 
       - name: Add OpenVINO Apt keys
         working-directory: ${{ github.workspace }}/plugin
-        id: setup
+        id: openvinoapt
         run: |
           wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
           sudo apt-get install gnupg
