@@ -445,7 +445,8 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
 
   cv::Mat backgroundMask(imageBGR.size(), CV_8UC1, cv::Scalar(255));
 
-  tf->maskEveryXFramesCount = ++(tf->maskEveryXFramesCount) % tf->maskEveryXFrames;
+  tf->maskEveryXFramesCount++;
+  tf->maskEveryXFramesCount %= tf->maskEveryXFrames;
   if (tf->maskEveryXFramesCount != 0 && !tf->backgroundMask.empty()) {
     // We are skipping processing of the mask for this frame.
     // Get the background mask previously generated.
