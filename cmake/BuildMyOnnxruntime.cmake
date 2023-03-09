@@ -150,7 +150,8 @@ if(OS_MACOS)
   )
 endif()
 if(OS_LINUX)
-  set(Onnxruntime_LIB_NAMES session;optimizer;providers;framework;graph;util;mlas;common;flatbuffers)
+  set(Onnxruntime_LIB_NAMES
+      session;optimizer;providers;framework;graph;util;mlas;common;flatbuffers)
 endif()
 
 foreach(lib_name IN LISTS Onnxruntime_LIB_NAMES)
