@@ -130,17 +130,42 @@ if(OS_MACOS)
   target_link_libraries(Onnxruntime INTERFACE "-framework Foundation")
 endif()
 
-add_library(Onnxruntime::session STATIC IMPORTED)
-set_target_properties(
-  Onnxruntime::session
-  PROPERTIES
-    IMPORTED_LOCATION
-    ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_session${CMAKE_STATIC_LIBRARY_SUFFIX}
-)
-set_target_properties(Onnxruntime::session PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                                      "${Onnxruntime_INCLUDE_PATH}")
+if(OS_WINDOWS)
+  add_library(Onnxruntime::DirectML SHARED IMPORTED)
+  set_target_properties(Onnxruntime::DirectML PROPERTIES IMPORTED_LOCATION
+                                                         ${INSTALL_DIR}/lib/DirectML.dll)
+  set_target_properties(Onnxruntime::DirectML PROPERTIES IMPORTED_IMPLIB
+                                                         ${INSTALL_DIR}/lib/DirectML.lib)
+  target_link_libraries(Onnxruntime INTERFACE Onnxruntime::DirectML d3d12.lib dxgi.lib dxguid.lib)
+endif()
 
-target_link_libraries(Onnxruntime INTERFACE Onnxruntime::session)
+if(OS_WINDOWS)
+  set(Onnxruntime_LIB_NAMES
+      session;providers_shared;providers_dml;optimizer;providers;framework;graph;util;mlas;common;flatbuffers
+  )
+endif()
+if(OS_MACOS)
+  set(Onnxruntime_LIB_NAMES
+      session;providers_coreml;coreml_proto;optimizer;providers;framework;graph;util;mlas;common;flatbuffers
+  )
+endif()
+if(OS_LINUX)
+  set(Onnxruntime_LIB_NAMES session;optimizer;providers;framework;graph;util;mlas;common;flatbuffers)
+endif()
+
+foreach(lib_name IN LISTS Onnxruntime_LIB_NAMES)
+  add_library(Onnxruntime::${lib_name} STATIC IMPORTED)
+  set_target_properties(
+    Onnxruntime::${lib_name}
+    PROPERTIES
+      IMPORTED_LOCATION
+      ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
+  )
+  set_target_properties(Onnxruntime::${lib_name} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                            "${Onnxruntime_INCLUDE_PATH}")
+
+  target_link_libraries(Onnxruntime INTERFACE Onnxruntime::${lib_name})
+endforeach()
 
 if(OS_WINDOWS)
   set(Onnxruntime_EXTERNAL_LIB_NAMES
@@ -158,43 +183,6 @@ foreach(lib_name IN LISTS Onnxruntime_EXTERNAL_LIB_NAMES)
     PROPERTIES
       IMPORTED_LOCATION
       ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
-
-  target_link_libraries(Onnxruntime INTERFACE Onnxruntime::${lib_name})
-endforeach()
-
-if(OS_WINDOWS)
-  add_library(Onnxruntime::DirectML SHARED IMPORTED)
-  set_target_properties(Onnxruntime::DirectML PROPERTIES IMPORTED_LOCATION
-                                                         ${INSTALL_DIR}/lib/DirectML.dll)
-  set_target_properties(Onnxruntime::DirectML PROPERTIES IMPORTED_IMPLIB
-                                                         ${INSTALL_DIR}/lib/DirectML.lib)
-  target_link_libraries(Onnxruntime INTERFACE Onnxruntime::DirectML d3d12.lib dxgi.lib dxguid.lib)
-endif()
-
-if(OS_WINDOWS)
-  set(Onnxruntime_LIB_NAMES
-      providers_shared;providers_dml;optimizer;providers;framework;graph;util;mlas;common;flatbuffers
-  )
-endif()
-if(OS_MACOS)
-  set(Onnxruntime_LIB_NAMES
-      providers_coreml;coreml_proto;optimizer;providers;framework;graph;util;mlas;common;flatbuffers
-  )
-endif()
-if(OS_LINUX)
-  set(Onnxruntime_LIB_NAMES optimizer;providers;framework;graph;util;mlas;common;flatbuffers)
-endif()
-
-foreach(lib_name IN LISTS Onnxruntime_LIB_NAMES)
-  add_library(Onnxruntime::${lib_name} STATIC IMPORTED)
-  set_target_properties(
-    Onnxruntime::${lib_name}
-    PROPERTIES
-      IMPORTED_LOCATION
-      ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
-  )
-  set_target_properties(Onnxruntime::${lib_name} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                                            "${Onnxruntime_INCLUDE_PATH}")
 
   target_link_libraries(Onnxruntime INTERFACE Onnxruntime::${lib_name})
 endforeach()
