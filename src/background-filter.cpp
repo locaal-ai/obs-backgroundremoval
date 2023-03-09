@@ -76,7 +76,7 @@ struct background_removal_filter {
   cv::Mat backgroundMask;
   int maskEveryXFrames = 1;
   int maskEveryXFramesCount = 0;
-  int blurBackground = 0;
+  int64_t blurBackground = 0;
 
 #if _WIN32
   const wchar_t *modelFilepath = nullptr;
