@@ -275,7 +275,7 @@ static void filter_update(void *data, obs_data_t *settings)
   tf->maskEveryXFrames = (int)obs_data_get_int(settings, "mask_every_x_frames");
   tf->maskEveryXFrames = (int)obs_data_get_int(settings, "mask_every_x_frames");
   tf->maskEveryXFramesCount = (int)(0);
-  tf->blurBackground = (float)obs_data_get_int(settings, "blur_background");
+  tf->blurBackground = obs_data_get_int(settings, "blur_background");
 
   const std::string newUseGpu = obs_data_get_string(settings, "useGPU");
   const std::string newModel = obs_data_get_string(settings, "model_select");
