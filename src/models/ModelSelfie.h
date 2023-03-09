@@ -1,7 +1,6 @@
 #ifndef MODELSELFIE_H
 #define MODELSELFIE_H
 
-
 #include "Model.h"
 
 class ModelSelfie : public Model {

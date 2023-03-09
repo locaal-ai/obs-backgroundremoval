@@ -1,7 +1,6 @@
 #ifndef MODELRVM_H
 #define MODELRVM_H
 
-
 #include "Model.h"
 
 class ModelRVM : public ModelBCHW {

@@ -248,8 +248,6 @@ class Model {
   }
 };
 
-
-
 class ModelBCHW : public Model {
   public:
   ModelBCHW(/* args */) {}
@@ -280,6 +278,5 @@ class ModelBCHW : public Model {
     inputTensorValues[0].assign(preprocessedImage.begin<float>(), preprocessedImage.end<float>());
   }
 };
-
 
 #endif

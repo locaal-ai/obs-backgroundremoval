@@ -487,7 +487,7 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
       // Blur the background (fast box filter)
       int k_size = (int)(5 + tf->blurBackground);
       k_size = k_size % 2 == 0 ? k_size + 1 : k_size;
-      cv::boxFilter(imageBGR, blurredBackground,  imageBGR.depth(), cv::Size(k_size, k_size));
+      cv::boxFilter(imageBGR, blurredBackground, imageBGR.depth(), cv::Size(k_size, k_size));
     }
 
     if (tf->feather > 0.0) {

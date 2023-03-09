@@ -46,7 +46,6 @@ class ModelPPHumanSeg : public ModelBCHW {
 
     cv::normalize(outputImage, outputImage, 1.0, 0.0, cv::NORM_MINMAX);
   }
-
 };
 
 #endif // MODELPPHUMANSEG_H
