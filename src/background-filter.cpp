@@ -534,6 +534,6 @@ struct obs_source_info background_removal_filter_info = {
   .get_defaults = filter_defaults,
   .get_properties = filter_properties,
   .update = filter_update,
-  .filter_video = filter_render,
   .video_render = filter_video_render,
+  .filter_video = filter_render,
 };
