@@ -38,25 +38,25 @@ static void hwc_to_chw(cv::InputArray src, cv::OutputArray dst)
   cv::hconcat(channels, dst);
 }
 
-static void chw_to_hwc(cv::InputArray src_, cv::OutputArray dst)
-{
-  cv::Mat src = src_.getMat();
-
-  // convert a CHW (channels, height, width) image to HWC (height, width, channels)
-  // determine the number of channels
-  int channels = src.size().height;
-  // determine the height and width of the image
-  int height = src.size().width;
-
-  // for each channel, extract a HxW image and store it in the vector
-  std::vector<cv::Mat> channelsMat;
-  for (int i = 0; i < channels; i++) {
-    channelsMat.push_back(src.row(i).reshape(1, height));
-  }
-
-  // merge the channels together
-  cv::merge(channelsMat, dst);
-}
+// static void chw_to_hwc(cv::InputArray src_, cv::OutputArray dst)
+// {
+//   cv::Mat src = src_.getMat();
+//
+//   // convert a CHW (channels, height, width) image to HWC (height, width, channels)
+//   // determine the number of channels
+//   int channels = src.size().height;
+//   // determine the height and width of the image
+//   int height = src.size().width;
+//
+//   // for each channel, extract a HxW image and store it in the vector
+//   std::vector<cv::Mat> channelsMat;
+//   for (int i = 0; i < channels; i++) {
+//     channelsMat.push_back(src.row(i).reshape(1, height));
+//   }
+//
+//   // merge the channels together
+//   cv::merge(channelsMat, dst);
+// }
 
 /**
   * @brief Base class for all models
