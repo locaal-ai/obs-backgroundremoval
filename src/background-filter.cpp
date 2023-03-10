@@ -29,13 +29,19 @@
 #include <fstream>
 
 #include "plugin-macros.generated.h"
-#include "Model.h"
+#include "models/ModelMODNET.h"
+#include "models/ModelSINET.h"
+#include "models/ModelMediapipe.h"
+#include "models/ModelSelfie.h"
+#include "models/ModelRVM.h"
+#include "models/ModelPPHumanSeg.h"
 
 const char *MODEL_SINET = "models/SINet_Softmax_simple.onnx";
 const char *MODEL_MODNET = "models/modnet_simple.onnx";
 const char *MODEL_MEDIAPIPE = "models/mediapipe.onnx";
 const char *MODEL_SELFIE = "models/selfie_segmentation.onnx";
 const char *MODEL_RVM = "models/rvm_mobilenetv3_fp32.onnx";
+const char *MODEL_PPHUMANSEG = "models/pphumanseg_fp32.onnx";
 
 const char *USEGPU_CPU = "cpu";
 const char *USEGPU_DML = "dml";
@@ -67,9 +73,12 @@ struct background_removal_filter {
   video_scaler_t *scalerToBGR;
   video_scaler_t *scalerFromBGR;
 
+  obs_source_t *source;
+
   cv::Mat backgroundMask;
   int maskEveryXFrames = 1;
   int maskEveryXFramesCount = 0;
+  int64_t blurBackground = 0;
 
 #if _WIN32
   const wchar_t *modelFilepath = nullptr;
@@ -128,10 +137,15 @@ static obs_properties_t *filter_properties(void *data)
   obs_property_list_add_string(p_model_select, obs_module_text("MediaPipe"), MODEL_MEDIAPIPE);
   obs_property_list_add_string(p_model_select, obs_module_text("Selfie Segmentation"),
                                MODEL_SELFIE);
+  obs_property_list_add_string(p_model_select, obs_module_text("PPHumanSeg"), MODEL_PPHUMANSEG);
   obs_property_list_add_string(p_model_select, obs_module_text("Robust Video Matting"), MODEL_RVM);
 
   obs_properties_add_int(props, "mask_every_x_frames",
                          obs_module_text("Calculate mask every X frame"), 1, 300, 1);
+
+  obs_properties_add_int_slider(props, "blur_background",
+                                obs_module_text("Blur background factor (0 - no blur, use color)"),
+                                0, 100, 1);
 
   UNUSED_PARAMETER(data);
   return props;
@@ -261,7 +275,9 @@ static void filter_update(void *data, obs_data_t *settings)
   tf->smoothContour = (float)obs_data_get_double(settings, "smooth_contour");
   tf->feather = (float)obs_data_get_double(settings, "feather");
   tf->maskEveryXFrames = (int)obs_data_get_int(settings, "mask_every_x_frames");
+  tf->maskEveryXFrames = (int)obs_data_get_int(settings, "mask_every_x_frames");
   tf->maskEveryXFramesCount = (int)(0);
+  tf->blurBackground = obs_data_get_int(settings, "blur_background");
 
   const std::string newUseGpu = obs_data_get_string(settings, "useGPU");
   const std::string newModel = obs_data_get_string(settings, "model_select");
@@ -287,6 +303,9 @@ static void filter_update(void *data, obs_data_t *settings)
     if (tf->modelSelection == MODEL_RVM) {
       tf->model.reset(new ModelRVM);
     }
+    if (tf->modelSelection == MODEL_PPHUMANSEG) {
+      tf->model.reset(new ModelPPHumanSeg);
+    }
 
     createOrtSession(tf);
   }
@@ -294,10 +313,12 @@ static void filter_update(void *data, obs_data_t *settings)
 
 /**                   FILTER CORE                     */
 
-static void *filter_create(obs_data_t *settings, obs_source_t *)
+static void *filter_create(obs_data_t *settings, obs_source_t *source)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(
     bzalloc(sizeof(struct background_removal_filter)));
+
+  tf->source = source;
 
   std::string instanceName{"background-removal-inference"};
   tf->env.reset(new Ort::Env(OrtLoggingLevel::ORT_LOGGING_LEVEL_ERROR, instanceName.c_str()));
@@ -465,6 +486,14 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
 
   // Apply the mask back to the main image.
   try {
+    cv::Mat blurredBackground;
+    if (tf->blurBackground > 0.0) {
+      // Blur the background (fast box filter)
+      int k_size = (int)(5 + tf->blurBackground);
+      k_size = k_size % 2 == 0 ? k_size + 1 : k_size;
+      cv::boxFilter(imageBGR, blurredBackground, imageBGR.depth(), cv::Size(k_size, k_size));
+    }
+
     if (tf->feather > 0.0) {
       // If we're going to feather/alpha blend, we need to do some processing that
       // will combine the blended "foreground" and "masked background" images onto the main image.
@@ -491,7 +520,12 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
     } else {
       // If we're not feathering/alpha blending, we can
       // apply the mask as-is back onto the main image.
-      imageBGR.setTo(tf->backgroundColor, backgroundMask);
+      if (tf->blurBackground > 0.0) {
+        // copy the blurred background to the main image where the mask is 0
+        blurredBackground.copyTo(imageBGR, backgroundMask);
+      } else {
+        imageBGR.setTo(tf->backgroundColor, backgroundMask);
+      }
     }
   } catch (const std::exception &e) {
     blog(LOG_ERROR, "%s", e.what());
@@ -512,15 +546,24 @@ static void filter_destroy(void *data)
   }
 }
 
+static void filter_video_render(void *data, gs_effect_t *effect)
+{
+  UNUSED_PARAMETER(effect);
+  struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
+
+  obs_source_skip_video_filter(tf->source);
+}
+
 struct obs_source_info background_removal_filter_info = {
   .id = "background_removal",
   .type = OBS_SOURCE_TYPE_FILTER,
-  .output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_ASYNC,
+  .output_flags = OBS_SOURCE_VIDEO,
   .get_name = filter_getname,
   .create = filter_create,
   .destroy = filter_destroy,
   .get_defaults = filter_defaults,
   .get_properties = filter_properties,
   .update = filter_update,
+  .video_render = filter_video_render,
   .filter_video = filter_render,
 };
