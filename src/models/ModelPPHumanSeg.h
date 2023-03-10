@@ -10,13 +10,6 @@ class ModelPPHumanSeg : public ModelBCHW {
 
   virtual void prepareInputToNetwork(cv::Mat &resizedImage, cv::Mat &preprocessedImage)
   {
-    // input_image = cv.resize(image, dsize=(input_size[1], input_size[0]))
-    // mean = [0.5, 0.5, 0.5]
-    // std = [0.5, 0.5, 0.5]
-    // input_image = (input_image / 255 - mean) / std
-    // input_image = input_image.transpose(2, 0, 1).astype('float32')
-    // input_image = np.expand_dims(input_image, axis=0)
-
     resizedImage = (resizedImage / 256.0 - cv::Scalar(0.5, 0.5, 0.5)) / cv::Scalar(0.5, 0.5, 0.5);
 
     hwc_to_chw(resizedImage, preprocessedImage);
