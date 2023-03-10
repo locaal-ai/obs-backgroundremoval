@@ -130,13 +130,28 @@ if(OS_MACOS)
   target_link_libraries(Onnxruntime INTERFACE "-framework Foundation")
 endif()
 
-set(Onnxruntime_LIB_NAMES session;framework;mlas;common;graph;providers;optimizer;util;flatbuffers)
+if(OS_WINDOWS)
+  add_library(Onnxruntime::DirectML SHARED IMPORTED)
+  set_target_properties(Onnxruntime::DirectML PROPERTIES IMPORTED_LOCATION
+                                                         ${INSTALL_DIR}/lib/DirectML.dll)
+  set_target_properties(Onnxruntime::DirectML PROPERTIES IMPORTED_IMPLIB
+                                                         ${INSTALL_DIR}/lib/DirectML.lib)
+  target_link_libraries(Onnxruntime INTERFACE Onnxruntime::DirectML d3d12.lib dxgi.lib dxguid.lib)
+endif()
 
 if(OS_WINDOWS)
-  set(Onnxruntime_LIB_NAMES ${Onnxruntime_LIB_NAMES};providers_shared;providers_dml)
+  set(Onnxruntime_LIB_NAMES
+      session;providers_shared;providers_dml;optimizer;providers;framework;graph;util;mlas;common;flatbuffers
+  )
 endif()
 if(OS_MACOS)
-  set(Onnxruntime_LIB_NAMES ${Onnxruntime_LIB_NAMES};providers_coreml;coreml_proto)
+  set(Onnxruntime_LIB_NAMES
+      session;providers_coreml;coreml_proto;optimizer;providers;framework;graph;util;mlas;common;flatbuffers
+  )
+endif()
+if(OS_LINUX)
+  set(Onnxruntime_LIB_NAMES
+      session;optimizer;providers;framework;graph;util;mlas;common;flatbuffers)
 endif()
 
 foreach(lib_name IN LISTS Onnxruntime_LIB_NAMES)
@@ -172,12 +187,3 @@ foreach(lib_name IN LISTS Onnxruntime_EXTERNAL_LIB_NAMES)
 
   target_link_libraries(Onnxruntime INTERFACE Onnxruntime::${lib_name})
 endforeach()
-
-if(OS_WINDOWS)
-  add_library(Onnxruntime::DirectML SHARED IMPORTED)
-  set_target_properties(Onnxruntime::DirectML PROPERTIES IMPORTED_LOCATION
-                                                         ${INSTALL_DIR}/lib/DirectML.dll)
-  set_target_properties(Onnxruntime::DirectML PROPERTIES IMPORTED_IMPLIB
-                                                         ${INSTALL_DIR}/lib/DirectML.lib)
-  target_link_libraries(Onnxruntime INTERFACE Onnxruntime::DirectML d3d12.lib dxgi.lib dxguid.lib)
-endif()
