@@ -67,6 +67,8 @@ struct background_removal_filter {
   video_scaler_t *scalerToBGR;
   video_scaler_t *scalerFromBGR;
 
+  obs_source_t *source;
+
   cv::Mat backgroundMask;
   int maskEveryXFrames = 1;
   int maskEveryXFramesCount = 0;
@@ -294,10 +296,12 @@ static void filter_update(void *data, obs_data_t *settings)
 
 /**                   FILTER CORE                     */
 
-static void *filter_create(obs_data_t *settings, obs_source_t *)
+static void *filter_create(obs_data_t *settings, obs_source_t *source)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(
     bzalloc(sizeof(struct background_removal_filter)));
+
+  tf->source = source;
 
   std::string instanceName{"background-removal-inference"};
   tf->env.reset(new Ort::Env(OrtLoggingLevel::ORT_LOGGING_LEVEL_ERROR, instanceName.c_str()));
@@ -512,15 +516,24 @@ static void filter_destroy(void *data)
   }
 }
 
+static void filter_video_render(void *data, gs_effect_t *effect)
+{
+  UNUSED_PARAMETER(effect);
+  struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
+
+  obs_source_skip_video_filter(tf->source);
+}
+
 struct obs_source_info background_removal_filter_info = {
   .id = "background_removal",
   .type = OBS_SOURCE_TYPE_FILTER,
-  .output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_ASYNC,
+  .output_flags = OBS_SOURCE_VIDEO,
   .get_name = filter_getname,
   .create = filter_create,
   .destroy = filter_destroy,
   .get_defaults = filter_defaults,
   .get_properties = filter_properties,
   .update = filter_update,
+  .video_render = filter_video_render,
   .filter_video = filter_render,
 };
