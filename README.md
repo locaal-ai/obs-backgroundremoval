@@ -26,10 +26,12 @@ GPU support:
 * CUDA is not directly supported in this plugin, however it is supported by ONNX Runtime which we use. Perhaps in the future we will add CUDA support.
 * The goal of this plugin is to be available for everyone on every system, even if they don't own a GPU.
 
-The models used for background detection are SINet: https://arxiv.org/abs/1911.09099 and MODNet: https://arxiv.org/pdf/2011.11961.pdf
-The pre-trained model weights were taken from:
+The pretrained model weights used for portrait foreground segmentation are taken from:
 - https://github.com/anilsathyan7/Portrait-Segmentation/tree/master/SINet
 - https://github.com/ZHKKKe/MODNet
+- https://github.com/PaddlePaddle/PaddleSeg/tree/release/2.7/contrib/PP-HumanSeg
+- https://github.com/PINTO0309/PINTO_model_zoo/tree/main/082_MediaPipe_Meet_Segmentation
+- https://github.com/PeterL1n/RobustVideoMatting
 
 Some more information about how I built it: https://www.morethantechnical.com/2021/04/15/obs-plugin-for-portrait-background-removal-with-onnx-sinet-model/
 
