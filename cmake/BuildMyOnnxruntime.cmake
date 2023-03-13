@@ -40,8 +40,13 @@ elseif(OS_MACOS)
   set(PYTHON3 python3)
   set(Onnxruntime_PLATFORM_CONFIGURE "")
   set(Onnxruntime_PLATFORM_OPTIONS
-      --cmake_generator Ninja --apple_deploy_target ${CMAKE_OSX_DEPLOYMENT_TARGET} --osx_arch
-      ${CMAKE_OSX_ARCHITECTURES})
+      --cmake_generator
+      Ninja
+      --apple_deploy_target
+      ${CMAKE_OSX_DEPLOYMENT_TARGET}
+      --osx_arch
+      ${CMAKE_OSX_ARCHITECTURES}
+      --use_coreml)
   if(Onnxruntime_CCACHE_EXE)
     list(APPEND Onnxruntime_PLATFORM_OPTIONS --cmake_extra_defines
          CMAKE_C_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE} --cmake_extra_defines
