@@ -90,7 +90,7 @@ struct background_removal_filter {
 static const char *filter_getname(void *unused)
 {
   UNUSED_PARAMETER(unused);
-  return "Background Removal";
+  return obs_module_text("BackgroundRemoval");
 }
 
 /**                   PROPERTIES                     */
@@ -103,33 +103,33 @@ static obs_properties_t *filter_properties(void *data)
                                   0.025);
 
   obs_properties_add_float_slider(props, "contour_filter",
-                                  obs_module_text("Contour Filter (% of image)"), 0.0, 1.0, 0.025);
+                                  obs_module_text("ContourFilterPercentOfImage"), 0.0, 1.0, 0.025);
 
-  obs_properties_add_float_slider(props, "smooth_contour", obs_module_text("Smooth silhouette"),
+  obs_properties_add_float_slider(props, "smooth_contour", obs_module_text("SmoothSilhouette"),
                                   0.0, 1.0, 0.05);
 
-  obs_properties_add_float_slider(props, "feather", obs_module_text("Feather blend silhouette"),
+  obs_properties_add_float_slider(props, "feather", obs_module_text("FeatherBlendSilhouette"),
                                   0.0, 1.0, 0.05);
 
-  obs_properties_add_color(props, "replaceColor", obs_module_text("Background Color"));
+  obs_properties_add_color(props, "replaceColor", obs_module_text("BackgroundColor"));
 
   obs_property_t *p_use_gpu = obs_properties_add_list(props, "useGPU",
-                                                      obs_module_text("Inference device"),
+                                                      obs_module_text("InferenceDevice"),
                                                       OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
   obs_property_list_add_string(p_use_gpu, obs_module_text("CPU"), USEGPU_CPU);
 #ifdef WITH_CUDA
-  obs_property_list_add_string(p_use_gpu, obs_module_text("GPU - CUDA"), USEGPU_CUDA);
+  obs_property_list_add_string(p_use_gpu, obs_module_text("GPUCUDA"), USEGPU_CUDA);
 #endif
 #if _WIN32
-  obs_property_list_add_string(p_use_gpu, obs_module_text("GPU - DirectML"), USEGPU_DML);
+  obs_property_list_add_string(p_use_gpu, obs_module_text("GPUDirectML"), USEGPU_DML);
 #endif
 #if defined(__APPLE__)
   obs_property_list_add_string(p_use_gpu, obs_module_text("CoreML"), USEGPU_COREML);
 #endif
 
   obs_property_t *p_model_select =
-    obs_properties_add_list(props, "model_select", obs_module_text("Segmentation model"),
+    obs_properties_add_list(props, "model_select", obs_module_text("SegmentationModel"),
                             OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
   obs_property_list_add_string(p_model_select, obs_module_text("SINet"), MODEL_SINET);
