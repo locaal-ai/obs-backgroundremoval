@@ -43,8 +43,9 @@ elseif(OS_MACOS)
       --cmake_generator Ninja --apple_deploy_target ${CMAKE_OSX_DEPLOYMENT_TARGET} --osx_arch
       ${CMAKE_OSX_ARCHITECTURES})
   if(Onnxruntime_CCACHE_EXE)
-    list(APPEND Onnxruntime_PLATFORM_OPTIONS --cmake_extra_defines CMAKE_C_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE}
-         --cmake_extra_defines CMAKE_CXX_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE})
+    list(APPEND Onnxruntime_PLATFORM_OPTIONS --cmake_extra_defines
+         CMAKE_C_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE} --cmake_extra_defines
+         CMAKE_CXX_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE})
   endif()
   set(Onnxruntime_PLATFORM_BYPRODUCT
       <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_providers_coreml${CMAKE_STATIC_LIBRARY_SUFFIX}
@@ -57,12 +58,12 @@ elseif(OS_MACOS)
 else()
   set(PYTHON3 python3)
   set(Onnxruntime_PLATFORM_CONFIGURE "")
-  set(Onnxruntime_PLATFORM_OPTIONS
-      --cmake_generator Ninja)
+  set(Onnxruntime_PLATFORM_OPTIONS --cmake_generator Ninja)
 
   if(Onnxruntime_CCACHE_EXE)
-    list(APPEND Onnxruntime_PLATFORM_OPTIONS --cmake_extra_defines CMAKE_C_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE}
-         --cmake_extra_defines CMAKE_CXX_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE})
+    list(APPEND Onnxruntime_PLATFORM_OPTIONS --cmake_extra_defines
+         CMAKE_C_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE} --cmake_extra_defines
+         CMAKE_CXX_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE})
   endif()
   set(Onnxruntime_PLATFORM_BYPRODUCT
       <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX})
