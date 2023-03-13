@@ -14,13 +14,13 @@ else()
   set(Onnxruntime_LIB_PREFIX "")
 endif()
 
-find_program(ccache_exe ccache)
+find_program(Onnxruntime_CCACHE_EXE ccache)
 
 if(OS_WINDOWS)
   set(PYTHON3 python)
   set(Onnxruntime_PLATFORM_OPTIONS --cmake_generator ${CMAKE_GENERATOR} --use_dml)
-  if(ccache_exe)
-    set(Onnxruntime_PLATFORM_CONFIGURE ${CMAKE_COMMAND} -E copy ${ccache_exe}
+  if(Onnxruntime_CCACHE_EXE)
+    set(Onnxruntime_PLATFORM_CONFIGURE ${CMAKE_COMMAND} -E copy ${Onnxruntime_CCACHE_EXE}
                                        ${CMAKE_BINARY_DIR}/cl.exe)
     list(
       APPEND
@@ -42,9 +42,9 @@ elseif(OS_MACOS)
   set(Onnxruntime_PLATFORM_OPTIONS
       --cmake_generator Ninja --apple_deploy_target ${CMAKE_OSX_DEPLOYMENT_TARGET} --osx_arch
       ${CMAKE_OSX_ARCHITECTURES})
-  if(ccache_exe)
-    list(APPEND Onnxruntime_PLATFORM_OPTIONS --cmake_extra_defines CMAKE_C_COMPILER_LAUNCHER=ccache
-         --cmake_extra_defines CMAKE_CXX_COMPILER_LAUNCHER=ccache)
+  if(Onnxruntime_CCACHE_EXE)
+    list(APPEND Onnxruntime_PLATFORM_OPTIONS --cmake_extra_defines CMAKE_C_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE}
+         --cmake_extra_defines CMAKE_CXX_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE})
   endif()
   set(Onnxruntime_PLATFORM_BYPRODUCT
       <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_providers_coreml${CMAKE_STATIC_LIBRARY_SUFFIX}
@@ -58,12 +58,11 @@ else()
   set(PYTHON3 python3)
   set(Onnxruntime_PLATFORM_CONFIGURE "")
   set(Onnxruntime_PLATFORM_OPTIONS
-      --cmake_generator Ninja --cmake_extra_defines CMAKE_C_COMPILER_LAUNCHER=ccache
-      --cmake_extra_defines CMAKE_CXX_COMPILER_LAUNCHER=ccache)
+      --cmake_generator Ninja)
 
-  if(ccache_exe)
-    list(APPEND Onnxruntime_PLATFORM_OPTIONS --cmake_extra_defines CMAKE_C_COMPILER_LAUNCHER=ccache
-         --cmake_extra_defines CMAKE_CXX_COMPILER_LAUNCHER=ccache)
+  if(Onnxruntime_CCACHE_EXE)
+    list(APPEND Onnxruntime_PLATFORM_OPTIONS --cmake_extra_defines CMAKE_C_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE}
+         --cmake_extra_defines CMAKE_CXX_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE})
   endif()
   set(Onnxruntime_PLATFORM_BYPRODUCT
       <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX})
