@@ -24,8 +24,8 @@ if(OS_WINDOWS)
                                        ${CMAKE_BINARY_DIR}/cl.exe)
     list(
       APPEND
-      --cmake_extra_defines
       Onnxruntime_PLATFORM_OPTIONS
+      --cmake_extra_defines
       CMAKE_VS_GLOBALS=CLToolExe=cl.exe$<SEMICOLON>CLToolPath=${CMAKE_BINARY_DIR}$<SEMICOLON>TrackFileAccess=false$<SEMICOLON>UseMultiToolTask=true$<SEMICOLON>DebugInformationFormat=OldStyle
     )
   endif()
