@@ -105,11 +105,11 @@ static obs_properties_t *filter_properties(void *data)
   obs_properties_add_float_slider(props, "contour_filter",
                                   obs_module_text("ContourFilterPercentOfImage"), 0.0, 1.0, 0.025);
 
-  obs_properties_add_float_slider(props, "smooth_contour", obs_module_text("SmoothSilhouette"),
-                                  0.0, 1.0, 0.05);
+  obs_properties_add_float_slider(props, "smooth_contour", obs_module_text("SmoothSilhouette"), 0.0,
+                                  1.0, 0.05);
 
-  obs_properties_add_float_slider(props, "feather", obs_module_text("FeatherBlendSilhouette"),
-                                  0.0, 1.0, 0.05);
+  obs_properties_add_float_slider(props, "feather", obs_module_text("FeatherBlendSilhouette"), 0.0,
+                                  1.0, 0.05);
 
   obs_properties_add_color(props, "replaceColor", obs_module_text("BackgroundColor"));
 
