@@ -140,12 +140,11 @@ static obs_properties_t *filter_properties(void *data)
   obs_property_list_add_string(p_model_select, obs_module_text("PPHumanSeg"), MODEL_PPHUMANSEG);
   obs_property_list_add_string(p_model_select, obs_module_text("Robust Video Matting"), MODEL_RVM);
 
-  obs_properties_add_int(props, "mask_every_x_frames",
-                         obs_module_text("CalculateMaskEveryXFrame"), 1, 300, 1);
+  obs_properties_add_int(props, "mask_every_x_frames", obs_module_text("CalculateMaskEveryXFrame"),
+                         1, 300, 1);
 
   obs_properties_add_int_slider(props, "blur_background",
-                                obs_module_text("BlurBackgroundFactor0NoBlurUseColor"),
-                                0, 100, 1);
+                                obs_module_text("BlurBackgroundFactor0NoBlurUseColor"), 0, 100, 1);
 
   UNUSED_PARAMETER(data);
   return props;
