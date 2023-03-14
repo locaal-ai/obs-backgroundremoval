@@ -46,24 +46,20 @@ configure_file(src/plugin-macros.h.in ${CMAKE_SOURCE_DIR}/src/plugin-macros.gene
 
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin-macros.generated.h)
 
-set(USE_SHARED_ONNXRUNTIME OFF CACHE STRING "Use system ONNX Runtime")
+set(USE_SHARED_ONNXRUNTIME
+    OFF
+    CACHE STRING "Use system ONNX Runtime")
 if(USE_SHARED_ONNXRUNTIME)
   if(OS_LINUX)
     find_package(Onnxruntime REQUIRED)
-    add_library(Onnxruntime SHARED IMPORTED)  
-    set_target_properties(
-      Onnxruntime
-      PROPERTIES
-        IMPORTED_LOCATION
-        ${Onnxruntime_LIBRARIES}
-    )
+    add_library(Onnxruntime SHARED IMPORTED)
+    set_target_properties(Onnxruntime PROPERTIES IMPORTED_LOCATION ${Onnxruntime_LIBRARIES})
     set(Onnxruntime_INCLUDE_PATH
-      ${Onnxruntime_INCLUDE_DIR}
-      ${Onnxruntime_INCLUDE_DIR}/onnxruntime
-      ${Onnxruntime_INCLUDE_DIR}/onnxruntime/core/session
-      ${Onnxruntime_INCLUDE_DIR}/onnxruntime/core/providers/cpu)
+        ${Onnxruntime_INCLUDE_DIR} ${Onnxruntime_INCLUDE_DIR}/onnxruntime
+        ${Onnxruntime_INCLUDE_DIR}/onnxruntime/core/session
+        ${Onnxruntime_INCLUDE_DIR}/onnxruntime/core/providers/cpu)
     set_target_properties(Onnxruntime PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-      "${Onnxruntime_INCLUDE_PATH}")
+                                                 "${Onnxruntime_INCLUDE_PATH}")
   else()
     message(FATAL_ERROR "Only on Linux the shared ONNX Runtime supported!")
   endif()
@@ -71,18 +67,15 @@ else()
   include(cmake/BuildMyOnnxruntime.cmake)
 endif()
 
-set(USE_SHARED_OPENCV OFF CACHE STRING "Use system OpenCV")
+set(USE_SHARED_OPENCV
+    OFF
+    CACHE STRING "Use system OpenCV")
 if(USE_SHARED_OPENCV)
   if(OS_LINUX)
     find_package(OpenCV REQUIRED)
-    add_library(OpenCV SHARED IMPORTED)  
-    set_target_properties(
-      OpenCV
-      PROPERTIES
-        IMPORTED_LOCATION
-        ${OpenCV_LIBRARIES}
-  set_target_properties(OpenCV PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-    "${OpenCV_INCLUDE_DIRS}")
+    add_library(OpenCV SHARED IMPORTED)
+    set_target_properties(OpenCV PROPERTIES IMPORTED_LOCATION ${OpenCV_LIBRARIES})
+    set_target_properties(OpenCV PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${OpenCV_INCLUDE_DIRS}")
   else()
     message(FATAL_ERROR "Only on Linux the shared OpenCV supported!")
   endif()
