@@ -81,7 +81,7 @@ endif()
 ExternalProject_Add(
   Ort
   GIT_REPOSITORY https://github.com/microsoft/onnxruntime.git
-  GIT_TAG v1.13.1
+  GIT_TAG v1.14.1
   GIT_SHALLOW ON
   CONFIGURE_COMMAND "${Onnxruntime_PLATFORM_CONFIGURE}"
   BUILD_COMMAND
