@@ -13,43 +13,6 @@ appstream-compose: false
 build-options:
   prefix: /app/plugins/backgroundremoval
 modules:
-  # onnxruntime has a bash+python+cmake build script - just download/use pre-compiled library
-  # https://onnxruntime.ai/docs/build/inferencing.html
-  - name: onnxruntime
-    buildsystem: simple
-    sources:
-      - type: archive
-        url: https://github.com/microsoft/onnxruntime/releases/download/v1.11.1/onnxruntime-linux-x64-1.11.1.tgz
-        sha256: ddc03b5ae325c675ff76a6f18786ce7d310be6eb6f320087f7a0e9228115f24d
-    build-commands:
-      - mkdir -p ${FLATPAK_DEST}/include ${FLATPAK_DEST}/lib
-      - mv include/* ${FLATPAK_DEST}/include
-      - mv lib/* ${FLATPAK_DEST}/lib
-  # https://docs.opencv.org/4.x/db/d05/tutorial_config_reference.html
-  - name: opencv
-    buildsystem: cmake
-    config-opts:
-      - "-DCMAKE_BUILD_TYPE=Release"
-      - "-DBUILD_LIST=imgproc"
-    cleanup:
-    - "/bin"
-    builddir: true
-    sources:
-      - type: archive
-        url: https://github.com/opencv/opencv/archive/refs/tags/4.5.5.tar.gz
-        sha256: a1cfdcf6619387ca9e232687504da996aaa9f7b5689986b8331ec02cb61d28ad
-  - name: obs-backgroundremoval
-    buildsystem: cmake
-    builddir: true
-    config-opts:
-      - -DLIBOBS_INCLUDE_DIR=/app/include/obs
-      - -DOnnxruntime_INCLUDE_DIR=/app/plugins/backgroundremoval/include
-      - -DOnnxruntime_LIBRARIES=/app/plugins/backgroundremoval/lib/libonnxruntime.so
-    sources:
-      - type: git
-        url: https://github.com/royshil/obs-backgroundremoval.git
-        tag: v0.4.0
-        commit: 4f0348a15103cd4e516d94b629851208280cd4d4
   - name: appdata
     buildsystem: simple
     build-commands:
