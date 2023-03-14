@@ -347,6 +347,9 @@ jobs:
     defaults:
       run:
         shell: bash
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:gnome-40
+      options: --privileged
     steps:
       - name: Checkout
         uses: actions/checkout@v3
