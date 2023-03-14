@@ -546,11 +546,56 @@ jobs:
           name: ${{ env.PLUGIN_NAME }}-windows-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}-installer
           path: ${{ github.workspace }}/plugin/release/${{ env.PLUGIN_NAME }}-*.exe
 
+  flatpak_build:
+    name: Build flatpak
+    if: always()
+    needs: [clang_check]
+    runs-on: [ubuntu-latest]
+    strategy:
+      fail-fast: true
+      matrix:
+        arch: [x86_64]
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:kde-6.4
+      options: --privileged
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+
+      - name: 'Setup build environment'
+        id: setup
+        run: |
+          git config --global --add safe.directory $GITHUB_WORKSPACE
+          echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build Flatpak Manifest
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v5
+        with:
+          arch: ${{ matrix.arch }}
+          bundle: obs-studio-plugin-background-removal-${{ steps.setup.outputs.commitHash }}.flatpak
+          build-bundle: false
+          manifest-path: ci/flatpak/com.obsproject.Studio.Plugin.backgroundremoval.yaml
+          cache-key: flatpak-builder-${{ hashFiles('ci/flatpak/com.obsproject.Studio.Plugin.backgroundremoval.yaml') }}
+          branch: stable
+
+      - name: Build Bundle
+        shell: bash
+        run: |
+          flatpak build-bundle --runtime repo com.obs.Studio.Plugin.backgroundremoval-${{ steps.setup.outputs.commitHash }}.flatpak com.obsproject.Studio.Plugin.backgroundremoval stable
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: com.obs.Studio.Plugin.backgroundremoval-${{ steps.setup.outputs.commitHash }}.flatpak
+          path: com.obs.Studio.Plugin.backgroundremoval-${{ steps.setup.outputs.commitHash }}.flatpak
+
   make-release:
     name: 03 - Create and upload release
     runs-on: ubuntu-22.04
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-    needs: [macos_package, linux_build, windows_build]
+    needs: [macos_package, linux_build, windows_build, flatpak_build]
     defaults:
       run:
         shell: bash
@@ -571,7 +616,7 @@ jobs:
           ## CHECKSUM GENERATION SCRIPT
           shopt -s extglob
           echo "### Checksums" > ${{ github.workspace }}/CHECKSUMS.txt
-          for file in ${{ github.workspace }}/**/@(*.pkg|*.exe|*.deb|*.zip); do
+          for file in ${{ github.workspace }}/**/@(*.pkg|*.exe|*.deb|*.zip|*.flatpak); do
             echo "    ${file##*/}: $(sha256sum "${file}" | cut -d " " -f 1)" >> ${{ github.workspace }}/CHECKSUMS.txt
           done
 
@@ -589,3 +634,4 @@ jobs:
             ${{ github.workspace }}/**/*.exe
             ${{ github.workspace }}/**/*.deb
             ${{ github.workspace }}/**/*.pkg
+            ${{ github.workspace }}/**/*.flatpak
