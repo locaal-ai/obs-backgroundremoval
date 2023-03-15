@@ -372,7 +372,6 @@ jobs:
           sudo apt install -y flatpak
           sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           sudo flatpak install --noninteractive -y flathub org.freedesktop.Platform/x86_64/22.08 org.freedesktop.Sdk/x86_64/22.08
-          sudo flatpak install --noninteractive -y flathub org.flatpak.Builder/x86_64/22.08
 
       - name: Restore Compilation Cache
         id: ccache-cache
