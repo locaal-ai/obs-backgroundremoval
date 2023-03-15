@@ -371,6 +371,7 @@ jobs:
           echo "commitHash=$(git rev-parse HEAD | cut -c1-9)" >> $GITHUB_OUTPUT
           sudo apt install -y flatpak
           sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install flathub org.freedesktop.Platform org.freedesktop.Sdk
           sudo flatpak install flathub org.flatpak.Builder
 
       - name: Restore Compilation Cache
