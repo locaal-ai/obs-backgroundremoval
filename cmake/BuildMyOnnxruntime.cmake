@@ -46,9 +46,7 @@ elseif(OS_MACOS)
       ${CMAKE_OSX_DEPLOYMENT_TARGET}
       --osx_arch
       ${CMAKE_OSX_ARCHITECTURES}
-      --use_coreml
-      --cmake_extra_defines
-      onnxruntime_ENABLE_CPUINFO=OFF)
+      --use_coreml)
   if(Onnxruntime_CCACHE_EXE)
     list(APPEND Onnxruntime_PLATFORM_OPTIONS --cmake_extra_defines
          CMAKE_C_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE} --cmake_extra_defines
