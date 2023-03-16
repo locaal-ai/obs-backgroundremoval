@@ -32,9 +32,9 @@ if(OS_WINDOWS)
   set(Onnxruntime_PLATFORM_BYPRODUCT <INSTALL_DIR>/lib/DirectML.lib <INSTALL_DIR>/lib/DirectML.dll
                                      <INSTALL_DIR>/lib/DirectML.pdb)
   set(Onnxruntime_PLATFORM_INSTALL_FILES
-      <BINARY_DIR>/packages/Microsoft.AI.DirectML.1.9.1/bin/x64-win/DirectML.dll
-      <BINARY_DIR>/packages/Microsoft.AI.DirectML.1.9.1/bin/x64-win/DirectML.lib
-      <BINARY_DIR>/packages/Microsoft.AI.DirectML.1.9.1/bin/x64-win/DirectML.pdb)
+      <BINARY_DIR>/packages/Microsoft.AI.DirectML.1.10.1/bin/x64-win/DirectML.dll
+      <BINARY_DIR>/packages/Microsoft.AI.DirectML.1.10.1/bin/x64-win/DirectML.lib
+      <BINARY_DIR>/packages/Microsoft.AI.DirectML.1.10.1/bin/x64-win/DirectML.pdb)
   set(Onnxruntime_PROTOBUF_PREFIX lib)
 elseif(OS_MACOS)
   set(PYTHON3 python3)
