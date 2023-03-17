@@ -164,6 +164,10 @@ static void filter_defaults(obs_data_t *settings)
 
 static void createOrtSession(struct background_removal_filter *tf)
 {
+  if (tf->model.get() == nullptr) {
+    blog(LOG_ERROR, "Model object is not initialized");
+    return;
+  }
 
   Ort::SessionOptions sessionOptions;
 
