@@ -46,10 +46,10 @@ configure_file(src/plugin-macros.h.in ${CMAKE_SOURCE_DIR}/src/plugin-macros.gene
 
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin-macros.generated.h)
 
-set(USE_SHARED_ONNXRUNTIME
+set(USE_SYSTEM_ONNXRUNTIME
     OFF
     CACHE STRING "Use system ONNX Runtime")
-if(USE_SHARED_ONNXRUNTIME)
+if(USE_SYSTEM_ONNXRUNTIME)
   if(OS_LINUX)
     find_package(Onnxruntime 1.14.1 REQUIRED)
     add_library(Onnxruntime SHARED IMPORTED)
@@ -61,23 +61,23 @@ if(USE_SHARED_ONNXRUNTIME)
     set_target_properties(Onnxruntime PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
                                                  "${Onnxruntime_INCLUDE_PATH}")
   else()
-    message(FATAL_ERROR "Shared ONNX Runtime is only supported on Linux!")
+    message(FATAL_ERROR "System ONNX Runtime is only supported on Linux!")
   endif()
 else()
   include(cmake/BuildMyOnnxruntime.cmake)
 endif()
 
-set(USE_SHARED_OPENCV
+set(USE_SYSTEM_OPENCV
     OFF
     CACHE STRING "Use system OpenCV")
-if(USE_SHARED_OPENCV)
+if(USE_SYSTEM_OPENCV)
   if(OS_LINUX)
     find_package(OpenCV REQUIRED COMPONENTS core imgproc)
     add_library(OpenCV SHARED IMPORTED)
     set_target_properties(OpenCV PROPERTIES IMPORTED_LOCATION ${OpenCV_LIBRARIES})
     set_target_properties(OpenCV PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${OpenCV_INCLUDE_DIRS}")
   else()
-    message(FATAL_ERROR "Shared OpenCV is only supported on Linux!")
+    message(FATAL_ERROR "System OpenCV is only supported on Linux!")
   endif()
 else()
   include(cmake/BuildMyOpenCV.cmake)
