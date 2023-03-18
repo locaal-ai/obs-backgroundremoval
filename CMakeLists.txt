@@ -51,7 +51,7 @@ set(USE_SHARED_ONNXRUNTIME
     CACHE STRING "Use system ONNX Runtime")
 if(USE_SHARED_ONNXRUNTIME)
   if(OS_LINUX)
-    find_package(Onnxruntime REQUIRED)
+    find_package(Onnxruntime 1.14.1 REQUIRED)
     add_library(Onnxruntime SHARED IMPORTED)
     set_target_properties(Onnxruntime PROPERTIES IMPORTED_LOCATION ${Onnxruntime_LIBRARIES})
     set(Onnxruntime_INCLUDE_PATH
