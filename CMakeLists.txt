@@ -72,7 +72,7 @@ set(USE_SHARED_OPENCV
     CACHE STRING "Use system OpenCV")
 if(USE_SHARED_OPENCV)
   if(OS_LINUX)
-    find_package(OpenCV REQUIRED)
+    find_package(OpenCV REQUIRED COMPONENTS core imgproc)
     add_library(OpenCV SHARED IMPORTED)
     set_target_properties(OpenCV PROPERTIES IMPORTED_LOCATION ${OpenCV_LIBRARIES})
     set_target_properties(OpenCV PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${OpenCV_INCLUDE_DIRS}")
