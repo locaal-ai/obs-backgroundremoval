@@ -32,9 +32,9 @@ if(OS_WINDOWS)
   set(Onnxruntime_PLATFORM_BYPRODUCT <INSTALL_DIR>/lib/DirectML.lib <INSTALL_DIR>/lib/DirectML.dll
                                      <INSTALL_DIR>/lib/DirectML.pdb)
   set(Onnxruntime_PLATFORM_INSTALL_FILES
-      <BINARY_DIR>/packages/Microsoft.AI.DirectML.1.9.1/bin/x64-win/DirectML.dll
-      <BINARY_DIR>/packages/Microsoft.AI.DirectML.1.9.1/bin/x64-win/DirectML.lib
-      <BINARY_DIR>/packages/Microsoft.AI.DirectML.1.9.1/bin/x64-win/DirectML.pdb)
+      <BINARY_DIR>/packages/Microsoft.AI.DirectML.1.10.1/bin/x64-win/DirectML.dll
+      <BINARY_DIR>/packages/Microsoft.AI.DirectML.1.10.1/bin/x64-win/DirectML.lib
+      <BINARY_DIR>/packages/Microsoft.AI.DirectML.1.10.1/bin/x64-win/DirectML.pdb)
   set(Onnxruntime_PROTOBUF_PREFIX lib)
 elseif(OS_MACOS)
   set(PYTHON3 python3)
@@ -57,7 +57,7 @@ elseif(OS_MACOS)
       <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_coreml_proto${CMAKE_STATIC_LIBRARY_SUFFIX}
       <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX})
   set(Onnxruntime_PLATFORM_INSTALL_FILES
-      <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/nsync/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX}
+      <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/google_nsync-build/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX}
   )
   set(Onnxruntime_PROTOBUF_PREFIX ${CMAKE_STATIC_LIBRARY_PREFIX})
 else()
@@ -73,7 +73,7 @@ else()
   set(Onnxruntime_PLATFORM_BYPRODUCT
       <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX})
   set(Onnxruntime_PLATFORM_INSTALL_FILES
-      <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/nsync/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX}
+      <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/google_nsync-build/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX}
   )
   set(Onnxruntime_PROTOBUF_PREFIX ${CMAKE_STATIC_LIBRARY_PREFIX})
 endif()
@@ -81,7 +81,7 @@ endif()
 ExternalProject_Add(
   Ort
   GIT_REPOSITORY https://github.com/microsoft/onnxruntime.git
-  GIT_TAG v1.13.1
+  GIT_TAG v1.14.1
   GIT_SHALLOW ON
   CONFIGURE_COMMAND "${Onnxruntime_PLATFORM_CONFIGURE}"
   BUILD_COMMAND
@@ -111,15 +111,15 @@ ExternalProject_Add(
   INSTALL_COMMAND
     ${CMAKE_COMMAND} --install <BINARY_DIR>/${Onnxruntime_BUILD_TYPE} --config
     ${Onnxruntime_BUILD_TYPE} --prefix <INSTALL_DIR> && ${CMAKE_COMMAND} -E copy
-    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/onnx/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}onnx${CMAKE_STATIC_LIBRARY_SUFFIX}
-    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/onnx/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}onnx_proto${CMAKE_STATIC_LIBRARY_SUFFIX}
-    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/protobuf/cmake/${Onnxruntime_LIB_PREFIX}/libprotobuf-lite${CMAKE_STATIC_LIBRARY_SUFFIX}
-    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/re2/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}re2${CMAKE_STATIC_LIBRARY_SUFFIX}
-    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/abseil-cpp/absl/base/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_throw_delegate${CMAKE_STATIC_LIBRARY_SUFFIX}
-    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/abseil-cpp/absl/hash/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_hash${CMAKE_STATIC_LIBRARY_SUFFIX}
-    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/abseil-cpp/absl/hash/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_city${CMAKE_STATIC_LIBRARY_SUFFIX}
-    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/abseil-cpp/absl/hash/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_low_level_hash${CMAKE_STATIC_LIBRARY_SUFFIX}
-    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/external/abseil-cpp/absl/container/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_raw_hash_set${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/onnx-build/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}onnx${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/onnx-build/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}onnx_proto${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/protobuf-build/${Onnxruntime_LIB_PREFIX}/libprotobuf-lite${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/re2-build/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}re2${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/abseil_cpp-build/absl/base/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_throw_delegate${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/abseil_cpp-build/absl/hash/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_hash${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/abseil_cpp-build/absl/hash/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_city${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/abseil_cpp-build/absl/hash/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_low_level_hash${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/abseil_cpp-build/absl/container/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_raw_hash_set${CMAKE_STATIC_LIBRARY_SUFFIX}
     ${Onnxruntime_PLATFORM_INSTALL_FILES} <INSTALL_DIR>/lib && ${CMAKE_COMMAND} -E copy_directory
     <SOURCE_DIR>/include/onnxruntime/core/providers/coreml
     <INSTALL_DIR>/include/onnxruntime/core/providers/coreml)
