@@ -78,7 +78,6 @@ struct background_removal_filter {
   int maskEveryXFrames = 1;
   int maskEveryXFramesCount = 0;
   int64_t blurBackground = 0;
-  cv::Mat imageBGRA;
 
 #if _WIN32
   const wchar_t *modelFilepath = nullptr;
@@ -469,7 +468,8 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
     backgroundMask.copyTo(tf->backgroundMask);
   }
 
-  cv::cvtColor(imageBGR, tf->imageBGRA, cv::COLOR_BGR2BGRA);
+  cv::Mat imageBGRA;
+  cv::cvtColor(imageBGR, imageBGRA, cv::COLOR_BGR2BGRA);
   // Apply the mask back to the main image.
   try {
     cv::Mat blurredBackground;
@@ -511,18 +511,16 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
         blurredBackground.copyTo(imageBGR, backgroundMask);
       } else {
         cv::Scalar transparentColor(0, 0, 0, 0);
-        tf->imageBGRA.setTo(transparentColor, backgroundMask);
+        imageBGRA.setTo(transparentColor, backgroundMask);
       }
     }
   } catch (const std::exception &e) {
     blog(LOG_ERROR, "%s", e.what());
   }
 
-  frame->data[0] = tf->imageBGRA.data;
-  frame->linesize[0] = static_cast<uint32_t>(tf->imageBGRA.cols * tf->imageBGRA.elemSize());
-  frame->width = static_cast<uint32_t>(tf->imageBGRA.cols);
-  frame->height = static_cast<uint32_t>(tf->imageBGRA.rows);
-  frame->format = VIDEO_FORMAT_BGRA;
+  bfree(frame->data[0]);
+  obs_source_frame_init(frame, VIDEO_FORMAT_BGRA, imageBGRA.cols, imageBGRA.rows);
+  std::memcpy(frame->data[0], imageBGRA.data, imageBGRA.cols * imageBGRA.elemSize() * imageBGRA.rows);
 
   return frame;
 }
