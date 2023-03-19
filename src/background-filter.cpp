@@ -523,7 +523,8 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
 
   tf->outputFrame = *frame;
   tf->outputFrame.data[0] = tf->imageBGRA.data;
-  tf->outputFrame.linesize[0] = static_cast<uint32_t>(tf->imageBGRA.cols * tf->imageBGRA.elemSize());
+  tf->outputFrame.linesize[0] =
+    static_cast<uint32_t>(tf->imageBGRA.cols * tf->imageBGRA.elemSize());
   tf->outputFrame.width = static_cast<uint32_t>(tf->imageBGRA.cols);
   tf->outputFrame.height = static_cast<uint32_t>(tf->imageBGRA.rows);
   tf->outputFrame.format = VIDEO_FORMAT_BGRA;
