@@ -519,8 +519,6 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
     blog(LOG_ERROR, "%s", e.what());
   }
 
-  // Put masked image back on frame,
-  //convertBGRAToFrame(imageBGRA, frame, tf);
   tf->outputFrame = *frame;
   tf->outputFrame.data[0] = tf->imageBGRA.data;
   tf->outputFrame.linesize[0] = tf->imageBGRA.cols * tf->imageBGRA.elemSize();
