@@ -482,6 +482,8 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
     }
 
     if (tf->feather > 0.0) {
+      cv::Scalar transparentColor(0, 0, 0, 0);
+
       // If we're going to feather/alpha blend, we need to do some processing that
       // will combine the blended "foreground" and "masked background" images onto the main image.
       cv::Mat maskFloat;
@@ -499,7 +501,7 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
       // Mutiply the unmasked foreground area of the image with ( 1 - alpha matte).
       cv::multiply(imageBGR, cv::Scalar(1, 1, 1) - maskFloat3c, tmpImage, 1.0, CV_32FC3);
       // Multiply the masked background area (with the background color applied) with the alpha matte.
-      cv::multiply(cv::Mat(imageBGR.size(), CV_32FC3, tf->backgroundColor), maskFloat3c,
+      cv::multiply(cv::Mat(imageBGR.size(), CV_32FC3, transparentColor), maskFloat3c,
                    tmpBackground);
       // Add the foreground and background images together, rescale back to an 8bit integer image
       // and apply onto the main image.
@@ -522,8 +524,8 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
   tf->outputFrame = *frame;
   tf->outputFrame.data[0] = tf->imageBGRA.data;
   tf->outputFrame.linesize[0] = tf->imageBGRA.cols * tf->imageBGRA.elemSize();
-  tf->outputFrame.width = tf->imageBGRA.cols;
-  tf->outputFrame.height = tf->imageBGRA.rows;
+  tf->outputFrame.width = static_cast<uint32_t>(tf->imageBGRA.cols);
+  tf->outputFrame.height = static_cast<uint32_t>(tf->imageBGRA.rows);
   tf->outputFrame.format = VIDEO_FORMAT_BGRA;
 
   return &tf->outputFrame;
