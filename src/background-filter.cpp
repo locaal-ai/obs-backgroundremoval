@@ -71,7 +71,6 @@ struct background_removal_filter {
 
   // Use the media-io converter to both scale and convert the colorspace
   video_scaler_t *scalerToBGR;
-  video_scaler_t *scalerFromBGR;
 
   obs_source_t *source;
 
@@ -79,6 +78,8 @@ struct background_removal_filter {
   int maskEveryXFrames = 1;
   int maskEveryXFramesCount = 0;
   int64_t blurBackground = 0;
+  cv::Mat imageBGRA;
+  obs_source_frame outputFrame;
 
 #if _WIN32
   const wchar_t *modelFilepath = nullptr;
@@ -258,10 +259,6 @@ static void destroyScalers(struct background_removal_filter *tf)
     video_scaler_destroy(tf->scalerToBGR);
     tf->scalerToBGR = nullptr;
   }
-  if (tf->scalerFromBGR != nullptr) {
-    video_scaler_destroy(tf->scalerFromBGR);
-    tf->scalerFromBGR = nullptr;
-  }
 }
 
 static void filter_update(void *data, obs_data_t *settings)
@@ -352,7 +349,6 @@ static void initializeScalers(cv::Size frameSize, enum video_format frameFormat,
 
   // Create new scalers
   video_scaler_create(&tf->scalerToBGR, &dst, &src, VIDEO_SCALE_DEFAULT);
-  video_scaler_create(&tf->scalerFromBGR, &src, &dst, VIDEO_SCALE_DEFAULT);
 }
 
 static cv::Mat convertFrameToBGR(struct obs_source_frame *frame,
@@ -371,19 +367,6 @@ static cv::Mat convertFrameToBGR(struct obs_source_frame *frame,
                      frame->linesize);
 
   return imageBGR;
-}
-
-static void convertBGRToFrame(const cv::Mat &imageBGR, struct obs_source_frame *frame,
-                              struct background_removal_filter *tf)
-{
-  if (tf->scalerFromBGR == nullptr) {
-    // Lazy initialize the frame scale & color converter
-    initializeScalers(cv::Size(frame->width, frame->height), frame->format, tf);
-  }
-
-  const uint32_t rgbLinesize = (uint32_t)(imageBGR.cols * imageBGR.elemSize());
-  video_scaler_scale(tf->scalerFromBGR, frame->data, frame->linesize, &(imageBGR.data),
-                     &(rgbLinesize));
 }
 
 static void processImageForBackground(struct background_removal_filter *tf, const cv::Mat &imageBGR,
@@ -487,6 +470,7 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
     backgroundMask.copyTo(tf->backgroundMask);
   }
 
+  cv::cvtColor(imageBGR, tf->imageBGRA, cv::COLOR_BGR2BGRA);
   // Apply the mask back to the main image.
   try {
     cv::Mat blurredBackground;
@@ -527,7 +511,8 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
         // copy the blurred background to the main image where the mask is 0
         blurredBackground.copyTo(imageBGR, backgroundMask);
       } else {
-        imageBGR.setTo(tf->backgroundColor, backgroundMask);
+        cv::Scalar transparentColor(0, 0, 0, 0);
+        tf->imageBGRA.setTo(transparentColor, backgroundMask);
       }
     }
   } catch (const std::exception &e) {
@@ -535,8 +520,15 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
   }
 
   // Put masked image back on frame,
-  convertBGRToFrame(imageBGR, frame, tf);
-  return frame;
+  //convertBGRAToFrame(imageBGRA, frame, tf);
+  tf->outputFrame = *frame;
+  tf->outputFrame.data[0] = tf->imageBGRA.data;
+  tf->outputFrame.linesize[0] = tf->imageBGRA.cols * tf->imageBGRA.elemSize();
+  tf->outputFrame.width = tf->imageBGRA.cols;
+  tf->outputFrame.height = tf->imageBGRA.rows;
+  tf->outputFrame.format = VIDEO_FORMAT_BGRA;
+
+  return &tf->outputFrame;
 }
 
 static void filter_destroy(void *data)
