@@ -79,7 +79,6 @@ struct background_removal_filter {
   int maskEveryXFramesCount = 0;
   int64_t blurBackground = 0;
   cv::Mat imageBGRA;
-  obs_source_frame outputFrame;
 
 #if _WIN32
   const wchar_t *modelFilepath = nullptr;
@@ -519,15 +518,13 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
     blog(LOG_ERROR, "%s", e.what());
   }
 
-  tf->outputFrame = *frame;
-  tf->outputFrame.data[0] = tf->imageBGRA.data;
-  tf->outputFrame.linesize[0] =
-    static_cast<uint32_t>(tf->imageBGRA.cols * tf->imageBGRA.elemSize());
-  tf->outputFrame.width = static_cast<uint32_t>(tf->imageBGRA.cols);
-  tf->outputFrame.height = static_cast<uint32_t>(tf->imageBGRA.rows);
-  tf->outputFrame.format = VIDEO_FORMAT_BGRA;
+  frame->data[0] = tf->imageBGRA.data;
+  frame->linesize[0] = static_cast<uint32_t>(tf->imageBGRA.cols * tf->imageBGRA.elemSize());
+  frame->width = static_cast<uint32_t>(tf->imageBGRA.cols);
+  frame->height = static_cast<uint32_t>(tf->imageBGRA.rows);
+  frame->format = VIDEO_FORMAT_BGRA;
 
-  return &tf->outputFrame;
+  return frame;
 }
 
 static void filter_destroy(void *data)
