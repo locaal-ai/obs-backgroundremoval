@@ -510,7 +510,8 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
       } else {
         for (int i = 0; i < maskFloat.cols; i++) {
           for (int j = 0; j < maskFloat.rows; j++) {
-            imageBGRA.at<cv::Vec4b>(j, i)[3] = (1.0 - maskFloat.at<float>(j, i)) * 255.0;
+            imageBGRA.at<cv::Vec4b>(j, i)[3] =
+              static_cast<uchar>((1.0 - maskFloat.at<float>(j, i)) * 255.0);
           }
         }
       }
