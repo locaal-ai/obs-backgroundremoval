@@ -360,9 +360,9 @@ static cv::Mat convertFrameToBGRA(struct obs_source_frame *frame,
     initializeScalers(frameSize, frame->format, tf);
   }
 
-  cv::Mat imageBGRA(frameSize, CV_8UC3);
-  const uint32_t bgrLinesize = (uint32_t)(imageBGRA.cols * imageBGRA.elemSize());
-  video_scaler_scale(tf->scalerToBGRA, &(imageBGRA.data), &(bgrLinesize), frame->data,
+  cv::Mat imageBGRA(frameSize, CV_8UC4);
+  const uint32_t bgraLinesize = (uint32_t)(imageBGRA.cols * imageBGRA.elemSize());
+  video_scaler_scale(tf->scalerToBGRA, &(imageBGRA.data), &(bgraLinesize), frame->data,
                      frame->linesize);
 
   return imageBGRA;
