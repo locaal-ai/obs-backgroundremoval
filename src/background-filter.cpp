@@ -492,6 +492,11 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
       // Alpha blend
       cv::Mat maskFloat4c;
       cv::cvtColor(maskFloat, maskFloat4c, cv::COLOR_GRAY2BGRA);
+      for (int i = 0; i < maskFloat4c.cols; i++) {
+        for (int j = 0; j < maskFloat4c.rows; j++) {
+          maskFloat4c.at<cv::Vec4f>(j, i)[3] = maskFloat4c.at<cv::Vec4f>(j, i)[0];
+        }
+      }
       cv::Mat tmpImage, tmpBackground;
       // Mutiply the unmasked foreground area of the image with (1 - alpha matte).
       cv::multiply(imageBGRA, cv::Scalar(1, 1, 1, 1) - maskFloat4c, tmpImage, 1.0, CV_32FC4);
@@ -500,7 +505,7 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
                    tmpBackground);
       // Add the foreground and background images together, rescale back to an 8bit integer image
       // and apply onto the main image.
-      cv::Mat(tmpImage + tmpBackground).convertTo(imageBGRA, CV_8UC3);
+      cv::Mat(tmpImage + tmpBackground).convertTo(imageBGRA, CV_8UC4);
     } else {
       // If we're not feathering/alpha blending, we can
       // apply the mask as-is back onto the main image.
