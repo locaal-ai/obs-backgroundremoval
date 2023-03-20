@@ -351,7 +351,7 @@ static void initializeScalers(cv::Size frameSize, enum video_format frameFormat,
 }
 
 static cv::Mat convertFrameToBGRA(struct obs_source_frame *frame,
-                                 struct background_removal_filter *tf)
+                                  struct background_removal_filter *tf)
 {
   const cv::Size frameSize(frame->width, frame->height);
 
@@ -369,8 +369,7 @@ static cv::Mat convertFrameToBGRA(struct obs_source_frame *frame,
 }
 
 static void processImageForBackground(struct background_removal_filter *tf,
-                                      const cv::Mat &imageBGRA,
-                                      cv::Mat &backgroundMask)
+                                      const cv::Mat &imageBGRA, cv::Mat &backgroundMask)
 {
   if (tf->session.get() == nullptr) {
     // Onnx runtime session is not initialized. Problem in initialization
@@ -497,8 +496,7 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
       // Mutiply the unmasked foreground area of the image with (1 - alpha matte).
       cv::multiply(imageBGRA, cv::Scalar(1, 1, 1, 1) - maskFloat4c, tmpImage, 1.0, CV_32FC4);
       // Multiply the masked background area (with the background color applied) with the alpha matte.
-      cv::multiply(cv::Mat(imageBGRA.size(), CV_32FC4, tf->backgroundColor),
-                   maskFloat4c,
+      cv::multiply(cv::Mat(imageBGRA.size(), CV_32FC4, tf->backgroundColor), maskFloat4c,
                    tmpBackground);
       // Add the foreground and background images together, rescale back to an 8bit integer image
       // and apply onto the main image.
@@ -520,8 +518,7 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
 
   bfree(frame->data[0]);
   obs_source_frame_init(frame, VIDEO_FORMAT_BGRA, imageBGRA.cols, imageBGRA.rows);
-  std::memcpy(frame->data[0],
-              imageBGRA.data,
+  std::memcpy(frame->data[0], imageBGRA.data,
               imageBGRA.cols * imageBGRA.elemSize() * imageBGRA.rows);
 
   return frame;
