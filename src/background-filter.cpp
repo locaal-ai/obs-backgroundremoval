@@ -503,7 +503,7 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
         cv::multiply(imageBGRA, cv::Scalar(1, 1, 1, 1) - maskFloat4c, tmpImage, 1.0, CV_32FC4);
         // Multiply the masked background area (with the background color applied) with the alpha matte.
         cv::multiply(cv::Mat(imageBGRA.size(), CV_32FC4, tf->backgroundColor), maskFloat4c,
-                    tmpBackground);
+                     tmpBackground);
         // Add the foreground and background images together, rescale back to an 8bit integer image
         // and apply onto the main image.
         cv::Mat(tmpImage + tmpBackground).convertTo(imageBGRA, CV_8UC4);
