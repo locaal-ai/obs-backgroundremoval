@@ -489,23 +489,31 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
       // Feather (blur) the normalized mask
       cv::boxFilter(maskFloat, maskFloat, maskFloat.depth(), cv::Size(k_size, k_size));
 
-      // Alpha blend
-      cv::Mat maskFloat4c;
-      cv::cvtColor(maskFloat, maskFloat4c, cv::COLOR_GRAY2BGRA);
-      for (int i = 0; i < maskFloat4c.cols; i++) {
-        for (int j = 0; j < maskFloat4c.rows; j++) {
-          maskFloat4c.at<cv::Vec4f>(j, i)[3] = maskFloat4c.at<cv::Vec4f>(j, i)[0];
+      if (tf->backgroundColor[3] == 255) {
+        // Alpha blend
+        cv::Mat maskFloat4c;
+        cv::cvtColor(maskFloat, maskFloat4c, cv::COLOR_GRAY2BGRA);
+        for (int i = 0; i < maskFloat4c.cols; i++) {
+          for (int j = 0; j < maskFloat4c.rows; j++) {
+            maskFloat4c.at<cv::Vec4f>(j, i)[3] = maskFloat4c.at<cv::Vec4f>(j, i)[0];
+          }
+        }
+        cv::Mat tmpImage, tmpBackground;
+        // Mutiply the unmasked foreground area of the image with (1 - alpha matte).
+        cv::multiply(imageBGRA, cv::Scalar(1, 1, 1, 1) - maskFloat4c, tmpImage, 1.0, CV_32FC4);
+        // Multiply the masked background area (with the background color applied) with the alpha matte.
+        cv::multiply(cv::Mat(imageBGRA.size(), CV_32FC4, tf->backgroundColor), maskFloat4c,
+                    tmpBackground);
+        // Add the foreground and background images together, rescale back to an 8bit integer image
+        // and apply onto the main image.
+        cv::Mat(tmpImage + tmpBackground).convertTo(imageBGRA, CV_8UC4);
+      } else {
+        for (int i = 0; i < maskFloat.cols; i++) {
+          for (int j = 0; j < maskFloat.rows; j++) {
+            imageBGRA.at<cv::Vec4b>(j, i)[3] = (1.0 - maskFloat.at<float>(j, i)) * 255.0;
+          }
         }
       }
-      cv::Mat tmpImage, tmpBackground;
-      // Mutiply the unmasked foreground area of the image with (1 - alpha matte).
-      cv::multiply(imageBGRA, cv::Scalar(1, 1, 1, 1) - maskFloat4c, tmpImage, 1.0, CV_32FC4);
-      // Multiply the masked background area (with the background color applied) with the alpha matte.
-      cv::multiply(cv::Mat(imageBGRA.size(), CV_32FC4, tf->backgroundColor), maskFloat4c,
-                   tmpBackground);
-      // Add the foreground and background images together, rescale back to an 8bit integer image
-      // and apply onto the main image.
-      cv::Mat(tmpImage + tmpBackground).convertTo(imageBGRA, CV_8UC4);
     } else {
       // If we're not feathering/alpha blending, we can
       // apply the mask as-is back onto the main image.
