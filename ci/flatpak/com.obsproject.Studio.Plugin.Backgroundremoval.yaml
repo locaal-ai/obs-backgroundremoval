@@ -1,4 +1,5 @@
 id: com.obsproject.Studio.Plugin.Backgroundremoval
+branch: stable
 runtime: com.obsproject.Studio
 runtime-version: stable
 sdk: org.kde.Sdk//6.4
