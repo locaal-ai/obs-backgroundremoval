@@ -68,7 +68,8 @@ else()
   if(Onnxruntime_CCACHE_EXE)
     list(APPEND Onnxruntime_PLATFORM_OPTIONS --cmake_extra_defines
          CMAKE_C_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE} --cmake_extra_defines
-         CMAKE_CXX_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE})
+         CMAKE_CXX_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE} --cmake_extra_defines
+         onnxruntime_ENABLE_CPUINFO=OFF)
   endif()
   set(Onnxruntime_PLATFORM_BYPRODUCT
       <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX})
