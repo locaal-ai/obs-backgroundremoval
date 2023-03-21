@@ -110,8 +110,6 @@ static obs_properties_t *filter_properties(void *data)
   obs_properties_add_float_slider(props, "feather", obs_module_text("FeatherBlendSilhouette"), 0.0,
                                   1.0, 0.05);
 
-  obs_properties_add_color_alpha(props, "replaceColor", obs_module_text("BackgroundColor"));
-
   obs_property_t *p_use_gpu = obs_properties_add_list(props, "useGPU",
                                                       obs_module_text("InferenceDevice"),
                                                       OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
@@ -155,7 +153,6 @@ static void filter_defaults(obs_data_t *settings)
   obs_data_set_default_double(settings, "contour_filter", 0.05);
   obs_data_set_default_double(settings, "smooth_contour", 0.5);
   obs_data_set_default_double(settings, "feather", 0.0);
-  obs_data_set_default_int(settings, "replaceColor", 0x000000);
   obs_data_set_default_string(settings, "useGPU", USEGPU_CPU);
   obs_data_set_default_string(settings, "model_select", MODEL_MEDIAPIPE);
   obs_data_set_default_int(settings, "mask_every_x_frames", 1);
@@ -263,12 +260,6 @@ static void filter_update(void *data, obs_data_t *settings)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
   tf->threshold = (float)obs_data_get_double(settings, "threshold");
-
-  uint64_t color = obs_data_get_int(settings, "replaceColor");
-  tf->backgroundColor.val[0] = (double)((color >> 16) & 0x0000ff);
-  tf->backgroundColor.val[1] = (double)((color >> 8) & 0x0000ff);
-  tf->backgroundColor.val[2] = (double)(color & 0x0000ff);
-  tf->backgroundColor.val[3] = (double)((color >> 24) & 0x0000ff);
 
   tf->contourFilter = (float)obs_data_get_double(settings, "contour_filter");
   tf->smoothContour = (float)obs_data_get_double(settings, "smooth_contour");
@@ -481,40 +472,21 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
     if (tf->feather > 0.0) {
       // If we're going to feather/alpha blend, we need to combine the blended "foreground" and
       // "masked background" images onto the main image.
-      cv::Mat maskFloat;
-      const int k_size = (int)(40 * tf->feather);
 
       // Convert Mat to float and Normalize the alpha mask to [0,1].
+      cv::Mat maskFloat;
       tf->backgroundMask.convertTo(maskFloat, CV_32FC1, 1.0 / 255.0);
       // Feather (blur) the normalized mask
+      const int k_size = (int)(40 * tf->feather);
       cv::boxFilter(maskFloat, maskFloat, maskFloat.depth(), cv::Size(k_size, k_size));
 
-      if (tf->backgroundColor[3] == 255) {
-        // Alpha blend
-        cv::Mat maskFloat4c;
-        cv::cvtColor(maskFloat, maskFloat4c, cv::COLOR_GRAY2BGRA);
-        for (int i = 0; i < maskFloat4c.cols; i++) {
-          for (int j = 0; j < maskFloat4c.rows; j++) {
-            maskFloat4c.at<cv::Vec4f>(j, i)[3] = maskFloat4c.at<cv::Vec4f>(j, i)[0];
-          }
-        }
-        cv::Mat tmpImage, tmpBackground;
-        // Mutiply the unmasked foreground area of the image with (1 - alpha matte).
-        cv::multiply(imageBGRA, cv::Scalar(1, 1, 1, 1) - maskFloat4c, tmpImage, 1.0, CV_32FC4);
-        // Multiply the masked background area (with the background color applied) with the alpha matte.
-        cv::multiply(cv::Mat(imageBGRA.size(), CV_32FC4, tf->backgroundColor), maskFloat4c,
-                     tmpBackground);
-        // Add the foreground and background images together, rescale back to an 8bit integer image
-        // and apply onto the main image.
-        cv::Mat(tmpImage + tmpBackground).convertTo(imageBGRA, CV_8UC4);
-      } else {
-        for (int i = 0; i < maskFloat.cols; i++) {
-          for (int j = 0; j < maskFloat.rows; j++) {
-            imageBGRA.at<cv::Vec4b>(j, i)[3] =
-              static_cast<uchar>((1.0 - maskFloat.at<float>(j, i)) * 255.0);
-          }
-        }
-      }
+      Mat alpha;
+      ((cv::Scalar(1.0) - maskFloat) * 255.0).convertTo(alpha, CV_8UC1);
+      Mat out[] = { imageBGRA, alpha };
+      // bgra[0,1,2] -> bgra[0,1,2], 
+      // bgra[3] -> alpha[0]
+      int from_to[] = { 0,0, 1,1, 2,2, 3,3 };
+      mixChannels( &bgra, 1, out, 2, from_to, 4 );
     } else {
       // If we're not feathering/alpha blending, we can
       // apply the mask as-is back onto the main image.
