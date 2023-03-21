@@ -61,7 +61,7 @@ struct background_removal_filter {
   std::vector<std::vector<float>> inputTensorValues;
   Ort::MemoryInfo memoryInfo;
   float threshold = 0.5f;
-  cv::Scalar backgroundColor{0, 0, 0};
+  cv::Scalar backgroundColor{0, 0, 0, 0};
   float contourFilter = 0.05f;
   float smoothContour = 0.5f;
   float feather = 0.0f;
@@ -70,8 +70,7 @@ struct background_removal_filter {
   std::unique_ptr<Model> model;
 
   // Use the media-io converter to both scale and convert the colorspace
-  video_scaler_t *scalerToBGR;
-  video_scaler_t *scalerFromBGR;
+  video_scaler_t *scalerToBGRA;
 
   obs_source_t *source;
 
@@ -111,7 +110,7 @@ static obs_properties_t *filter_properties(void *data)
   obs_properties_add_float_slider(props, "feather", obs_module_text("FeatherBlendSilhouette"), 0.0,
                                   1.0, 0.05);
 
-  obs_properties_add_color(props, "replaceColor", obs_module_text("BackgroundColor"));
+  obs_properties_add_color_alpha(props, "replaceColor", obs_module_text("BackgroundColor"));
 
   obs_property_t *p_use_gpu = obs_properties_add_list(props, "useGPU",
                                                       obs_module_text("InferenceDevice"),
@@ -254,13 +253,9 @@ static void createOrtSession(struct background_removal_filter *tf)
 static void destroyScalers(struct background_removal_filter *tf)
 {
   blog(LOG_INFO, "Destroy scalers.");
-  if (tf->scalerToBGR != nullptr) {
-    video_scaler_destroy(tf->scalerToBGR);
-    tf->scalerToBGR = nullptr;
-  }
-  if (tf->scalerFromBGR != nullptr) {
-    video_scaler_destroy(tf->scalerFromBGR);
-    tf->scalerFromBGR = nullptr;
+  if (tf->scalerToBGRA != nullptr) {
+    video_scaler_destroy(tf->scalerToBGRA);
+    tf->scalerToBGRA = nullptr;
   }
 }
 
@@ -273,6 +268,7 @@ static void filter_update(void *data, obs_data_t *settings)
   tf->backgroundColor.val[0] = (double)((color >> 16) & 0x0000ff);
   tf->backgroundColor.val[1] = (double)((color >> 8) & 0x0000ff);
   tf->backgroundColor.val[2] = (double)(color & 0x0000ff);
+  tf->backgroundColor.val[3] = (double)((color >> 24) & 0x0000ff);
 
   tf->contourFilter = (float)obs_data_get_double(settings, "contour_filter");
   tf->smoothContour = (float)obs_data_get_double(settings, "smooth_contour");
@@ -337,7 +333,7 @@ static void initializeScalers(cv::Size frameSize, enum video_format frameFormat,
 {
 
   struct video_scale_info dst {
-    VIDEO_FORMAT_BGR3, (uint32_t)frameSize.width,
+    VIDEO_FORMAT_BGRA, (uint32_t)frameSize.width,
       (uint32_t)frameSize.height, VIDEO_RANGE_DEFAULT, VIDEO_CS_DEFAULT
   };
   struct video_scale_info src {
@@ -351,43 +347,29 @@ static void initializeScalers(cv::Size frameSize, enum video_format frameFormat,
   blog(LOG_INFO, "Initialize scalers. Size %d x %d", frameSize.width, frameSize.height);
 
   // Create new scalers
-  video_scaler_create(&tf->scalerToBGR, &dst, &src, VIDEO_SCALE_DEFAULT);
-  video_scaler_create(&tf->scalerFromBGR, &src, &dst, VIDEO_SCALE_DEFAULT);
+  video_scaler_create(&tf->scalerToBGRA, &dst, &src, VIDEO_SCALE_DEFAULT);
 }
 
-static cv::Mat convertFrameToBGR(struct obs_source_frame *frame,
-                                 struct background_removal_filter *tf)
+static cv::Mat convertFrameToBGRA(struct obs_source_frame *frame,
+                                  struct background_removal_filter *tf)
 {
   const cv::Size frameSize(frame->width, frame->height);
 
-  if (tf->scalerToBGR == nullptr) {
+  if (tf->scalerToBGRA == nullptr) {
     // Lazy initialize the frame scale & color converter
     initializeScalers(frameSize, frame->format, tf);
   }
 
-  cv::Mat imageBGR(frameSize, CV_8UC3);
-  const uint32_t bgrLinesize = (uint32_t)(imageBGR.cols * imageBGR.elemSize());
-  video_scaler_scale(tf->scalerToBGR, &(imageBGR.data), &(bgrLinesize), frame->data,
+  cv::Mat imageBGRA(frameSize, CV_8UC4);
+  const uint32_t bgraLinesize = (uint32_t)(imageBGRA.cols * imageBGRA.elemSize());
+  video_scaler_scale(tf->scalerToBGRA, &(imageBGRA.data), &(bgraLinesize), frame->data,
                      frame->linesize);
 
-  return imageBGR;
+  return imageBGRA;
 }
 
-static void convertBGRToFrame(const cv::Mat &imageBGR, struct obs_source_frame *frame,
-                              struct background_removal_filter *tf)
-{
-  if (tf->scalerFromBGR == nullptr) {
-    // Lazy initialize the frame scale & color converter
-    initializeScalers(cv::Size(frame->width, frame->height), frame->format, tf);
-  }
-
-  const uint32_t rgbLinesize = (uint32_t)(imageBGR.cols * imageBGR.elemSize());
-  video_scaler_scale(tf->scalerFromBGR, frame->data, frame->linesize, &(imageBGR.data),
-                     &(rgbLinesize));
-}
-
-static void processImageForBackground(struct background_removal_filter *tf, const cv::Mat &imageBGR,
-                                      cv::Mat &backgroundMask)
+static void processImageForBackground(struct background_removal_filter *tf,
+                                      const cv::Mat &imageBGRA, cv::Mat &backgroundMask)
 {
   if (tf->session.get() == nullptr) {
     // Onnx runtime session is not initialized. Problem in initialization
@@ -396,7 +378,7 @@ static void processImageForBackground(struct background_removal_filter *tf, cons
   try {
     // To RGB
     cv::Mat imageRGB;
-    cv::cvtColor(imageBGR, imageRGB, cv::COLOR_BGR2RGB);
+    cv::cvtColor(imageBGRA, imageRGB, cv::COLOR_BGRA2RGB);
 
     // Resize to network input size
     uint32_t inputWidth, inputHeight;
@@ -449,7 +431,7 @@ static void processImageForBackground(struct background_removal_filter *tf, cons
     }
 
     // Resize the size of the mask back to the size of the original input.
-    cv::resize(backgroundMask, backgroundMask, imageBGR.size());
+    cv::resize(backgroundMask, backgroundMask, imageBGRA.size());
 
     // Smooth mask with a fast filter (box).
     if (tf->smoothContour > 0.0) {
@@ -468,23 +450,22 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
   // Convert to BGR
-  cv::Mat imageBGR = convertFrameToBGR(frame, tf);
+  cv::Mat imageBGRA = convertFrameToBGRA(frame, tf);
 
-  cv::Mat backgroundMask(imageBGR.size(), CV_8UC1, cv::Scalar(255));
+  if (tf->backgroundMask.empty()) {
+    // First frame. Initialize the background mask.
+    tf->backgroundMask = cv::Mat(imageBGRA.size(), CV_8UC1, cv::Scalar(255));
+  }
 
   tf->maskEveryXFramesCount++;
   tf->maskEveryXFramesCount %= tf->maskEveryXFrames;
   if (tf->maskEveryXFramesCount != 0 && !tf->backgroundMask.empty()) {
     // We are skipping processing of the mask for this frame.
     // Get the background mask previously generated.
-    tf->backgroundMask.copyTo(backgroundMask);
+    ; // Do nothing
   } else {
     // Process the image to find the mask.
-    processImageForBackground(tf, imageBGR, backgroundMask);
-
-    // Now that the mask is completed, save it off so it can be used on a later frame
-    // if we've chosen to only process the mask every X frames.
-    backgroundMask.copyTo(tf->backgroundMask);
+    processImageForBackground(tf, imageBGRA, tf->backgroundMask);
   }
 
   // Apply the mask back to the main image.
@@ -494,48 +475,66 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
       // Blur the background (fast box filter)
       int k_size = (int)(5 + tf->blurBackground);
       k_size = k_size % 2 == 0 ? k_size + 1 : k_size;
-      cv::boxFilter(imageBGR, blurredBackground, imageBGR.depth(), cv::Size(k_size, k_size));
+      cv::boxFilter(imageBGRA, blurredBackground, imageBGRA.depth(), cv::Size(k_size, k_size));
     }
 
     if (tf->feather > 0.0) {
-      // If we're going to feather/alpha blend, we need to do some processing that
-      // will combine the blended "foreground" and "masked background" images onto the main image.
+      // If we're going to feather/alpha blend, we need to combine the blended "foreground" and
+      // "masked background" images onto the main image.
       cv::Mat maskFloat;
-      int k_size = (int)(40 * tf->feather);
+      const int k_size = (int)(40 * tf->feather);
 
-      // Convert Mat to float and Normalize the alpha mask to keep intensity between 0 and 1.
-      backgroundMask.convertTo(maskFloat, CV_32FC1, 1.0 / 255.0);
-      //Feather the normalized mask.
+      // Convert Mat to float and Normalize the alpha mask to [0,1].
+      tf->backgroundMask.convertTo(maskFloat, CV_32FC1, 1.0 / 255.0);
+      // Feather (blur) the normalized mask
       cv::boxFilter(maskFloat, maskFloat, maskFloat.depth(), cv::Size(k_size, k_size));
 
-      // Alpha blend
-      cv::Mat maskFloat3c;
-      cv::cvtColor(maskFloat, maskFloat3c, cv::COLOR_GRAY2BGR);
-      cv::Mat tmpImage, tmpBackground;
-      // Mutiply the unmasked foreground area of the image with ( 1 - alpha matte).
-      cv::multiply(imageBGR, cv::Scalar(1, 1, 1) - maskFloat3c, tmpImage, 1.0, CV_32FC3);
-      // Multiply the masked background area (with the background color applied) with the alpha matte.
-      cv::multiply(cv::Mat(imageBGR.size(), CV_32FC3, tf->backgroundColor), maskFloat3c,
-                   tmpBackground);
-      // Add the foreground and background images together, rescale back to an 8bit integer image
-      // and apply onto the main image.
-      cv::Mat(tmpImage + tmpBackground).convertTo(imageBGR, CV_8UC3);
+      if (tf->backgroundColor[3] == 255) {
+        // Alpha blend
+        cv::Mat maskFloat4c;
+        cv::cvtColor(maskFloat, maskFloat4c, cv::COLOR_GRAY2BGRA);
+        for (int i = 0; i < maskFloat4c.cols; i++) {
+          for (int j = 0; j < maskFloat4c.rows; j++) {
+            maskFloat4c.at<cv::Vec4f>(j, i)[3] = maskFloat4c.at<cv::Vec4f>(j, i)[0];
+          }
+        }
+        cv::Mat tmpImage, tmpBackground;
+        // Mutiply the unmasked foreground area of the image with (1 - alpha matte).
+        cv::multiply(imageBGRA, cv::Scalar(1, 1, 1, 1) - maskFloat4c, tmpImage, 1.0, CV_32FC4);
+        // Multiply the masked background area (with the background color applied) with the alpha matte.
+        cv::multiply(cv::Mat(imageBGRA.size(), CV_32FC4, tf->backgroundColor), maskFloat4c,
+                     tmpBackground);
+        // Add the foreground and background images together, rescale back to an 8bit integer image
+        // and apply onto the main image.
+        cv::Mat(tmpImage + tmpBackground).convertTo(imageBGRA, CV_8UC4);
+      } else {
+        for (int i = 0; i < maskFloat.cols; i++) {
+          for (int j = 0; j < maskFloat.rows; j++) {
+            imageBGRA.at<cv::Vec4b>(j, i)[3] =
+              static_cast<uchar>((1.0 - maskFloat.at<float>(j, i)) * 255.0);
+          }
+        }
+      }
     } else {
       // If we're not feathering/alpha blending, we can
       // apply the mask as-is back onto the main image.
       if (tf->blurBackground > 0.0) {
         // copy the blurred background to the main image where the mask is 0
-        blurredBackground.copyTo(imageBGR, backgroundMask);
+        blurredBackground.copyTo(imageBGRA, tf->backgroundMask);
       } else {
-        imageBGR.setTo(tf->backgroundColor, backgroundMask);
+        // Set the main image to the background color where the mask is 0
+        imageBGRA.setTo(tf->backgroundColor, tf->backgroundMask);
       }
     }
   } catch (const std::exception &e) {
     blog(LOG_ERROR, "%s", e.what());
   }
 
-  // Put masked image back on frame,
-  convertBGRToFrame(imageBGR, frame, tf);
+  bfree(frame->data[0]);
+  obs_source_frame_init(frame, VIDEO_FORMAT_BGRA, imageBGRA.cols, imageBGRA.rows);
+  std::memcpy(frame->data[0], imageBGRA.data,
+              imageBGRA.cols * imageBGRA.elemSize() * imageBGRA.rows);
+
   return frame;
 }
 
