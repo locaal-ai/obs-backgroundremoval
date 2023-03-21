@@ -55,9 +55,13 @@ elseif(OS_MACOS)
   set(Onnxruntime_PLATFORM_BYPRODUCT
       <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_providers_coreml${CMAKE_STATIC_LIBRARY_SUFFIX}
       <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_coreml_proto${CMAKE_STATIC_LIBRARY_SUFFIX}
-      <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX})
+      <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX}
+      <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}cpuinfo${CMAKE_STATIC_LIBRARY_SUFFIX}
+      <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}clog${CMAKE_STATIC_LIBRARY_SUFFIX})
   set(Onnxruntime_PLATFORM_INSTALL_FILES
       <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/google_nsync-build/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX}
+      <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/pytorch_cpuinfo-build/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}cpuinfo${CMAKE_STATIC_LIBRARY_SUFFIX}
+      <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/pytorch_cpuinfo-build/${Onnxruntime_LIB_PREFIX}/deps/clog/${CMAKE_STATIC_LIBRARY_PREFIX}clog${CMAKE_STATIC_LIBRARY_SUFFIX}
   )
   set(Onnxruntime_PROTOBUF_PREFIX ${CMAKE_STATIC_LIBRARY_PREFIX})
 else()
@@ -71,9 +75,13 @@ else()
          CMAKE_CXX_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE})
   endif()
   set(Onnxruntime_PLATFORM_BYPRODUCT
-      <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX})
+      <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX}
+      <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}cpuinfo${CMAKE_STATIC_LIBRARY_SUFFIX}
+      <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}clog${CMAKE_STATIC_LIBRARY_SUFFIX})
   set(Onnxruntime_PLATFORM_INSTALL_FILES
       <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/google_nsync-build/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}nsync_cpp${CMAKE_STATIC_LIBRARY_SUFFIX}
+      <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/pytorch_cpuinfo-build/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}cpuinfo${CMAKE_STATIC_LIBRARY_SUFFIX}
+      <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/pytorch_cpuinfo-build/${Onnxruntime_LIB_PREFIX}/deps/clog/${CMAKE_STATIC_LIBRARY_PREFIX}clog${CMAKE_STATIC_LIBRARY_SUFFIX}
   )
   set(Onnxruntime_PROTOBUF_PREFIX ${CMAKE_STATIC_LIBRARY_PREFIX})
 endif()
@@ -184,7 +192,7 @@ if(OS_WINDOWS)
   )
 else()
   set(Onnxruntime_EXTERNAL_LIB_NAMES
-      onnx;onnx_proto;nsync_cpp;protobuf-lite;re2;absl_throw_delegate;absl_hash;absl_city;absl_low_level_hash;absl_raw_hash_set
+      onnx;onnx_proto;nsync_cpp;protobuf-lite;re2;absl_throw_delegate;absl_hash;absl_city;absl_low_level_hash;absl_raw_hash_set;cpuinfo;clog
   )
 endif()
 foreach(lib_name IN LISTS Onnxruntime_EXTERNAL_LIB_NAMES)
