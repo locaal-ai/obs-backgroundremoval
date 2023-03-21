@@ -19,8 +19,8 @@ modules:
     buildsystem: simple
     sources:
       - type: archive
-        url: https://github.com/microsoft/onnxruntime/releases/download/v1.11.1/onnxruntime-linux-x64-1.11.1.tgz
-        sha256: ddc03b5ae325c675ff76a6f18786ce7d310be6eb6f320087f7a0e9228115f24d
+        url: https://github.com/microsoft/onnxruntime/releases/download/v1.14.1/onnxruntime-linux-x64-1.14.1.tgz
+        sha256: 010585f534d822bf02d54c7cfc53b57aa3eb0cf34f8fb7503ee519ed18e25d29
     build-commands:
       - mkdir -p ${FLATPAK_DEST}/include ${FLATPAK_DEST}/lib
       - mv include/* ${FLATPAK_DEST}/include
@@ -36,20 +36,18 @@ modules:
     builddir: true
     sources:
       - type: archive
-        url: https://github.com/opencv/opencv/archive/refs/tags/4.5.5.tar.gz
-        sha256: a1cfdcf6619387ca9e232687504da996aaa9f7b5689986b8331ec02cb61d28ad
+        url: https://github.com/opencv/opencv/archive/refs/tags/4.7.0.tar.gz
+        sha256: 8df0079cdbe179748a18d44731af62a245a45ebf5085223dc03133954c662973
   - name: obs-backgroundremoval
     buildsystem: cmake
     builddir: true
     config-opts:
-      - -DLIBOBS_INCLUDE_DIR=/app/include/obs
-      - -DOnnxruntime_INCLUDE_DIR=/app/plugins/backgroundremoval/include
-      - -DOnnxruntime_LIBRARIES=/app/plugins/backgroundremoval/lib/libonnxruntime.so
+      - -DUSE_SYSTEM_OPENCV=ON
+      - -DUSE_SYSTEM_ONNXRUNTIME=ON
     sources:
-      - type: git
-        url: https://github.com/royshil/obs-backgroundremoval.git
-        tag: v0.4.0
-        commit: 4f0348a15103cd4e516d94b629851208280cd4d4
+      - type: archive
+        url: https://github.com/royshil/obs-backgroundremoval/archive/refs/heads/umireon.flatpak-build.tar.gz
+        sha256: f92281169398375b9e816d41e0c7da66ec1b6469395449918a7d16f1f282c82b
   - name: appdata
     buildsystem: simple
     build-commands:
