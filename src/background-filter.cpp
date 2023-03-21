@@ -486,7 +486,7 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
       // bgra[0,1,2] -> bgra[0,1,2],
       // bgra[3] -> alpha[0]
       int from_to[] = {0, 0, 1, 1, 2, 2, 3, 3};
-      mixChannels(&bgra, 1, out, 2, from_to, 4);
+      mixChannels(&imageBGRA, 1, out, 2, from_to, 4);
     } else {
       // If we're not feathering/alpha blending, we can
       // apply the mask as-is back onto the main image.
