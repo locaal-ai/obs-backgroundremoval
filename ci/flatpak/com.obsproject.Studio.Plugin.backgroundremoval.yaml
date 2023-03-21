@@ -1,17 +1,12 @@
-# build into folder "build-dir":
-# $ flatpak-builder build-dir com.obsproject.Studio.Plugin.backgroundremoval.yaml --force-clean
-#
-# install:
-# $ flatpak-builder --user --install --force-clean build-dir com.obsproject.Studio.Plugin.backgroundremoval.yaml
-id: com.obsproject.Studio.Plugin.backgroundremoval
+id: com.obsproject.Studio.Plugin.Backgroundremoval
 runtime: com.obsproject.Studio
 runtime-version: stable
-sdk: org.kde.Sdk/x86_64/6.4
+sdk: org.kde.Sdk//6.4
 build-extension: true
 separate-locales: false
 appstream-compose: false
 build-options:
-  prefix: /app/plugins/backgroundremoval
+  prefix: /app/plugins/Backgroundremoval
 modules:
   # onnxruntime has a bash+python+cmake build script - just download/use pre-compiled library
   # https://onnxruntime.ai/docs/build/inferencing.html
@@ -27,32 +22,33 @@ modules:
       - mv lib/* ${FLATPAK_DEST}/lib
   # https://docs.opencv.org/4.x/db/d05/tutorial_config_reference.html
   - name: opencv
-    buildsystem: cmake
-    config-opts:
-      - "-DCMAKE_BUILD_TYPE=Release"
-      - "-DBUILD_LIST=imgproc"
-    cleanup:
-    - "/bin"
+    buildsystem: cmake-ninja
     builddir: true
+    config-opts:
+      - "-DBUILD_LIST=core,imgproc"
     sources:
       - type: archive
         url: https://github.com/opencv/opencv/archive/refs/tags/4.7.0.tar.gz
         sha256: 8df0079cdbe179748a18d44731af62a245a45ebf5085223dc03133954c662973
   - name: obs-backgroundremoval
-    buildsystem: cmake
-    builddir: true
+    buildsystem: cmake-ninja
     config-opts:
       - -DUSE_SYSTEM_OPENCV=ON
       - -DUSE_SYSTEM_ONNXRUNTIME=ON
+      - -DLINUX_PORTABLE=OFF
+    post-install:
+      - install -Dm644 --target-directory=${FLATPAK_DEST}/share/metainfo ${FLATPAK_ID}.metainfo.xml
+      - appstream-compose --basename=${FLATPAK_ID} --prefix=${FLATPAK_DEST} --origin=flatpak
+        ${FLATPAK_ID}
     sources:
       - type: archive
         url: https://github.com/royshil/obs-backgroundremoval/archive/refs/heads/umireon.flatpak-build.tar.gz
-        sha256: f92281169398375b9e816d41e0c7da66ec1b6469395449918a7d16f1f282c82b
-  - name: appdata
-    buildsystem: simple
-    build-commands:
-      - install -Dm644 --target-directory=${FLATPAK_DEST}/share/metainfo ${FLATPAK_ID}.metainfo.xml
-      - appstream-compose --basename=${FLATPAK_ID} --prefix=${FLATPAK_DEST} --origin=flatpak ${FLATPAK_ID}
-    sources:
+        sha256: ff5c8078507a42c5188f9d51440530e8466859a7f34d5f9b09708d9423240840
       - type: file
         path: com.obsproject.Studio.Plugin.backgroundremoval.metainfo.xml
+cleanup:
+  - /include
+  - /share/opencv4
+  - /lib/cmake
+  - /bin
+
