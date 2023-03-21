@@ -480,13 +480,13 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
       const int k_size = (int)(40 * tf->feather);
       cv::boxFilter(maskFloat, maskFloat, maskFloat.depth(), cv::Size(k_size, k_size));
 
-      Mat alpha;
-      ((cv::Scalar(1.0) - maskFloat) * 255.0).convertTo(alpha, CV_8UC1);
-      Mat out[] = { imageBGRA, alpha };
-      // bgra[0,1,2] -> bgra[0,1,2], 
+      cv::Mat alpha;
+      cv::Mat((cv::Scalar(1.0) - maskFloat) * 255.0).convertTo(alpha, CV_8UC1);
+      cv::Mat out[] = {imageBGRA, alpha};
+      // bgra[0,1,2] -> bgra[0,1,2],
       // bgra[3] -> alpha[0]
-      int from_to[] = { 0,0, 1,1, 2,2, 3,3 };
-      mixChannels( &bgra, 1, out, 2, from_to, 4 );
+      int from_to[] = {0, 0, 1, 1, 2, 2, 3, 3};
+      mixChannels(&bgra, 1, out, 2, from_to, 4);
     } else {
       // If we're not feathering/alpha blending, we can
       // apply the mask as-is back onto the main image.
