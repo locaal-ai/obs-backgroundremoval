@@ -52,19 +52,18 @@ set(USE_SYSTEM_ONNXRUNTIME
 if(USE_SYSTEM_ONNXRUNTIME)
   if(OS_LINUX)
     find_package(Onnxruntime 1.14.1 REQUIRED)
-    add_library(Onnxruntime SHARED IMPORTED)
-    set_target_properties(Onnxruntime PROPERTIES IMPORTED_LOCATION ${Onnxruntime_LIBRARIES})
     set(Onnxruntime_INCLUDE_PATH
         ${Onnxruntime_INCLUDE_DIR} ${Onnxruntime_INCLUDE_DIR}/onnxruntime
         ${Onnxruntime_INCLUDE_DIR}/onnxruntime/core/session
         ${Onnxruntime_INCLUDE_DIR}/onnxruntime/core/providers/cpu)
-    set_target_properties(Onnxruntime PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                                 "${Onnxruntime_INCLUDE_PATH}")
+    target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${Onnxruntime_LIBRARIES}")
+    target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM PUBLIC "${Onnxruntime_INCLUDE_PATH}")
   else()
     message(FATAL_ERROR "System ONNX Runtime is only supported on Linux!")
   endif()
 else()
   include(cmake/BuildMyOnnxruntime.cmake)
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Onnxruntime)
 endif()
 
 set(USE_SYSTEM_OPENCV
@@ -73,14 +72,14 @@ set(USE_SYSTEM_OPENCV
 if(USE_SYSTEM_OPENCV)
   if(OS_LINUX)
     find_package(OpenCV REQUIRED COMPONENTS core imgproc)
-    add_library(OpenCV INTERFACE)
-    target_link_libraries(OpenCV "${OpenCV_LIBRARIES}")
-    target_include_directories(OpenCV SYSTEM PUBLIC "${OpenCV_INCLUDE_DIRS}")
+    target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${OpenCV_LIBRARIES}")
+    target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM PUBLIC "${OpenCV_INCLUDE_DIRS}")
   else()
     message(FATAL_ERROR "System OpenCV is only supported on Linux!")
   endif()
 else()
   include(cmake/BuildMyOpenCV.cmake)
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OpenCV)
 endif()
 
 if(OS_WINDOWS)
