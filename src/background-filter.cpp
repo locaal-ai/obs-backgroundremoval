@@ -476,7 +476,7 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
       // Convert Mat to float and Normalize the alpha mask to [0,1].
       cv::Mat maskFloat;
       tf->backgroundMask.convertTo(maskFloat, CV_32FC1, 1.0 / 255.0);
-      
+
       // Feather (blur) the normalized mask
       const int k_size = (int)(40 * tf->feather);
       cv::dilate(maskFloat, maskFloat, cv::Mat(), cv::Point(-1, -1), k_size / 3);
@@ -484,8 +484,8 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
 
       cv::Mat alpha;
       cv::Mat((cv::Scalar(1.0) - maskFloat) * 255.0).convertTo(alpha, CV_8UC1);
-      
-      int from_to[] = {0, 3};  // alpha[0] -> bgra[3]
+
+      int from_to[] = {0, 3}; // alpha[0] -> bgra[3]
       mixChannels(&alpha, 1, &imageBGRA, 1, from_to, 1);
     } else {
       // If we're not feathering/alpha blending, we can
