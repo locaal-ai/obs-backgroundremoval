@@ -487,6 +487,7 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
       // Convert Mat to float and Normalize the alpha mask to [0,1].
       tf->backgroundMask.convertTo(maskFloat, CV_32FC1, 1.0 / 255.0);
       // Feather (blur) the normalized mask
+      cv::dilate(maskFloat, maskFloat, cv::Mat(), cv::Point(-1, -1), k_size / 3);
       cv::boxFilter(maskFloat, maskFloat, maskFloat.depth(), cv::Size(k_size, k_size));
 
       if (tf->backgroundColor[3] == 255) {
