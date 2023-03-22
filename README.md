@@ -1,4 +1,6 @@
-# OBS Plugin: Background Removal
+# OBS Plugin: Portrait Background Removal / Virtual Green-screen
+
+A plugin for [OBS Studio](https://obsproject.com/) that allows you to replace the background in portrait images and video.
 
 - [Introduction](#introduction)
 - [Building](#building)
@@ -15,6 +17,10 @@ This plugin is meant to make it easy to replace the background in portrait image
 It is using a neural network to predict the mask of the portrait and remove the background pixels.
 It's easily composable with other OBS plugins to replace the background with e.g. an image or
 a transparent color.
+
+If you like this work, which is given to you completely free of charge, please consider supporting it by sponsoring us on GitHub:
+- https://github.com/sponsors/royshil
+- https://github.com/sponsors/umireon
 
 OBS Plugins forum: https://obsproject.com/forum/resources/background-removal-portrait-segmentation.1260/
 
