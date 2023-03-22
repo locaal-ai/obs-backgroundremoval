@@ -94,7 +94,7 @@ ExternalProject_Add(
   CONFIGURE_COMMAND "${Onnxruntime_PLATFORM_CONFIGURE}"
   BUILD_COMMAND
     ${PYTHON3} <SOURCE_DIR>/tools/ci_build/build.py --build_dir <BINARY_DIR> --config
-    ${Onnxruntime_BUILD_TYPE} --parallel --skip_tests --skip_submodule_sync
+    ${Onnxruntime_BUILD_TYPE} --parallel --skip_tests --skip_submodule_sync --enable_lto
     ${Onnxruntime_PLATFORM_OPTIONS}
   BUILD_BYPRODUCTS
     <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_session${CMAKE_STATIC_LIBRARY_SUFFIX}

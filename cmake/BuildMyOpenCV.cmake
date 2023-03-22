@@ -118,6 +118,7 @@ ExternalProject_Add(
              -DWITH_ITT=OFF
              -DWITH_OPENCL=OFF
              -DWITH_IPP=OFF
+             -DENABLE_LTO=ON
              ${OpenCV_PLATFORM_CMAKE_ARGS})
 
 ExternalProject_Get_Property(OpenCV_Build INSTALL_DIR)
