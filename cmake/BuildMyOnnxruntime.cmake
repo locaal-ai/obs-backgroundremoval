@@ -107,8 +107,8 @@ ExternalProject_Add(
     <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_util${CMAKE_STATIC_LIBRARY_SUFFIX}
     <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnxruntime_flatbuffers${CMAKE_STATIC_LIBRARY_SUFFIX}
     <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnx${CMAKE_STATIC_LIBRARY_SUFFIX}
-    <INSTALL_DIR>/lib/${Onnxruntime_PROTOBUF_PREFIX}protobuf-lite${CMAKE_STATIC_LIBRARY_SUFFIX}
     <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}onnx_proto${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <INSTALL_DIR>/lib/${Onnxruntime_PROTOBUF_PREFIX}protobuf-lite${CMAKE_STATIC_LIBRARY_SUFFIX}
     <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}re2${CMAKE_STATIC_LIBRARY_SUFFIX}
     <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}absl_throw_delegate${CMAKE_STATIC_LIBRARY_SUFFIX}
     <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}absl_hash${CMAKE_STATIC_LIBRARY_SUFFIX}
@@ -120,8 +120,8 @@ ExternalProject_Add(
     ${CMAKE_COMMAND} --install <BINARY_DIR>/${Onnxruntime_BUILD_TYPE} --config
     ${Onnxruntime_BUILD_TYPE} --prefix <INSTALL_DIR> && ${CMAKE_COMMAND} -E copy
     <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/onnx-build/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}onnx${CMAKE_STATIC_LIBRARY_SUFFIX}
-    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/protobuf-build/${Onnxruntime_LIB_PREFIX}/libprotobuf-lite${CMAKE_STATIC_LIBRARY_SUFFIX}
     <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/onnx-build/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}onnx_proto${CMAKE_STATIC_LIBRARY_SUFFIX}
+    <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/protobuf-build/${Onnxruntime_LIB_PREFIX}/libprotobuf-lite${CMAKE_STATIC_LIBRARY_SUFFIX}
     <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/re2-build/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}re2${CMAKE_STATIC_LIBRARY_SUFFIX}
     <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/abseil_cpp-build/absl/base/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_throw_delegate${CMAKE_STATIC_LIBRARY_SUFFIX}
     <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/abseil_cpp-build/absl/hash/${Onnxruntime_LIB_PREFIX}/${CMAKE_STATIC_LIBRARY_PREFIX}absl_hash${CMAKE_STATIC_LIBRARY_SUFFIX}
@@ -172,26 +172,6 @@ if(OS_LINUX)
       session;optimizer;providers;framework;graph;util;mlas;common;flatbuffers)
 endif()
 
-if(OS_WINDOWS)
-  set(Onnxruntime_EXTERNAL_LIB_NAMES
-      onnx;onnx_proto;libprotobuf-lite;re2;absl_throw_delegate;absl_hash;absl_city;absl_low_level_hash;absl_raw_hash_set
-  )
-else()
-  set(Onnxruntime_EXTERNAL_LIB_NAMES
-      protobuf-lite;onnx;onnx_proto;nsync_cpp;re2;absl_throw_delegate;absl_hash;absl_city;absl_low_level_hash;absl_raw_hash_set;cpuinfo;clog
-  )
-endif()
-foreach(lib_name IN LISTS Onnxruntime_EXTERNAL_LIB_NAMES)
-  add_library(Onnxruntime::${lib_name} STATIC IMPORTED)
-  set_target_properties(
-    Onnxruntime::${lib_name}
-    PROPERTIES
-      IMPORTED_LOCATION
-      ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
-
-  target_link_libraries(Onnxruntime INTERFACE Onnxruntime::${lib_name})
-endforeach()
-
 foreach(lib_name IN LISTS Onnxruntime_LIB_NAMES)
   add_library(Onnxruntime::${lib_name} STATIC IMPORTED)
   set_target_properties(
@@ -202,6 +182,26 @@ foreach(lib_name IN LISTS Onnxruntime_LIB_NAMES)
   )
   set_target_properties(Onnxruntime::${lib_name} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
                                                             "${Onnxruntime_INCLUDE_PATH}")
+
+  target_link_libraries(Onnxruntime INTERFACE Onnxruntime::${lib_name})
+endforeach()
+
+if(OS_WINDOWS)
+  set(Onnxruntime_EXTERNAL_LIB_NAMES
+      onnx;onnx_proto;libprotobuf-lite;re2;absl_throw_delegate;absl_hash;absl_city;absl_low_level_hash;absl_raw_hash_set
+  )
+else()
+  set(Onnxruntime_EXTERNAL_LIB_NAMES
+      onnx;onnx_proto;nsync_cpp;protobuf-lite;re2;absl_throw_delegate;absl_hash;absl_city;absl_low_level_hash;absl_raw_hash_set;cpuinfo;clog
+  )
+endif()
+foreach(lib_name IN LISTS Onnxruntime_EXTERNAL_LIB_NAMES)
+  add_library(Onnxruntime::${lib_name} STATIC IMPORTED)
+  set_target_properties(
+    Onnxruntime::${lib_name}
+    PROPERTIES
+      IMPORTED_LOCATION
+      ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
 
   target_link_libraries(Onnxruntime INTERFACE Onnxruntime::${lib_name})
 endforeach()
