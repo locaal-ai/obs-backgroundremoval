@@ -29,7 +29,6 @@
 #include <fstream>
 
 #include "plugin-macros.generated.h"
-#include "models/ModelMODNET.h"
 #include "models/ModelSINET.h"
 #include "models/ModelMediapipe.h"
 #include "models/ModelSelfie.h"
@@ -37,7 +36,6 @@
 #include "models/ModelPPHumanSeg.h"
 
 const char *MODEL_SINET = "models/SINet_Softmax_simple.onnx";
-const char *MODEL_MODNET = "models/modnet_simple.onnx";
 const char *MODEL_MEDIAPIPE = "models/mediapipe.onnx";
 const char *MODEL_SELFIE = "models/selfie_segmentation.onnx";
 const char *MODEL_RVM = "models/rvm_mobilenetv3_fp32.onnx";
@@ -130,7 +128,6 @@ static obs_properties_t *filter_properties(void *data)
                             OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
   obs_property_list_add_string(p_model_select, obs_module_text("SINet"), MODEL_SINET);
-  obs_property_list_add_string(p_model_select, obs_module_text("MODNet"), MODEL_MODNET);
   obs_property_list_add_string(p_model_select, obs_module_text("MediaPipe"), MODEL_MEDIAPIPE);
   obs_property_list_add_string(p_model_select, obs_module_text("Selfie Segmentation"),
                                MODEL_SELFIE);
@@ -280,9 +277,6 @@ static void filter_update(void *data, obs_data_t *settings)
 
     if (tf->modelSelection == MODEL_SINET) {
       tf->model.reset(new ModelSINET);
-    }
-    if (tf->modelSelection == MODEL_MODNET) {
-      tf->model.reset(new ModelMODNET);
     }
     if (tf->modelSelection == MODEL_SELFIE) {
       tf->model.reset(new ModelSelfie);
