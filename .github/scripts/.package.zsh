@@ -155,6 +155,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
       --distribution "${project_root}/cmake/bundle/macos/Distribution.xml" \
       --package-path "${project_root}/release" \
       "${project_root}/release/${product_name}.pkg"
+    rm "${project_root}/release/${product_name}-flat.pkg"
 
     if (( ${+CODESIGN} )) {
       read_codesign_installer
