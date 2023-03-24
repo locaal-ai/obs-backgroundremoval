@@ -12,5 +12,5 @@
         <pkg-ref id="com.royshilkrot.obs-backgroundremoval"/>
     </choice>
     <pkg-ref id="com.royshilkrot.obs-backgroundremoval" version="1.0.0" onConclusion="none">obs-backgroundremoval-flat.pkg</pkg-ref>
-    <domains enable_currentUserHome="true"/>
+    <domains enable_anywhere="false" enable_currentUserHome="true" enable_localSystem="false"/>
 </installer-gui-script>
