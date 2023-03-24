@@ -150,6 +150,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
     pkgbuild \
       --component "${project_root}/release/obs-backgroundremoval.plugin" \
       --install-location "/Library/Application Support/obs-studio/plugins" \
+      --scripts "${project_root}/cmake/bundle/macos/scripts" \
        "${project_root}/release/${product_name}-flat.pkg"
     productbuild \
       --distribution "${project_root}/cmake/bundle/macos/Distribution.xml" \
