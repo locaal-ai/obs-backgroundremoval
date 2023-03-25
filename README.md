@@ -34,7 +34,6 @@ GPU support:
 
 The pretrained model weights used for portrait foreground segmentation are taken from:
 - https://github.com/anilsathyan7/Portrait-Segmentation/tree/master/SINet
-- https://github.com/ZHKKKe/MODNet
 - https://github.com/PaddlePaddle/PaddleSeg/tree/release/2.7/contrib/PP-HumanSeg
 - https://github.com/PINTO0309/PINTO_model_zoo/tree/main/082_MediaPipe_Meet_Segmentation
 - https://github.com/PeterL1n/RobustVideoMatting
