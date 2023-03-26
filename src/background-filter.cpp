@@ -504,7 +504,7 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
   frame->data[1] = &frame->data[0][imageBGRA.cols * imageBGRA.rows * 4];
   frame->data[2] = &frame->data[1][imageBGRA.cols * imageBGRA.rows * 4];
   frame->data[3] = &frame->data[2][imageBGRA.cols * imageBGRA.rows * 4];
-  frame->linesize[0] = imageBGRA.cols * 4;
+  frame->linesize[0] = static_cast<uint32_t>(imageBGRA.cols * 4);
   frame->format = VIDEO_FORMAT_BGRA;
   std::memcpy(frame->data[0], imageBGRA.data, imageBGRA.cols * imageBGRA.rows * 4);
 
