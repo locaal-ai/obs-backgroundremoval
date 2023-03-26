@@ -145,13 +145,18 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
       return 2
     }
 
-    check_packages
-
     log_info "Packaging ${product_name}..."
     pushd ${project_root}
-    packagesbuild \
-      --build-folder ${project_root}/release \
-      ${project_root}/build_${target##*-}/installer-macos.generated.pkgproj
+    pkgbuild \
+      --component "${project_root}/release/obs-backgroundremoval.plugin" \
+      --install-location "/Library/Application Support/obs-studio/plugins" \
+      --scripts "${project_root}/cmake/bundle/macos/scripts" \
+       "${project_root}/release/${product_name}-flat.pkg"
+    productbuild \
+      --distribution "${project_root}/cmake/bundle/macos/Distribution.xml" \
+      --package-path "${project_root}/release" \
+      "${project_root}/release/${product_name}.pkg"
+    rm "${project_root}/release/${product_name}-flat.pkg"
 
     if (( ${+CODESIGN} )) {
       read_codesign_installer

@@ -93,16 +93,20 @@ jobs:
           if [[ '${{ secrets.MACOS_SIGNING_APPLICATION_IDENTITY }}' != '' && \
                 '${{ secrets.MACOS_SIGNING_INSTALLER_IDENTITY }}' != '' && \
                 '${{ secrets.MACOS_SIGNING_CERT }}' != '' ]] {
-            print 'haveCodesignIdent=true' >> $GITHUB_OUTPUT
+            echo 'haveCodesignIdent=true' >> "$GITHUB_OUTPUT"
+            echo "found signing information"
           } else {
-            print 'haveCodesignIdent=false' >> $GITHUB_OUTPUT
+            echo 'haveCodesignIdent=false' >> "$GITHUB_OUTPUT"
+            echo "signing information not found"
           }
 
           if [[ '${{ secrets.MACOS_NOTARIZATION_USERNAME }}' != '' && \
                 '${{ secrets.MACOS_NOTARIZATION_PASSWORD }}' != '' ]] {
-            print 'haveNotarizationUser=true' >> $GITHUB_OUTPUT
+            echo 'haveNotarizationUser=true' >> "$GITHUB_OUTPUT"
+            echo "found notarization user"
           } else {
-            print 'haveNotarizationUser=false' >> $GITHUB_OUTPUT
+            echo 'haveNotarizationUser=false' >> "$GITHUB_OUTPUT"
+            echo "notarization user not found"
           }
           print '::endgroup::'
 
