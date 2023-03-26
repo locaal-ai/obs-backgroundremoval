@@ -77,9 +77,6 @@ struct background_removal_filter {
   int maskEveryXFramesCount = 0;
   int64_t blurBackground = 0;
 
-  uint8_t *previousFrameData0;
-  int previousFrameLinesize0;
-
 #if _WIN32
   const wchar_t *modelFilepath = nullptr;
 #else
