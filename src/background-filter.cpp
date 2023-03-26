@@ -500,7 +500,7 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
   }
 
   bfree(frame->data[0]);
-  frame->data[0] = static_cast<uint8_t*>(bzalloc(imageBGRA.cols * imageBGRA.rows * 16));
+  frame->data[0] = static_cast<uint8_t *>(bzalloc(imageBGRA.cols * imageBGRA.rows * 16));
   frame->data[1] = &frame->data[0][imageBGRA.cols * imageBGRA.rows * 4];
   frame->data[2] = &frame->data[1][imageBGRA.cols * imageBGRA.rows * 4];
   frame->data[3] = &frame->data[2][imageBGRA.cols * imageBGRA.rows * 4];
