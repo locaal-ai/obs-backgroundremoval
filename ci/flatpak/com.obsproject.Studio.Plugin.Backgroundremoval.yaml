@@ -43,8 +43,8 @@ modules:
         ${FLATPAK_ID}
     sources:
       - type: archive
-        url: https://github.com/royshil/obs-backgroundremoval/archive/refs/heads/umireon.flatpak-build.tar.gz
-        sha256: ff5c8078507a42c5188f9d51440530e8466859a7f34d5f9b09708d9423240840
+        url: https://github.com/royshil/obs-backgroundremoval/archive/refs/tags/v0.5.15.tar.gz
+        sha256: bae4563374d97512ee7495b8e176204c3961af7f2e0001ce7a0d15f710016091
       - type: file
         path: com.obsproject.Studio.Plugin.Backgroundremoval.metainfo.xml
 cleanup:
