@@ -77,9 +77,6 @@ struct background_removal_filter {
   int maskEveryXFramesCount = 0;
   int64_t blurBackground = 0;
 
-  uint8_t *previousFrameData0;
-  int previousFrameLinesize0;
-
 #if _WIN32
   const wchar_t *modelFilepath = nullptr;
 #else
@@ -433,625 +430,78 @@ static void processImageForBackground(struct background_removal_filter *tf,
   }
 }
 
-#define ALIGN_SIZE(size, align) size = (((size) + (align - 1)) & (~(align - 1)))
-
-
-/* messy code alarm */
-void fix_linesize(struct obs_source_frame *frame, enum video_format format,
-		      uint32_t width, uint32_t height)
-{
-	size_t size;
-	size_t offsets[MAX_AV_PLANES]{};
-	int alignment = base_get_alignment();
-
-	if (!frame)
-		return;
-
-	switch (format) {
-	case VIDEO_FORMAT_NONE:
-		return;
-
-	case VIDEO_FORMAT_I420: {
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t half_width = (width + 1) / 2;
-		const uint32_t half_height = (height + 1) / 2;
-		const uint32_t quarter_area = half_width * half_height;
-		size += quarter_area;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += quarter_area;
-		ALIGN_SIZE(size, alignment);
-		frame->linesize[0] = width;
-		frame->linesize[1] = half_width;
-		frame->linesize[2] = half_width;
-		break;
-	}
-
-	case VIDEO_FORMAT_NV12: {
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t cbcr_width = (width + 1) & (UINT32_MAX - 1);
-		size += cbcr_width * ((height + 1) / 2);
-		ALIGN_SIZE(size, alignment);
-		frame->linesize[0] = width;
-		frame->linesize[1] = cbcr_width;
-		break;
-	}
-
-	case VIDEO_FORMAT_Y800:
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		frame->linesize[0] = width;
-		break;
-
-	case VIDEO_FORMAT_YVYU:
-	case VIDEO_FORMAT_YUY2:
-	case VIDEO_FORMAT_UYVY: {
-		const uint32_t double_width =
-			((width + 1) & (UINT32_MAX - 1)) * 2;
-		size = double_width * height;
-		ALIGN_SIZE(size, alignment);
-		frame->linesize[0] = double_width;
-		break;
-	}
-
-	case VIDEO_FORMAT_RGBA:
-	case VIDEO_FORMAT_BGRA:
-	case VIDEO_FORMAT_BGRX:
-	case VIDEO_FORMAT_AYUV:
-		size = width * height * 4;
-		ALIGN_SIZE(size, alignment);
-		frame->linesize[0] = width * 4;
-		break;
-
-	case VIDEO_FORMAT_I444:
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		frame->linesize[0] = width;
-		frame->linesize[1] = width;
-		frame->linesize[2] = width;
-		break;
-
-	case VIDEO_FORMAT_I412:
-		size = width * height * 2;
-		ALIGN_SIZE(size, alignment);
-		frame->linesize[0] = width * 2;
-		frame->linesize[1] = width * 2;
-		frame->linesize[2] = width * 2;
-		break;
-
-	case VIDEO_FORMAT_BGR3:
-		size = width * height * 3;
-		ALIGN_SIZE(size, alignment);
-		frame->linesize[0] = width * 3;
-		break;
-
-	case VIDEO_FORMAT_I422: {
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t half_width = (width + 1) / 2;
-		const uint32_t half_area = half_width * height;
-		size += half_area;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += half_area;
-		ALIGN_SIZE(size, alignment);
-		frame->linesize[0] = width;
-		frame->linesize[1] = half_width;
-		frame->linesize[2] = half_width;
-		break;
-	}
-
-	case VIDEO_FORMAT_I210: {
-		size = width * height * 2;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t half_width = (width + 1) / 2;
-		const uint32_t half_area = half_width * height;
-		const uint32_t half_area_size = 2 * half_area;
-		size += half_area_size;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += half_area_size;
-		ALIGN_SIZE(size, alignment);
-		frame->linesize[0] = width * 2;
-		frame->linesize[1] = half_width * 2;
-		frame->linesize[2] = half_width * 2;
-		break;
-	}
-
-	case VIDEO_FORMAT_I40A: {
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t half_width = (width + 1) / 2;
-		const uint32_t half_height = (height + 1) / 2;
-		const uint32_t quarter_area = half_width * half_height;
-		size += quarter_area;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += quarter_area;
-		ALIGN_SIZE(size, alignment);
-		offsets[2] = size;
-		size += width * height;
-		ALIGN_SIZE(size, alignment);
-		frame->linesize[0] = width;
-		frame->linesize[1] = half_width;
-		frame->linesize[2] = half_width;
-		frame->linesize[3] = width;
-		break;
-	}
-
-	case VIDEO_FORMAT_I42A: {
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t half_width = (width + 1) / 2;
-		const uint32_t half_area = half_width * height;
-		size += half_area;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += half_area;
-		ALIGN_SIZE(size, alignment);
-		offsets[2] = size;
-		size += width * height;
-		ALIGN_SIZE(size, alignment);
-		frame->linesize[0] = width;
-		frame->linesize[1] = half_width;
-		frame->linesize[2] = half_width;
-		frame->linesize[3] = width;
-		break;
-	}
-
-	case VIDEO_FORMAT_YUVA:
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		size += width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[2] = size;
-		size += width * height;
-		ALIGN_SIZE(size, alignment);
-		frame->linesize[0] = width;
-		frame->linesize[1] = width;
-		frame->linesize[2] = width;
-		frame->linesize[3] = width;
-		break;
-
-	case VIDEO_FORMAT_YA2L: {
-		const uint32_t linesize = width * 2;
-		const uint32_t plane_size = linesize * height;
-		size = plane_size;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		size += plane_size;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += plane_size;
-		ALIGN_SIZE(size, alignment);
-		offsets[2] = size;
-		size += plane_size;
-		ALIGN_SIZE(size, alignment);
-		frame->linesize[0] = linesize;
-		frame->linesize[1] = linesize;
-		frame->linesize[2] = linesize;
-		frame->linesize[3] = linesize;
-		break;
-	}
-
-	case VIDEO_FORMAT_I010: {
-		size = width * height * 2;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t half_width = (width + 1) / 2;
-		const uint32_t half_height = (height + 1) / 2;
-		const uint32_t quarter_area = half_width * half_height;
-		size += quarter_area * 2;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += quarter_area * 2;
-		ALIGN_SIZE(size, alignment);
-		frame->linesize[0] = width * 2;
-		frame->linesize[1] = half_width * 2;
-		frame->linesize[2] = half_width * 2;
-		break;
-	}
-
-	case VIDEO_FORMAT_P010: {
-		size = width * height * 2;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t cbcr_width = (width + 1) & (UINT32_MAX - 1);
-		size += cbcr_width * ((height + 1) / 2) * 2;
-		ALIGN_SIZE(size, alignment);
-		frame->linesize[0] = width * 2;
-		frame->linesize[1] = cbcr_width * 2;
-		break;
-	}
-
-	// case VIDEO_FORMAT_P216: {
-	// 	size = width * height * 2;
-	// 	ALIGN_SIZE(size, alignment);
-	// 	offsets[0] = size;
-	// 	const uint32_t cbcr_width = (width + 1) & (UINT32_MAX - 1);
-	// 	size += cbcr_width * height * 2;
-	// 	ALIGN_SIZE(size, alignment);
-	// 	frame->linesize[0] = width * 2;
-	// 	frame->linesize[1] = cbcr_width * 2;
-	// 	break;
-	// }
-
-	// case VIDEO_FORMAT_P416: {
-	// 	size = width * height * 2;
-	// 	ALIGN_SIZE(size, alignment);
-	// 	offsets[0] = size;
-	// 	size += width * height * 4;
-	// 	ALIGN_SIZE(size, alignment);
-	// 	frame->linesize[0] = width * 2;
-	// 	frame->linesize[1] = width * 4;
-	// 	break;
-	// }
-	}
-}
-
-void fix_frame_data(struct obs_source_frame *frame, enum video_format format,
-		      uint32_t width, uint32_t height)
-{
-	size_t size;
-	size_t offsets[MAX_AV_PLANES]{};
-	int alignment = base_get_alignment();
-
-	if (!frame)
-		return;
-
-	switch (format) {
-	case VIDEO_FORMAT_NONE:
-		return;
-
-	case VIDEO_FORMAT_I420: {
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t half_width = (width + 1) / 2;
-		const uint32_t half_height = (height + 1) / 2;
-		const uint32_t quarter_area = half_width * half_height;
-		size += quarter_area;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += quarter_area;
-		ALIGN_SIZE(size, alignment);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
-		frame->linesize[1] = half_width;
-		frame->linesize[2] = half_width;
-		break;
-	}
-
-	case VIDEO_FORMAT_NV12: {
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t cbcr_width = (width + 1) & (UINT32_MAX - 1);
-		size += cbcr_width * ((height + 1) / 2);
-		ALIGN_SIZE(size, alignment);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->linesize[1] = cbcr_width;
-		break;
-	}
-
-	case VIDEO_FORMAT_Y800:
-		break;
-
-	case VIDEO_FORMAT_YVYU:
-	case VIDEO_FORMAT_YUY2:
-	case VIDEO_FORMAT_UYVY:
-		break;
-
-	case VIDEO_FORMAT_RGBA:
-	case VIDEO_FORMAT_BGRA:
-	case VIDEO_FORMAT_BGRX:
-	case VIDEO_FORMAT_AYUV:
-		break;
-
-	case VIDEO_FORMAT_I444:
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		frame->data[1] = (uint8_t *)frame->data[0] + size;
-		frame->data[2] = (uint8_t *)frame->data[1] + size;
-		frame->linesize[1] = width;
-		frame->linesize[2] = width;
-		break;
-
-	case VIDEO_FORMAT_I412:
-		size = width * height * 2;
-		ALIGN_SIZE(size, alignment);
-		frame->data[1] = (uint8_t *)frame->data[0] + size;
-		frame->data[2] = (uint8_t *)frame->data[1] + size;
-		frame->linesize[1] = width * 2;
-		frame->linesize[2] = width * 2;
-		break;
-
-	case VIDEO_FORMAT_BGR3:
-		break;
-
-	case VIDEO_FORMAT_I422: {
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t half_width = (width + 1) / 2;
-		const uint32_t half_area = half_width * height;
-		size += half_area;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += half_area;
-		ALIGN_SIZE(size, alignment);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
-		frame->linesize[1] = half_width;
-		frame->linesize[2] = half_width;
-		break;
-	}
-
-	case VIDEO_FORMAT_I210: {
-		size = width * height * 2;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t half_width = (width + 1) / 2;
-		const uint32_t half_area = half_width * height;
-		const uint32_t half_area_size = 2 * half_area;
-		size += half_area_size;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += half_area_size;
-		ALIGN_SIZE(size, alignment);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
-		frame->linesize[1] = half_width * 2;
-		frame->linesize[2] = half_width * 2;
-		break;
-	}
-
-	case VIDEO_FORMAT_I40A: {
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t half_width = (width + 1) / 2;
-		const uint32_t half_height = (height + 1) / 2;
-		const uint32_t quarter_area = half_width * half_height;
-		size += quarter_area;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += quarter_area;
-		ALIGN_SIZE(size, alignment);
-		offsets[2] = size;
-		size += width * height;
-		ALIGN_SIZE(size, alignment);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
-		frame->data[3] = (uint8_t *)frame->data[0] + offsets[2];
-		frame->linesize[1] = half_width;
-		frame->linesize[2] = half_width;
-		frame->linesize[3] = width;
-		break;
-	}
-
-	case VIDEO_FORMAT_I42A: {
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t half_width = (width + 1) / 2;
-		const uint32_t half_area = half_width * height;
-		size += half_area;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += half_area;
-		ALIGN_SIZE(size, alignment);
-		offsets[2] = size;
-		size += width * height;
-		ALIGN_SIZE(size, alignment);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
-		frame->data[3] = (uint8_t *)frame->data[0] + offsets[2];
-		frame->linesize[1] = half_width;
-		frame->linesize[2] = half_width;
-		frame->linesize[3] = width;
-		break;
-	}
-
-	case VIDEO_FORMAT_YUVA:
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		size += width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[2] = size;
-		size += width * height;
-		ALIGN_SIZE(size, alignment);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
-		frame->data[3] = (uint8_t *)frame->data[0] + offsets[2];
-		frame->linesize[1] = width;
-		frame->linesize[2] = width;
-		frame->linesize[3] = width;
-		break;
-
-	case VIDEO_FORMAT_YA2L: {
-		const uint32_t linesize = width * 2;
-		const uint32_t plane_size = linesize * height;
-		size = plane_size;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		size += plane_size;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += plane_size;
-		ALIGN_SIZE(size, alignment);
-		offsets[2] = size;
-		size += plane_size;
-		ALIGN_SIZE(size, alignment);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
-		frame->data[3] = (uint8_t *)frame->data[0] + offsets[2];
-		frame->linesize[1] = linesize;
-		frame->linesize[2] = linesize;
-		frame->linesize[3] = linesize;
-		break;
-	}
-
-	case VIDEO_FORMAT_I010: {
-		size = width * height * 2;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t half_width = (width + 1) / 2;
-		const uint32_t half_height = (height + 1) / 2;
-		const uint32_t quarter_area = half_width * half_height;
-		size += quarter_area * 2;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += quarter_area * 2;
-		ALIGN_SIZE(size, alignment);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
-		frame->linesize[1] = half_width * 2;
-		frame->linesize[2] = half_width * 2;
-		break;
-	}
-
-	case VIDEO_FORMAT_P010: {
-		size = width * height * 2;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t cbcr_width = (width + 1) & (UINT32_MAX - 1);
-		size += cbcr_width * ((height + 1) / 2) * 2;
-		ALIGN_SIZE(size, alignment);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->linesize[1] = cbcr_width * 2;
-		break;
-	}
-
-	// case VIDEO_FORMAT_P216: {
-	// 	size = width * height * 2;
-	// 	ALIGN_SIZE(size, alignment);
-	// 	offsets[0] = size;
-	// 	const uint32_t cbcr_width = (width + 1) & (UINT32_MAX - 1);
-	// 	size += cbcr_width * height * 2;
-	// 	ALIGN_SIZE(size, alignment);
-	// 	frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-	// 	frame->linesize[1] = cbcr_width * 2;
-	// 	break;
-	// }
-
-	// case VIDEO_FORMAT_P416: {
-	// 	size = width * height * 2;
-	// 	ALIGN_SIZE(size, alignment);
-	// 	offsets[0] = size;
-	// 	size += width * height * 4;
-	// 	ALIGN_SIZE(size, alignment);
-	// 	frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-	// 	frame->linesize[1] = width * 4;
-	// 	break;
-	// }
-	}
-}
-
 static struct obs_source_frame *filter_render(void *data, struct obs_source_frame *frame)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
-  fix_linesize(frame, frame->format, frame->width, frame->height);
-  blog(LOG_ERROR, "1: %d", frame->format);
-  blog(LOG_ERROR, "1: %d", frame->linesize[0]);
-  blog(LOG_ERROR, "1: %d", frame->linesize[1]);
-  blog(LOG_ERROR, "1: %d", frame->linesize[2]);
-  blog(LOG_ERROR, "1: %d", frame->linesize[3]);
-  blog(LOG_ERROR, "1: %p", frame->data[0]);
-  blog(LOG_ERROR, "1: %p", frame->data[1]);
-  blog(LOG_ERROR, "1: %p", frame->data[2]);
-
   // Convert to BGR
   cv::Mat imageBGRA = convertFrameToBGRA(frame, tf);
 
-  // if (tf->backgroundMask.empty()) {
-  //   // First frame. Initialize the background mask.
-  //   tf->backgroundMask = cv::Mat(imageBGRA.size(), CV_8UC1, cv::Scalar(255));
-  // }
+  if (tf->backgroundMask.empty()) {
+    // First frame. Initialize the background mask.
+    tf->backgroundMask = cv::Mat(imageBGRA.size(), CV_8UC1, cv::Scalar(255));
+  }
 
-  // tf->maskEveryXFramesCount++;
-  // tf->maskEveryXFramesCount %= tf->maskEveryXFrames;
-  // if (tf->maskEveryXFramesCount != 0 && !tf->backgroundMask.empty()) {
-  //   // We are skipping processing of the mask for this frame.
-  //   // Get the background mask previously generated.
-  //   ; // Do nothing
-  // } else {
-  //   // Process the image to find the mask.
-  //   processImageForBackground(tf, imageBGRA, tf->backgroundMask);
-  // }
+  tf->maskEveryXFramesCount++;
+  tf->maskEveryXFramesCount %= tf->maskEveryXFrames;
+  if (tf->maskEveryXFramesCount != 0 && !tf->backgroundMask.empty()) {
+    // We are skipping processing of the mask for this frame.
+    // Get the background mask previously generated.
+    ; // Do nothing
+  } else {
+    // Process the image to find the mask.
+    processImageForBackground(tf, imageBGRA, tf->backgroundMask);
+  }
 
-  // // Apply the mask back to the main image.
-  // try {
-  //   cv::Mat blurredBackground;
-  //   if (tf->blurBackground > 0.0) {
-  //     // Blur the background (fast box filter)
-  //     int k_size = (int)(5 + tf->blurBackground);
-  //     k_size = k_size % 2 == 0 ? k_size + 1 : k_size;
-  //     cv::boxFilter(imageBGRA, blurredBackground, imageBGRA.depth(), cv::Size(k_size, k_size));
-  //   }
+  // Apply the mask back to the main image.
+  try {
+    cv::Mat blurredBackground;
+    if (tf->blurBackground > 0.0) {
+      // Blur the background (fast box filter)
+      int k_size = (int)(5 + tf->blurBackground);
+      k_size = k_size % 2 == 0 ? k_size + 1 : k_size;
+      cv::boxFilter(imageBGRA, blurredBackground, imageBGRA.depth(), cv::Size(k_size, k_size));
+    }
 
-  //   if (tf->feather > 0.0) {
-  //     // If we're going to feather/alpha blend, we need to combine the blended "foreground" and
-  //     // "masked background" images onto the main image.
+    if (tf->feather > 0.0) {
+      // If we're going to feather/alpha blend, we need to combine the blended "foreground" and
+      // "masked background" images onto the main image.
 
-  //     // Convert Mat to float and Normalize the alpha mask to [0,1].
-  //     cv::Mat maskFloat;
-  //     tf->backgroundMask.convertTo(maskFloat, CV_32FC1, 1.0 / 255.0);
+      // Convert Mat to float and Normalize the alpha mask to [0,1].
+      cv::Mat maskFloat;
+      tf->backgroundMask.convertTo(maskFloat, CV_32FC1, 1.0 / 255.0);
 
-  //     // Feather (blur) the normalized mask
-  //     const int k_size = (int)(40 * tf->feather);
-  //     cv::dilate(maskFloat, maskFloat, cv::Mat(), cv::Point(-1, -1), k_size / 3);
-  //     cv::boxFilter(maskFloat, maskFloat, maskFloat.depth(), cv::Size(k_size, k_size));
+      // Feather (blur) the normalized mask
+      const int k_size = (int)(40 * tf->feather);
+      cv::dilate(maskFloat, maskFloat, cv::Mat(), cv::Point(-1, -1), k_size / 3);
+      cv::boxFilter(maskFloat, maskFloat, maskFloat.depth(), cv::Size(k_size, k_size));
 
-  //     cv::Mat alpha;
-  //     cv::Mat((cv::Scalar(1.0) - maskFloat) * 255.0).convertTo(alpha, CV_8UC1);
+      cv::Mat alpha;
+      cv::Mat((cv::Scalar(1.0) - maskFloat) * 255.0).convertTo(alpha, CV_8UC1);
 
-  //     int from_to[] = {0, 3}; // alpha[0] -> bgra[3]
-  //     mixChannels(&alpha, 1, &imageBGRA, 1, from_to, 1);
-  //   } else {
-  //     // If we're not feathering/alpha blending, we can
-  //     // apply the mask as-is back onto the main image.
-  //     if (tf->blurBackground > 0.0) {
-  //       // copy the blurred background to the main image where the mask is 0
-  //       blurredBackground.copyTo(imageBGRA, tf->backgroundMask);
-  //     } else {
-  //       // Set the main image to the background color where the mask is 0
-  //       imageBGRA.setTo(tf->backgroundColor, tf->backgroundMask);
-  //     }
-  //   }
-  // } catch (const std::exception &e) {
-  //   blog(LOG_ERROR, "%s", e.what());
-  // }
+      int from_to[] = {0, 3}; // alpha[0] -> bgra[3]
+      mixChannels(&alpha, 1, &imageBGRA, 1, from_to, 1);
+    } else {
+      // If we're not feathering/alpha blending, we can
+      // apply the mask as-is back onto the main image.
+      if (tf->blurBackground > 0.0) {
+        // copy the blurred background to the main image where the mask is 0
+        blurredBackground.copyTo(imageBGRA, tf->backgroundMask);
+      } else {
+        // Set the main image to the background color where the mask is 0
+        imageBGRA.setTo(tf->backgroundColor, tf->backgroundMask);
+      }
+    }
+  } catch (const std::exception &e) {
+    blog(LOG_ERROR, "%s", e.what());
+  }
 
-  int outputData0Size = imageBGRA.cols * imageBGRA.elemSize() * imageBGRA.rows;
-  // if (frame->data[0] != tf->previousFrameData0) {
-    // bfree(frame->data[0]);
-    // frame->data[0] = static_cast<uint8_t*>(bzalloc(outputData0Size * 4));
-
-    blog(LOG_ERROR, "aaa %d", frame->format);
-    // fix_frame_data(frame, frame->format, frame->width, frame->height);
-  // }
-  // tf->previousFrameData0 = frame->data[0];
+  bfree(frame->data[0]);
+  frame->data[0] = static_cast<uint8_t*>(bzalloc(imageBGRA.cols * imageBGRA.elemSize() * imageBGRA.rows * 4));
   frame->linesize[0] = imageBGRA.cols * imageBGRA.elemSize();
   frame->format = VIDEO_FORMAT_BGRA;
-  std::memcpy(frame->data[0], imageBGRA.data, outputData0Size);
+  std::memcpy(frame->data[0], imageBGRA.data,
+              imageBGRA.cols * imageBGRA.elemSize() * imageBGRA.rows);
 
   return frame;
 }
