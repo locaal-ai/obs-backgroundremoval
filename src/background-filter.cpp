@@ -437,9 +437,6 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
-  blog(LOG_ERROR, "format %d", frame->format);
-  blog(LOG_ERROR, "ls0 %d", frame->linesize[0]);
-
   // Convert to BGR
   cv::Mat imageBGRA = convertFrameToBGRA(frame, tf);
 
