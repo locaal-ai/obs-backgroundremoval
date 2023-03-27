@@ -433,22 +433,12 @@ static void processImageForBackground(struct background_removal_filter *tf,
 // Blend
 void blend_images_with_mask(cv::Mat &dst, const cv::Mat &src, const cv::Mat &mask)
 {
-  for (int i = 0; i < dst.rows; i++) {
-    const cv::Vec4b *srcRow = src.ptr<cv::Vec4b>(i);
-    const uchar *maskRow = mask.ptr<uchar>(i);
-    cv::Vec4b *dstRow = dst.ptr<cv::Vec4b>(i);
+  for (size_t i = 0; i < dst.total(); i++) {
+    const auto &srcPixel = src.at<cv::Vec4b>(i);
+    const auto maskPixel = mask.at<uchar>(i) / 255.0;
+    auto &dstPixel = dst.at<cv::Vec4b>(i);
 
-    for (int j = 0; j < dst.cols; j++) {
-      const cv::Vec4b &srcPixel = srcRow[j];
-      const float maskPixel = (float)(maskRow[j]) / 255.0f;
-      cv::Vec4b &dstPixel = dstRow[j];
-
-      if (maskPixel == 1.0) {
-        dstPixel = srcPixel;
-      } else if (maskPixel > 0.0) {
-        dstPixel = dstPixel * (1.0 - maskPixel) + srcPixel * (maskPixel);
-      }
-    }
+    dstPixel = dstPixel * (1.0 - maskPixel) + srcPixel * maskPixel;
   }
 }
 
