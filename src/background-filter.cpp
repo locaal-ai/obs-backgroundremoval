@@ -446,7 +446,7 @@ void blend_images_with_mask(cv::Mat &dst, const cv::Mat &src, const cv::Mat &mas
       if (maskPixel == 0) {
         dstPixel = srcPixel;
       } else if (maskPixel < 1.0) {
-        dstPixel = dstPixel * (1.0 - maskPixel) + srcPixel * (maskPixel);
+        dstPixel = dstPixel * (maskPixel) + srcPixel * (1.0 - maskPixel);
       }
     }
   }
