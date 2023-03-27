@@ -133,7 +133,7 @@ jobs:
           }
 
       - name: Install Apple Developer Certificate
-        if: ${{ github.event_name != 'pull_request' && steps.setup.outputs.haveCodesignIdent == 'true' }}
+        if: ${{ steps.setup.outputs.haveCodesignIdent == 'true' }}
         uses: apple-actions/import-codesign-certs@253ddeeac23f2bdad1646faac5c8c2832e800071
         with:
           keychain-password: ${{ github.run_id }}
@@ -141,7 +141,7 @@ jobs:
           p12-password: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
 
       - name: Set Signing Identity
-        if: ${{ github.event_name != 'pull_request' && steps.setup.outputs.haveCodesignIdent == 'true' }}
+        if: ${{ steps.setup.outputs.haveCodesignIdent == 'true' }}
         run: |
           print "CODESIGN_IDENT=${{ secrets.MACOS_SIGNING_APPLICATION_IDENTITY }}" >> $GITHUB_ENV
           print "CODESIGN_IDENT_INSTALLER=${{ secrets.MACOS_SIGNING_INSTALLER_IDENTITY }}" >> $GITHUB_ENV
