@@ -435,10 +435,14 @@ void blend_images_with_mask(cv::Mat &dst, const cv::Mat &src, const cv::Mat &mas
 {
   for (size_t i = 0; i < dst.total(); i++) {
     const auto &srcPixel = src.at<cv::Vec4b>(i);
-    const auto maskPixel = mask.at<uchar>(i) / 255.0;
+    const auto maskPixel = mask.at<uchar>(i) / 255.0f;
     auto &dstPixel = dst.at<cv::Vec4b>(i);
 
-    dstPixel = dstPixel * (1.0 - maskPixel) + srcPixel * maskPixel;
+    if (maskPixel == 1.0f) {
+      dstPixel = srcPixel;
+    } else if (maskPixel > 0.0f) {
+      dstPixel = dstPixel * (1.0f - maskPixel) + srcPixel * maskPixel;
+    }
   }
 }
 
