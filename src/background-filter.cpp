@@ -440,7 +440,7 @@ void blend_images_with_mask(cv::Mat &dst, const cv::Mat &src, const cv::Mat &mas
 
     for (int j = 0; j < dst.cols; j++) {
       const cv::Vec4b &srcPixel = srcRow[j];
-      const float maskPixel = maskRow[j] / 255.0;
+      const float maskPixel = (float)(maskRow[j]) / 255.0f;
       cv::Vec4b &dstPixel = dstRow[j];
 
       if (maskPixel == 0) {
