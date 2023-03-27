@@ -435,7 +435,7 @@ void blend_images_with_mask(cv::Mat &dst, const cv::Mat &src, const cv::Mat &mas
 {
   for (int i = 0; i < dst.rows; i++) {
     const cv::Vec4b *srcRow = src.ptr<cv::Vec4b>(i);
-    const cv::Vec4b *maskRow = mask.ptr<uchar>(i);
+    const uchar *maskRow = mask.ptr<uchar>(i);
     cv::Vec4b *dstRow = dst.ptr<cv::Vec4b>(i);
 
     for (int j = 0; j < dst.cols; j++) {
