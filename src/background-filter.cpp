@@ -466,25 +466,27 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
 
   tf->maskEveryXFramesCount++;
   tf->maskEveryXFramesCount %= tf->maskEveryXFrames;
-  if (tf->maskEveryXFramesCount != 0 && !tf->backgroundMask.empty()) {
-    // We are skipping processing of the mask for this frame.
-    // Get the background mask previously generated.
-    ; // Do nothing
-  } else {
-    // Process the image to find the mask.
-    processImageForBackground(tf, imageBGRA, tf->backgroundMask);
-  }
 
-  // Apply the mask back to the main image.
   try {
-    if (tf->feather > 0.0) {
-      // Feather (blur) the mask
-      const int k_size = (int)(40 * tf->feather);
-      cv::dilate(tf->backgroundMask, tf->backgroundMask, cv::Mat(), cv::Point(-1, -1), k_size / 3);
-      cv::boxFilter(tf->backgroundMask, tf->backgroundMask, tf->backgroundMask.depth(),
-                    cv::Size(k_size, k_size));
+    if (tf->maskEveryXFramesCount != 0 && !tf->backgroundMask.empty()) {
+      // We are skipping processing of the mask for this frame.
+      // Get the background mask previously generated.
+      ; // Do nothing
+    } else {
+      // Process the image to find the mask.
+      processImageForBackground(tf, imageBGRA, tf->backgroundMask);
+
+      if (tf->feather > 0.0) {
+        // Feather (blur) the mask
+        const int k_size = (int)(40 * tf->feather);
+        cv::dilate(tf->backgroundMask, tf->backgroundMask, cv::Mat(), cv::Point(-1, -1),
+                   k_size / 3);
+        cv::boxFilter(tf->backgroundMask, tf->backgroundMask, tf->backgroundMask.depth(),
+                      cv::Size(k_size, k_size));
+      }
     }
 
+    // Apply the mask back to the main image.
     if (tf->blurBackground > 0.0) {
       // Blur the background (fast box filter)
       int k_size = (int)(5 + tf->blurBackground);
