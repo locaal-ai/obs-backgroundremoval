@@ -433,7 +433,7 @@ static void processImageForBackground(struct background_removal_filter *tf,
 // Blend
 void blend_images_with_mask(cv::Mat &dst, const cv::Mat &src, const cv::Mat &mask)
 {
-  for (size_t i = 0; i < dst.total(); i++) {
+  for (int i = 0; i < dst.total(); i++) {
     const auto &srcPixel = src.at<cv::Vec4b>(i);
     const auto maskPixel = mask.at<uchar>(i) / 255.0f;
     auto &dstPixel = dst.at<cv::Vec4b>(i);
