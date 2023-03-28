@@ -1,6 +1,5 @@
 #include <obs-module.h>
 #include <media-io/video-scaler.h>
-#include <util/platform.h>
 
 #if defined(__APPLE__)
 #include <core/session/onnxruntime_cxx_api.h>
