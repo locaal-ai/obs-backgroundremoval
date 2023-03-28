@@ -1,5 +1,4 @@
 #include <obs-module.h>
-#include <media-io/video-scaler.h>
 
 #if defined(__APPLE__)
 #include <core/session/onnxruntime_cxx_api.h>
@@ -66,9 +65,6 @@ struct background_removal_filter {
   std::string useGPU;
   std::string modelSelection;
   std::unique_ptr<Model> model;
-
-  // Use the media-io converter to both scale and convert the colorspace
-  video_scaler_t *scalerToBGRA;
 
   obs_source_t *source;
 
@@ -247,15 +243,6 @@ static void createOrtSession(struct background_removal_filter *tf)
                                    tf->inputTensorValues, tf->inputTensor, tf->outputTensor);
 }
 
-static void destroyScalers(struct background_removal_filter *tf)
-{
-  blog(LOG_INFO, "Destroy scalers.");
-  if (tf->scalerToBGRA != nullptr) {
-    video_scaler_destroy(tf->scalerToBGRA);
-    tf->scalerToBGRA = nullptr;
-  }
-}
-
 static void filter_update(void *data, obs_data_t *settings)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
@@ -276,7 +263,6 @@ static void filter_update(void *data, obs_data_t *settings)
     // Re-initialize model if it's not already the selected one or switching inference device
     tf->modelSelection = newModel;
     tf->useGPU = newUseGpu;
-    destroyScalers(tf);
 
     if (tf->modelSelection == MODEL_SINET) {
       tf->model.reset(new ModelSINET);
@@ -314,46 +300,6 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
   filter_update(tf, settings);
 
   return tf;
-}
-
-static void initializeScalers(cv::Size frameSize, enum video_format frameFormat,
-                              struct background_removal_filter *tf)
-{
-
-  struct video_scale_info dst {
-    VIDEO_FORMAT_BGRA, (uint32_t)frameSize.width,
-      (uint32_t)frameSize.height, VIDEO_RANGE_DEFAULT, VIDEO_CS_DEFAULT
-  };
-  struct video_scale_info src {
-    frameFormat, (uint32_t)frameSize.width,
-      (uint32_t)frameSize.height, VIDEO_RANGE_DEFAULT, VIDEO_CS_DEFAULT
-  };
-
-  // Check if scalers already defined and release them
-  destroyScalers(tf);
-
-  blog(LOG_INFO, "Initialize scalers. Size %d x %d", frameSize.width, frameSize.height);
-
-  // Create new scalers
-  video_scaler_create(&tf->scalerToBGRA, &dst, &src, VIDEO_SCALE_DEFAULT);
-}
-
-static cv::Mat convertFrameToBGRA(struct obs_source_frame *frame,
-                                  struct background_removal_filter *tf)
-{
-  const cv::Size frameSize(frame->width, frame->height);
-
-  if (tf->scalerToBGRA == nullptr) {
-    // Lazy initialize the frame scale & color converter
-    initializeScalers(frameSize, frame->format, tf);
-  }
-
-  cv::Mat imageBGRA(frameSize, CV_8UC4);
-  const uint32_t bgraLinesize = (uint32_t)(imageBGRA.cols * imageBGRA.elemSize());
-  video_scaler_scale(tf->scalerToBGRA, &(imageBGRA.data), &(bgraLinesize), frame->data,
-                     frame->linesize);
-
-  return imageBGRA;
 }
 
 static void processImageForBackground(struct background_removal_filter *tf,
@@ -459,7 +405,6 @@ static void filter_destroy(void *data)
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
   if (tf) {
-    destroyScalers(tf);
     bfree(tf);
   }
 }
