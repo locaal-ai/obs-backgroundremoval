@@ -243,6 +243,15 @@ static void createOrtSession(struct background_removal_filter *tf)
                                    tf->inputTensorValues, tf->inputTensor, tf->outputTensor);
 }
 
+static void filter_destroy(void *data)
+{
+  struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
+
+  if (tf) {
+    bfree(tf);
+  }
+}
+
 static void filter_update(void *data, obs_data_t *settings)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
@@ -397,15 +406,6 @@ void blend_images_with_mask(cv::Mat &dst, const cv::Mat &src, const cv::Mat &mas
       const float alpha = maskPixel / 255.0f;
       dstPixel = dstPixel * (1.0f - alpha) + srcPixel * alpha;
     }
-  }
-}
-
-static void filter_destroy(void *data)
-{
-  struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
-
-  if (tf) {
-    bfree(tf);
   }
 }
 
