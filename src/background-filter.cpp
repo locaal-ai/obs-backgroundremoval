@@ -566,7 +566,7 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
   gs_effect_set_texture_srgb(image, texture);
   gs_blend_state_push();
-  gs_blend_function(GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA);
+  gs_reset_blend_state();
   while (gs_effect_loop(effect, "Draw")) {
     gs_draw_sprite(texture, 0, width, height);
   }
