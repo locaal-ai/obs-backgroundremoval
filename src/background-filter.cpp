@@ -530,40 +530,40 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   gs_texrender_t *texrender = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
   const uint32_t width = obs_source_get_width(parent);
   const uint32_t height = obs_source_get_height(parent);
-	if (!gs_texrender_begin(texrender, width, height)) {
+  if (!gs_texrender_begin(texrender, width, height)) {
     gs_texrender_destroy(texrender);
-		return;
+    return;
   }
-	struct vec4 background;
-	vec4_zero(&background);
+  struct vec4 background;
+  vec4_zero(&background);
   gs_clear(GS_CLEAR_COLOR, &background, 0.0f, 0);
-	gs_ortho(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height),
-		 -100.0f, 100.0f);
-	gs_blend_state_push();
-	gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
-	obs_source_video_render(parent);
-	gs_blend_state_pop();
-	gs_texrender_end(texrender);
-  
+  gs_ortho(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height), -100.0f, 100.0f);
+  gs_blend_state_push();
+  gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
+  obs_source_video_render(parent);
+  gs_blend_state_pop();
+  gs_texrender_end(texrender);
+
   auto *stagesurface = gs_stagesurface_create(width, height, GS_BGRA);
-	gs_stage_texture(stagesurface, gs_texrender_get_texture(texrender));
+  gs_stage_texture(stagesurface, gs_texrender_get_texture(texrender));
   uint8_t *video_data;
   uint32_t linesize;
   if (!gs_stagesurface_map(stagesurface, &video_data, &linesize)) {
-		return;
-	}
-  tf->inputBGRA = cv::Mat(height, width, CV_8UC4, video_data, linesize);
-  gs_stagesurface_unmap(stagesurface);
-	gs_stagesurface_destroy(stagesurface);
-  gs_texrender_destroy(texrender);
-
-  if (static_cast<size_t>(tf->outputBGRA.cols) != width || static_cast<size_t>(tf->outputBGRA.rows) != height) {
     return;
   }
-  const uint8_t *textureData[] = { tf->outputBGRA.data };
+  tf->inputBGRA = cv::Mat(height, width, CV_8UC4, video_data, linesize);
+  gs_stagesurface_unmap(stagesurface);
+  gs_stagesurface_destroy(stagesurface);
+  gs_texrender_destroy(texrender);
+
+  if (static_cast<size_t>(tf->outputBGRA.cols) != width ||
+      static_cast<size_t>(tf->outputBGRA.rows) != height) {
+    return;
+  }
+  const uint8_t *textureData[] = {tf->outputBGRA.data};
   gs_texture_t *texture = gs_texture_create(width, height, GS_BGRA, 1, textureData, 0);
   gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
-	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
+  gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
   gs_effect_set_texture_srgb(image, texture);
   gs_blend_state_push();
   gs_blend_function(GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA);
