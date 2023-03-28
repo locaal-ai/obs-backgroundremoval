@@ -430,6 +430,27 @@ static void processImageForBackground(struct background_removal_filter *tf,
   }
 }
 
+// Blend
+void blend_images_with_mask(cv::Mat &dst, const cv::Mat &src, const cv::Mat &mask)
+{
+  for (size_t i = 0; i < dst.total(); i++) {
+    const auto maskPixel = mask.at<uchar>((int)i);
+    if (maskPixel == 0) {
+      continue;
+    }
+
+    const auto &srcPixel = src.at<cv::Vec4b>((int)i);
+    auto &dstPixel = dst.at<cv::Vec4b>((int)i);
+
+    if (maskPixel == 255) {
+      dstPixel = srcPixel;
+    } else {
+      const float alpha = maskPixel / 255.0f;
+      dstPixel = dstPixel * (1.0f - alpha) + srcPixel * alpha;
+    }
+  }
+}
+
 static struct obs_source_frame *filter_render(void *data, struct obs_source_frame *frame)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
@@ -444,53 +465,42 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
 
   tf->maskEveryXFramesCount++;
   tf->maskEveryXFramesCount %= tf->maskEveryXFrames;
-  if (tf->maskEveryXFramesCount != 0 && !tf->backgroundMask.empty()) {
-    // We are skipping processing of the mask for this frame.
-    // Get the background mask previously generated.
-    ; // Do nothing
-  } else {
-    // Process the image to find the mask.
-    processImageForBackground(tf, imageBGRA, tf->backgroundMask);
-  }
 
-  // Apply the mask back to the main image.
   try {
-    cv::Mat blurredBackground;
+    if (tf->maskEveryXFramesCount != 0 && !tf->backgroundMask.empty()) {
+      // We are skipping processing of the mask for this frame.
+      // Get the background mask previously generated.
+      ; // Do nothing
+    } else {
+      // Process the image to find the mask.
+      processImageForBackground(tf, imageBGRA, tf->backgroundMask);
+
+      if (tf->feather > 0.0) {
+        // Feather (blur) the mask
+        const int k_size = (int)(40 * tf->feather);
+        cv::dilate(tf->backgroundMask, tf->backgroundMask, cv::Mat(), cv::Point(-1, -1),
+                   k_size / 3);
+        cv::boxFilter(tf->backgroundMask, tf->backgroundMask, tf->backgroundMask.depth(),
+                      cv::Size(k_size, k_size));
+      }
+    }
+
+    // Apply the mask back to the main image.
     if (tf->blurBackground > 0.0) {
       // Blur the background (fast box filter)
       int k_size = (int)(5 + tf->blurBackground);
-      k_size = k_size % 2 == 0 ? k_size + 1 : k_size;
-      cv::boxFilter(imageBGRA, blurredBackground, imageBGRA.depth(), cv::Size(k_size, k_size));
-    }
+      k_size += k_size % 2 == 0 ? 1 : 0;
 
-    if (tf->feather > 0.0) {
-      // If we're going to feather/alpha blend, we need to combine the blended "foreground" and
-      // "masked background" images onto the main image.
+      cv::Mat blurredBackground;
+      cv::stackBlur(imageBGRA, blurredBackground, cv::Size(k_size, k_size));
 
-      // Convert Mat to float and Normalize the alpha mask to [0,1].
-      cv::Mat maskFloat;
-      tf->backgroundMask.convertTo(maskFloat, CV_32FC1, 1.0 / 255.0);
-
-      // Feather (blur) the normalized mask
-      const int k_size = (int)(40 * tf->feather);
-      cv::dilate(maskFloat, maskFloat, cv::Mat(), cv::Point(-1, -1), k_size / 3);
-      cv::boxFilter(maskFloat, maskFloat, maskFloat.depth(), cv::Size(k_size, k_size));
-
-      cv::Mat alpha;
-      cv::Mat((cv::Scalar(1.0) - maskFloat) * 255.0).convertTo(alpha, CV_8UC1);
-
-      int from_to[] = {0, 3}; // alpha[0] -> bgra[3]
-      mixChannels(&alpha, 1, &imageBGRA, 1, from_to, 1);
+      // Blend the blurred background with the main image
+      blend_images_with_mask(imageBGRA, blurredBackground, tf->backgroundMask);
     } else {
-      // If we're not feathering/alpha blending, we can
-      // apply the mask as-is back onto the main image.
-      if (tf->blurBackground > 0.0) {
-        // copy the blurred background to the main image where the mask is 0
-        blurredBackground.copyTo(imageBGRA, tf->backgroundMask);
-      } else {
-        // Set the main image to the background color where the mask is 0
-        imageBGRA.setTo(tf->backgroundColor, tf->backgroundMask);
-      }
+      // Set the main image to the background color where the mask is 0
+      cv::Mat inverseMask = cv::Scalar(255) - tf->backgroundMask;
+      int from_to[] = {0, 3}; // alpha[0] -> bgra[3]
+      cv::mixChannels(&inverseMask, 1, &imageBGRA, 1, from_to, 1);
     }
   } catch (const std::exception &e) {
     blog(LOG_ERROR, "%s", e.what());
