@@ -302,6 +302,15 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
   return tf;
 }
 
+static void filter_destroy(void *data)
+{
+  struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
+
+  if (tf) {
+    bfree(tf);
+  }
+}
+
 static void processImageForBackground(struct background_removal_filter *tf,
                                       const cv::Mat &imageBGRA, cv::Mat &backgroundMask)
 {
@@ -461,15 +470,6 @@ void filter_video_tick(void *data, float seconds)
   tf->outputBGRA = imageBGRA.clone();
 
   UNUSED_PARAMETER(seconds);
-}
-
-static void filter_destroy(void *data)
-{
-  struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
-
-  if (tf) {
-    bfree(tf);
-  }
 }
 
 static void filter_video_render(void *data, gs_effect_t *_effect)
