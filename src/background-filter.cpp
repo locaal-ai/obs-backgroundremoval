@@ -506,10 +506,17 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
     blog(LOG_ERROR, "%s", e.what());
   }
 
-  bfree(frame->data[0]);
-  obs_source_frame_init(frame, VIDEO_FORMAT_BGRA, imageBGRA.cols, imageBGRA.rows);
-  std::memcpy(frame->data[0], imageBGRA.data,
-              imageBGRA.cols * imageBGRA.elemSize() * imageBGRA.rows);
+  uint8_t *data0 = frame->data[0];
+  uint8_t *data1 = frame->data[1];
+  uint8_t *data2 = frame->data[2];
+  uint8_t *data3 = frame->data[3];
+  frame->data[0] = static_cast<uint8_t *>(brealloc(data0, imageBGRA.cols * imageBGRA.rows * 16));
+  frame->data[1] = frame->data[0] + (imageBGRA.cols * imageBGRA.rows * 4);
+  frame->data[2] = frame->data[1] + (data2 - data1);
+  frame->data[3] = frame->data[1] + (data3 - data1);
+  frame->linesize[0] = static_cast<uint32_t>(imageBGRA.cols * 4);
+  frame->format = VIDEO_FORMAT_BGRA;
+  std::memcpy(frame->data[0], imageBGRA.data, imageBGRA.cols * imageBGRA.rows * 4);
 
   return frame;
 }
