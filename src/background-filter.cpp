@@ -455,7 +455,7 @@ static void filter_destroy(void *data)
     bfree(tf);
   }
 }
-#include <iostream>
+
 void filter_video_tick(void *data, float seconds)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
