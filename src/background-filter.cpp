@@ -1,5 +1,6 @@
 #include <obs-module.h>
 #include <media-io/video-scaler.h>
+#include <util/platform.h>
 
 #if defined(__APPLE__)
 #include <core/session/onnxruntime_cxx_api.h>
@@ -76,6 +77,8 @@ struct background_removal_filter {
   int maskEveryXFrames = 1;
   int maskEveryXFramesCount = 0;
   int64_t blurBackground = 0;
+
+  cv::Mat imageBGRA;
 
 #if _WIN32
   const wchar_t *modelFilepath = nullptr;
@@ -430,12 +433,28 @@ static void processImageForBackground(struct background_removal_filter *tf,
   }
 }
 
+// Blend
+void blend_images_with_mask(cv::Mat &dst, const cv::Mat &src, const cv::Mat &mask)
+{
+  for (size_t i = 0; i < dst.total(); i++) {
+    const auto &srcPixel = src.at<cv::Vec4b>(i);
+    const auto maskPixel = mask.at<uchar>(i) / 255.0;
+    auto &dstPixel = dst.at<cv::Vec4b>(i);
+
+    dstPixel = dstPixel * (1.0 - maskPixel) + srcPixel * maskPixel;
+  }
+}
+
 static struct obs_source_frame *filter_render(void *data, struct obs_source_frame *frame)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
   // Convert to BGR
-  cv::Mat imageBGRA = convertFrameToBGRA(frame, tf);
+  cv::Mat imageBGRA = tf->imageBGRA;
+
+  if (imageBGRA.empty()) {
+    return frame;
+  }
 
   if (tf->backgroundMask.empty()) {
     // First frame. Initialize the background mask.
@@ -513,19 +532,112 @@ static void filter_destroy(void *data)
     bfree(tf);
   }
 }
-
+#include <iostream>
 static void filter_video_render(void *data, gs_effect_t *effect)
 {
   UNUSED_PARAMETER(effect);
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
-  obs_source_skip_video_filter(tf->source);
+  auto *parent = obs_filter_get_parent(tf->source);
+  if (!parent) return;
+  auto *texrender = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
+  gs_texrender_reset(texrender);
+  const auto width = obs_source_get_width(parent);
+  const auto height = obs_source_get_height(parent);
+	if (!gs_texrender_begin(texrender, width, height)) {
+		return;
+  }
+	struct vec4 background;
+	vec4_zero(&background);
+  gs_clear(GS_CLEAR_COLOR, &background, 0.0f, 0);
+	gs_ortho(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height),
+		 -100.0f, 100.0f);
+	gs_blend_state_push();
+	gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
+	obs_source_video_render(parent);
+	gs_blend_state_pop();
+	gs_texrender_end(texrender);
+  
+  auto *stagesurface = gs_stagesurface_create(width, height, GS_BGRA);
+	gs_stage_texture(stagesurface, gs_texrender_get_texture(texrender));
+  uint8_t *video_data;
+  uint32_t linesize;
+  if (!gs_stagesurface_map(stagesurface, &video_data, &linesize)) {
+		return;
+	}
+  cv::Mat imageBGRA(width, height, CV_8UC4);
+  if (width * 4 == linesize) {
+    std::memcpy(imageBGRA.data, video_data, linesize * height);
+  } else {
+    for (uint32_t i = 0; i < height; ++i) {
+      const uint32_t dst_offset = width * 4 * i;
+      const uint32_t src_offset = linesize * i;
+      std::memcpy(imageBGRA.data + dst_offset, video_data + src_offset, linesize);
+    }
+  }
+
+  gs_stagesurface_unmap(stagesurface);
+	gs_stagesurface_destroy(stagesurface);
+
+  obs_source_draw(gs_texrender_get_texture(texrender), 0, 0, 0, 0, false);
+
+  // if (imageBGRA.empty()) {
+  //   return;
+  // }
+
+  // if (tf->backgroundMask.empty()) {
+  //   // First frame. Initialize the background mask.
+  //   tf->backgroundMask = cv::Mat(imageBGRA.size(), CV_8UC1, cv::Scalar(255));
+  // }
+
+  // tf->maskEveryXFramesCount++;
+  // tf->maskEveryXFramesCount %= tf->maskEveryXFrames;
+
+  // try {
+  //   if (tf->maskEveryXFramesCount != 0 && !tf->backgroundMask.empty()) {
+  //     // We are skipping processing of the mask for this frame.
+  //     // Get the background mask previously generated.
+  //     ; // Do nothing
+  //   } else {
+  //     // Process the image to find the mask.
+  //     processImageForBackground(tf, imageBGRA, tf->backgroundMask);
+
+  //     if (tf->feather > 0.0) {
+  //       // Feather (blur) the mask
+  //       const int k_size = (int)(40 * tf->feather);
+  //       cv::dilate(tf->backgroundMask, tf->backgroundMask, cv::Mat(), cv::Point(-1, -1),
+  //                  k_size / 3);
+  //       cv::boxFilter(tf->backgroundMask, tf->backgroundMask, tf->backgroundMask.depth(),
+  //                     cv::Size(k_size, k_size));
+  //     }
+  //   }
+
+  //   // Apply the mask back to the main image.
+  //   if (tf->blurBackground > 0.0) {
+  //     // Blur the background (fast box filter)
+  //     int k_size = (int)(5 + tf->blurBackground);
+  //     k_size += k_size % 2 == 0 ? 1 : 0;
+
+  //     cv::Mat blurredBackground;
+  //     cv::stackBlur(imageBGRA, blurredBackground, cv::Size(k_size, k_size));
+
+  //     // Blend the blurred background with the main image
+  //     blend_images_with_mask(imageBGRA, blurredBackground, tf->backgroundMask);
+  //   } else {
+  //     // Set the main image to the background color where the mask is 0
+  //     cv::Mat inverseMask = cv::Scalar(255) - tf->backgroundMask;
+  //     int from_to[] = {0, 3}; // alpha[0] -> bgra[3]
+  //     cv::mixChannels(&inverseMask, 1, &imageBGRA, 1, from_to, 1);
+  //   }
+  // } catch (const std::exception &e) {
+  //   blog(LOG_ERROR, "%s", e.what());
+  // }
 }
 
 struct obs_source_info background_removal_filter_info = {
   .id = "background_removal",
   .type = OBS_SOURCE_TYPE_FILTER,
-  .output_flags = OBS_SOURCE_VIDEO,
+  .output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
   .get_name = filter_getname,
   .create = filter_create,
   .destroy = filter_destroy,
@@ -533,5 +645,4 @@ struct obs_source_info background_removal_filter_info = {
   .get_properties = filter_properties,
   .update = filter_update,
   .video_render = filter_video_render,
-  .filter_video = filter_render,
 };
