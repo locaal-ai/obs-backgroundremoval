@@ -579,7 +579,7 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
 struct obs_source_info background_removal_filter_info = {
   .id = "background_removal",
   .type = OBS_SOURCE_TYPE_FILTER,
-  .output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB | OBS_SOURCE_CUSTOM_DRAW,
+  .output_flags = OBS_SOURCE_VIDEO,
   .get_name = filter_getname,
   .create = filter_create,
   .destroy = filter_destroy,
