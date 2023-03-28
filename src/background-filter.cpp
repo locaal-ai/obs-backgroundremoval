@@ -556,8 +556,8 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   gs_stagesurface_destroy(stagesurface);
   gs_texrender_destroy(texrender);
 
-  if (static_cast<size_t>(tf->outputBGRA.cols) != width ||
-      static_cast<size_t>(tf->outputBGRA.rows) != height) {
+  if (static_cast<uint32_t>(tf->outputBGRA.cols) != width ||
+      static_cast<uint32_t>(tf->outputBGRA.rows) != height) {
     return;
   }
   const uint8_t *textureData[] = {tf->outputBGRA.data};
