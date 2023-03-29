@@ -489,10 +489,10 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
-	if (!obs_source_enabled(tf->source)) {
-		return;
+  if (!obs_source_enabled(tf->source)) {
+    return;
   }
-  
+
   obs_source_t *parent = obs_filter_get_parent(tf->source);
   if (!parent) {
     return;
