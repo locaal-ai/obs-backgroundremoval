@@ -476,7 +476,8 @@ void filter_video_tick(void *data, float seconds)
     blog(LOG_ERROR, "%s", e.what());
   }
 
-  if (!tf->outputData || tf->outputWidth != static_cast<uint32_t>(imageBGRA.cols) || tf->outputHeight != static_cast<uint32_t>(imageBGRA.rows)) {
+  if (!tf->outputData || tf->outputWidth != static_cast<uint32_t>(imageBGRA.cols) ||
+      tf->outputHeight != static_cast<uint32_t>(imageBGRA.rows)) {
     if (tf->outputData) {
       bfree(tf->outputData);
     }
@@ -521,7 +522,8 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   if (!gs_stagesurface_map(stagesurface, &video_data, &linesize)) {
     return;
   }
-  if (!tf->inputData || tf->inputWidth != width || tf->inputHeight != height || tf->inputLinesize != linesize) {
+  if (!tf->inputData || tf->inputWidth != width || tf->inputHeight != height ||
+      tf->inputLinesize != linesize) {
     if (tf->inputData) {
       bfree(tf->inputData);
     }
