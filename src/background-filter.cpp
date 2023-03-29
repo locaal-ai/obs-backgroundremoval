@@ -533,7 +533,7 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   gs_stagesurface_destroy(stagesurface);
   gs_texrender_destroy(texrender);
 
-  if (static_cast<uint32_t>(tf->outputBGRA.cols) != width ||
+  if (tf->outputBGRA.empty() || static_cast<uint32_t>(tf->outputBGRA.cols) != width ||
       static_cast<uint32_t>(tf->outputBGRA.rows) != height) {
     return;
   }
