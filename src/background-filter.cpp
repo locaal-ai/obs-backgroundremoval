@@ -310,10 +310,12 @@ static void filter_destroy(void *data)
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
   if (tf) {
+    obs_enter_graphics();
     gs_texrender_destroy(tf->texrender);
     if (tf->stagesurface) {
       gs_stagesurface_destroy(tf->stagesurface);
     }
+    obs_leave_graphics();
     bfree(tf);
   }
 }
@@ -491,7 +493,6 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   const uint32_t height = obs_source_get_height(parent);
   gs_texrender_reset(tf->texrender);
   if (!gs_texrender_begin(tf->texrender, width, height)) {
-    blog(LOG_INFO, "%p", tf->texrender);
     return;
   }
   struct vec4 background;
@@ -503,7 +504,7 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   obs_source_video_render(parent);
   gs_blend_state_pop();
   gs_texrender_end(tf->texrender);
-  
+
   if (tf->stagesurface) {
     uint32_t stagesurf_width = gs_stagesurface_get_width(tf->stagesurface);
     uint32_t stagesurf_height = gs_stagesurface_get_height(tf->stagesurface);
