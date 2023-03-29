@@ -1,4 +1,5 @@
 #include <obs-module.h>
+#include <util/threading.h>
 
 #if defined(__APPLE__)
 #include <core/session/onnxruntime_cxx_api.h>
@@ -72,9 +73,11 @@ struct background_removal_filter {
   uint32_t inputLinesize;
   uint32_t inputWidth;
   uint32_t inputHeight;
+  pthread_mutex_t inputLock;
   uint8_t *outputData;
   uint32_t outputWidth;
   uint32_t outputHeight;
+  pthread_mutex_t outputLock;
 
   cv::Mat backgroundMask;
   int maskEveryXFrames = 1;
@@ -297,6 +300,8 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
     bzalloc(sizeof(struct background_removal_filter)));
 
   tf->source = source;
+  pthread_mutex_init(&tf->inputLock, NULL);
+  pthread_mutex_init(&tf->outputLock, NULL);
 
   std::string instanceName{"background-removal-inference"};
   tf->env.reset(new Ort::Env(OrtLoggingLevel::ORT_LOGGING_LEVEL_ERROR, instanceName.c_str()));
@@ -420,10 +425,15 @@ void filter_video_tick(void *data, float seconds)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
+  if (pthread_mutex_trylock(&tf->inputLock) == -1) {
+    return;
+  }
   if (!tf->inputData || tf->inputWidth == 0 || tf->inputHeight == 0) {
+    pthread_mutex_unlock(&tf->inputLock);
     return;
   }
   cv::Mat imageBGRA(tf->inputHeight, tf->inputWidth, CV_8UC4, tf->inputData, tf->inputLinesize);
+  pthread_mutex_unlock(&tf->inputLock);
 
   if (tf->backgroundMask.empty()) {
     // First frame. Initialize the background mask.
@@ -473,6 +483,9 @@ void filter_video_tick(void *data, float seconds)
     blog(LOG_ERROR, "%s", e.what());
   }
 
+  if (pthread_mutex_trylock(&tf->outputLock) == -1) {
+    return;
+  }
   if (!tf->outputData || tf->outputWidth != static_cast<uint32_t>(imageBGRA.cols) ||
       tf->outputHeight != static_cast<uint32_t>(imageBGRA.rows)) {
     if (tf->outputData) {
@@ -483,6 +496,7 @@ void filter_video_tick(void *data, float seconds)
   std::memcpy(tf->outputData, imageBGRA.data, imageBGRA.rows * imageBGRA.cols * 4);
   tf->outputWidth = imageBGRA.cols;
   tf->outputHeight = imageBGRA.rows;
+  pthread_mutex_unlock(&tf->outputLock);
 
   UNUSED_PARAMETER(seconds);
 }
@@ -491,13 +505,23 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
+  if (!obs_source_enabled(tf->source)) {
+    return;
+  }
+
   obs_source_t *parent = obs_filter_get_parent(tf->source);
   if (!parent) {
+    return;
+  }
+  if (!obs_source_enabled(parent)) {
     return;
   }
   gs_texrender_t *texrender = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
   const uint32_t width = obs_source_get_width(parent);
   const uint32_t height = obs_source_get_height(parent);
+  if (width == 0 || height == 0) {
+    return;
+  }
   if (!gs_texrender_begin(texrender, width, height)) {
     gs_texrender_destroy(texrender);
     return;
@@ -519,6 +543,9 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   if (!gs_stagesurface_map(stagesurface, &video_data, &linesize)) {
     return;
   }
+  if (pthread_mutex_lock(&tf->inputLock) == -1) {
+    return;
+  }
   if (!tf->inputData || tf->inputWidth != width || tf->inputHeight != height ||
       tf->inputLinesize != linesize) {
     if (tf->inputData) {
@@ -530,15 +557,21 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   tf->inputLinesize = linesize;
   tf->inputWidth = width;
   tf->inputHeight = height;
+  pthread_mutex_unlock(&tf->inputLock);
   gs_stagesurface_unmap(stagesurface);
   gs_stagesurface_destroy(stagesurface);
   gs_texrender_destroy(texrender);
 
+  if (pthread_mutex_lock(&tf->outputLock) == -1) {
+    return;
+  }
   if (!tf->outputData || tf->outputWidth != width || tf->outputHeight != height) {
+    pthread_mutex_unlock(&tf->outputLock);
     return;
   }
   const uint8_t *textureData[] = {tf->outputData};
   gs_texture_t *texture = gs_texture_create(width, height, GS_BGRA, 1, textureData, 0);
+  pthread_mutex_unlock(&tf->outputLock);
   gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
   gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
   gs_effect_set_texture_srgb(image, texture);
