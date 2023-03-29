@@ -288,7 +288,7 @@ static void filter_update(void *data, obs_data_t *settings)
 static void *filter_create(obs_data_t *settings, obs_source_t *source)
 {
   void *data = bmalloc(sizeof(struct background_removal_filter));
-  struct background_removal_filter *tf = new(data) background_removal_filter();
+  struct background_removal_filter *tf = new (data) background_removal_filter();
 
   tf->source = source;
 
