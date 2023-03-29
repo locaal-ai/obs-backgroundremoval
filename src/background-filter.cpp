@@ -541,7 +541,7 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   gs_texture_t *texture = gs_texture_create(width, height, GS_BGRA, 1, textureData, 0);
   gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
   gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
-  gs_effect_set_texture(image, texture);
+  gs_effect_set_texture_srgb(image, texture);
   gs_blend_state_push();
   gs_reset_blend_state();
   while (gs_effect_loop(effect, "Draw")) {
