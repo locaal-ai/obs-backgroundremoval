@@ -1,5 +1,4 @@
 #include <obs-module.h>
-#include <media-io/video-scaler.h>
 
 #if defined(__APPLE__)
 #include <core/session/onnxruntime_cxx_api.h>
@@ -67,15 +66,15 @@ struct background_removal_filter {
   std::string modelSelection;
   std::unique_ptr<Model> model;
 
-  // Use the media-io converter to both scale and convert the colorspace
-  video_scaler_t *scalerToBGRA;
-
   obs_source_t *source;
 
   cv::Mat backgroundMask;
   int maskEveryXFrames = 1;
   int maskEveryXFramesCount = 0;
   int64_t blurBackground = 0;
+
+  cv::Mat inputBGRA;
+  cv::Mat outputBGRA;
 
 #if _WIN32
   const wchar_t *modelFilepath = nullptr;
@@ -244,15 +243,6 @@ static void createOrtSession(struct background_removal_filter *tf)
                                    tf->inputTensorValues, tf->inputTensor, tf->outputTensor);
 }
 
-static void destroyScalers(struct background_removal_filter *tf)
-{
-  blog(LOG_INFO, "Destroy scalers.");
-  if (tf->scalerToBGRA != nullptr) {
-    video_scaler_destroy(tf->scalerToBGRA);
-    tf->scalerToBGRA = nullptr;
-  }
-}
-
 static void filter_update(void *data, obs_data_t *settings)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
@@ -273,7 +263,6 @@ static void filter_update(void *data, obs_data_t *settings)
     // Re-initialize model if it's not already the selected one or switching inference device
     tf->modelSelection = newModel;
     tf->useGPU = newUseGpu;
-    destroyScalers(tf);
 
     if (tf->modelSelection == MODEL_SINET) {
       tf->model.reset(new ModelSINET);
@@ -313,44 +302,13 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
   return tf;
 }
 
-static void initializeScalers(cv::Size frameSize, enum video_format frameFormat,
-                              struct background_removal_filter *tf)
+static void filter_destroy(void *data)
 {
+  struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
-  struct video_scale_info dst {
-    VIDEO_FORMAT_BGRA, (uint32_t)frameSize.width,
-      (uint32_t)frameSize.height, VIDEO_RANGE_DEFAULT, VIDEO_CS_DEFAULT
-  };
-  struct video_scale_info src {
-    frameFormat, (uint32_t)frameSize.width,
-      (uint32_t)frameSize.height, VIDEO_RANGE_DEFAULT, VIDEO_CS_DEFAULT
-  };
-
-  // Check if scalers already defined and release them
-  destroyScalers(tf);
-
-  blog(LOG_INFO, "Initialize scalers. Size %d x %d", frameSize.width, frameSize.height);
-
-  // Create new scalers
-  video_scaler_create(&tf->scalerToBGRA, &dst, &src, VIDEO_SCALE_DEFAULT);
-}
-
-static cv::Mat convertFrameToBGRA(struct obs_source_frame *frame,
-                                  struct background_removal_filter *tf)
-{
-  const cv::Size frameSize(frame->width, frame->height);
-
-  if (tf->scalerToBGRA == nullptr) {
-    // Lazy initialize the frame scale & color converter
-    initializeScalers(frameSize, frame->format, tf);
+  if (tf) {
+    bfree(tf);
   }
-
-  cv::Mat imageBGRA(frameSize, CV_8UC4);
-  const uint32_t bgraLinesize = (uint32_t)(imageBGRA.cols * imageBGRA.elemSize());
-  video_scaler_scale(tf->scalerToBGRA, &(imageBGRA.data), &(bgraLinesize), frame->data,
-                     frame->linesize);
-
-  return imageBGRA;
 }
 
 static void processImageForBackground(struct background_removal_filter *tf,
@@ -451,12 +409,15 @@ void blend_images_with_mask(cv::Mat &dst, const cv::Mat &src, const cv::Mat &mas
   }
 }
 
-static struct obs_source_frame *filter_render(void *data, struct obs_source_frame *frame)
+void filter_video_tick(void *data, float seconds)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
-  // Convert to BGR
-  cv::Mat imageBGRA = convertFrameToBGRA(frame, tf);
+  if (tf->inputBGRA.empty()) {
+    return;
+  }
+
+  cv::Mat imageBGRA(tf->inputBGRA.clone());
 
   if (tf->backgroundMask.empty()) {
     // First frame. Initialize the background mask.
@@ -506,37 +467,66 @@ static struct obs_source_frame *filter_render(void *data, struct obs_source_fram
     blog(LOG_ERROR, "%s", e.what());
   }
 
-  uint8_t *data0 = frame->data[0];
-  uint8_t *data1 = frame->data[1];
-  uint8_t *data2 = frame->data[2];
-  uint8_t *data3 = frame->data[3];
-  frame->data[0] = static_cast<uint8_t *>(brealloc(data0, imageBGRA.cols * imageBGRA.rows * 16));
-  frame->data[1] = frame->data[0] + (imageBGRA.cols * imageBGRA.rows * 4);
-  frame->data[2] = frame->data[1] + (data2 - data1);
-  frame->data[3] = frame->data[1] + (data3 - data1);
-  frame->linesize[0] = static_cast<uint32_t>(imageBGRA.cols * 4);
-  frame->format = VIDEO_FORMAT_BGRA;
-  std::memcpy(frame->data[0], imageBGRA.data, imageBGRA.cols * imageBGRA.rows * 4);
+  tf->outputBGRA = imageBGRA.clone();
 
-  return frame;
+  UNUSED_PARAMETER(seconds);
 }
 
-static void filter_destroy(void *data)
+static void filter_video_render(void *data, gs_effect_t *_effect)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
-  if (tf) {
-    destroyScalers(tf);
-    bfree(tf);
+  obs_source_t *parent = obs_filter_get_parent(tf->source);
+  if (!parent) {
+    return;
   }
-}
+  gs_texrender_t *texrender = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
+  const uint32_t width = obs_source_get_width(parent);
+  const uint32_t height = obs_source_get_height(parent);
+  if (!gs_texrender_begin(texrender, width, height)) {
+    gs_texrender_destroy(texrender);
+    return;
+  }
+  struct vec4 background;
+  vec4_zero(&background);
+  gs_clear(GS_CLEAR_COLOR, &background, 0.0f, 0);
+  gs_ortho(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height), -100.0f, 100.0f);
+  gs_blend_state_push();
+  gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
+  obs_source_video_render(parent);
+  gs_blend_state_pop();
+  gs_texrender_end(texrender);
 
-static void filter_video_render(void *data, gs_effect_t *effect)
-{
-  UNUSED_PARAMETER(effect);
-  struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
+  auto *stagesurface = gs_stagesurface_create(width, height, GS_BGRA);
+  gs_stage_texture(stagesurface, gs_texrender_get_texture(texrender));
+  uint8_t *video_data;
+  uint32_t linesize;
+  if (!gs_stagesurface_map(stagesurface, &video_data, &linesize)) {
+    return;
+  }
+  tf->inputBGRA = cv::Mat(height, width, CV_8UC4, video_data, linesize);
+  gs_stagesurface_unmap(stagesurface);
+  gs_stagesurface_destroy(stagesurface);
+  gs_texrender_destroy(texrender);
 
-  obs_source_skip_video_filter(tf->source);
+  if (static_cast<uint32_t>(tf->outputBGRA.cols) != width ||
+      static_cast<uint32_t>(tf->outputBGRA.rows) != height) {
+    return;
+  }
+  const uint8_t *textureData[] = {tf->outputBGRA.data};
+  gs_texture_t *texture = gs_texture_create(width, height, GS_BGRA, 1, textureData, 0);
+  gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+  gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
+  gs_effect_set_texture_srgb(image, texture);
+  gs_blend_state_push();
+  gs_reset_blend_state();
+  while (gs_effect_loop(effect, "Draw")) {
+    gs_draw_sprite(texture, 0, width, height);
+  }
+  gs_blend_state_pop();
+  gs_texture_destroy(texture);
+
+  UNUSED_PARAMETER(_effect);
 }
 
 struct obs_source_info background_removal_filter_info = {
@@ -549,6 +539,6 @@ struct obs_source_info background_removal_filter_info = {
   .get_defaults = filter_defaults,
   .get_properties = filter_properties,
   .update = filter_update,
+  .video_tick = filter_video_tick,
   .video_render = filter_video_render,
-  .filter_video = filter_render,
 };
