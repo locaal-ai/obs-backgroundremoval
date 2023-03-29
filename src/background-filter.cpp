@@ -310,13 +310,13 @@ static void filter_destroy(void *data)
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
   if (tf) {
-    tf->~background_removal_filter();
     obs_enter_graphics();
     gs_texrender_destroy(tf->texrender);
     if (tf->stagesurface) {
       gs_stagesurface_destroy(tf->stagesurface);
     }
     obs_leave_graphics();
+    tf->~background_removal_filter();
     bfree(tf);
   }
 }
