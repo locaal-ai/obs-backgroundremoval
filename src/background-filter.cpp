@@ -1,4 +1,5 @@
 #include <obs-module.h>
+#include <util/threading.h>
 
 #if defined(__APPLE__)
 #include <core/session/onnxruntime_cxx_api.h>
