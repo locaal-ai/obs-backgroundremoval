@@ -56,7 +56,6 @@ struct background_removal_filter {
   std::vector<std::vector<int64_t>> outputDims;
   std::vector<std::vector<float>> outputTensorValues;
   std::vector<std::vector<float>> inputTensorValues;
-  Ort::MemoryInfo memoryInfo;
   float threshold = 0.5f;
   cv::Scalar backgroundColor{0, 0, 0, 0};
   float contourFilter = 0.05f;
@@ -288,8 +287,8 @@ static void filter_update(void *data, obs_data_t *settings)
 
 static void *filter_create(obs_data_t *settings, obs_source_t *source)
 {
-  struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(
-    bzalloc(sizeof(struct background_removal_filter)));
+  void *data = bmalloc(sizeof(struct background_removal_filter));
+  struct background_removal_filter *tf = new(data) background_removal_filter();
 
   tf->source = source;
 
@@ -307,6 +306,7 @@ static void filter_destroy(void *data)
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
   if (tf) {
+    tf->~background_removal_filter();
     bfree(tf);
   }
 }
