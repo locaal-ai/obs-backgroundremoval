@@ -67,6 +67,8 @@ struct background_removal_filter {
   std::unique_ptr<Model> model;
 
   obs_source_t *source;
+  gs_texrender_t *texrender;
+  gs_stagesurf_t *stagesurface;
 
   cv::Mat backgroundMask;
   int maskEveryXFrames = 1;
@@ -292,6 +294,7 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
     bzalloc(sizeof(struct background_removal_filter)));
 
   tf->source = source;
+  tf->texrender = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
 
   std::string instanceName{"background-removal-inference"};
   tf->env.reset(new Ort::Env(OrtLoggingLevel::ORT_LOGGING_LEVEL_ERROR, instanceName.c_str()));
@@ -307,6 +310,10 @@ static void filter_destroy(void *data)
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
   if (tf) {
+    gs_texrender_destroy(tf->texrender);
+    if (tf->stagesurface) {
+      gs_stagesurface_destroy(tf->stagesurface);
+    }
     bfree(tf);
   }
 }
@@ -480,11 +487,11 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   if (!parent) {
     return;
   }
-  gs_texrender_t *texrender = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
   const uint32_t width = obs_source_get_width(parent);
   const uint32_t height = obs_source_get_height(parent);
-  if (!gs_texrender_begin(texrender, width, height)) {
-    gs_texrender_destroy(texrender);
+  gs_texrender_reset(tf->texrender);
+  if (!gs_texrender_begin(tf->texrender, width, height)) {
+    blog(LOG_INFO, "%p", tf->texrender);
     return;
   }
   struct vec4 background;
@@ -495,19 +502,27 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
   obs_source_video_render(parent);
   gs_blend_state_pop();
-  gs_texrender_end(texrender);
-
-  auto *stagesurface = gs_stagesurface_create(width, height, GS_BGRA);
-  gs_stage_texture(stagesurface, gs_texrender_get_texture(texrender));
+  gs_texrender_end(tf->texrender);
+  
+  if (tf->stagesurface) {
+    uint32_t stagesurf_width = gs_stagesurface_get_width(tf->stagesurface);
+    uint32_t stagesurf_height = gs_stagesurface_get_height(tf->stagesurface);
+    if (stagesurf_width != width || stagesurf_height != height) {
+      gs_stagesurface_destroy(tf->stagesurface);
+      tf->stagesurface = nullptr;
+    }
+  }
+  if (!tf->stagesurface) {
+    tf->stagesurface = gs_stagesurface_create(width, height, GS_BGRA);
+  }
+  gs_stage_texture(tf->stagesurface, gs_texrender_get_texture(tf->texrender));
   uint8_t *video_data;
   uint32_t linesize;
-  if (!gs_stagesurface_map(stagesurface, &video_data, &linesize)) {
+  if (!gs_stagesurface_map(tf->stagesurface, &video_data, &linesize)) {
     return;
   }
   tf->inputBGRA = cv::Mat(height, width, CV_8UC4, video_data, linesize);
-  gs_stagesurface_unmap(stagesurface);
-  gs_stagesurface_destroy(stagesurface);
-  gs_texrender_destroy(texrender);
+  gs_stagesurface_unmap(tf->stagesurface);
 
   if (static_cast<uint32_t>(tf->outputBGRA.cols) != width ||
       static_cast<uint32_t>(tf->outputBGRA.rows) != height) {
