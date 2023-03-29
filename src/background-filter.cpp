@@ -76,6 +76,9 @@ struct background_removal_filter {
   cv::Mat inputBGRA;
   cv::Mat outputBGRA;
 
+  pthread_mutex_t inputBGRALock;
+  pthread_mutex_t outputBGRALock;
+
 #if _WIN32
   const wchar_t *modelFilepath = nullptr;
 #else
@@ -292,6 +295,8 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
     bzalloc(sizeof(struct background_removal_filter)));
 
   tf->source = source;
+  pthread_mutex_init(&tf->inputBGRALock, NULL);
+  pthread_mutex_init(&tf->outputBGRALock, NULL);
 
   std::string instanceName{"background-removal-inference"};
   tf->env.reset(new Ort::Env(OrtLoggingLevel::ORT_LOGGING_LEVEL_ERROR, instanceName.c_str()));
@@ -417,7 +422,11 @@ void filter_video_tick(void *data, float seconds)
     return;
   }
 
+  if (pthread_mutex_trylock(&tf->inputBGRALock) == -1) {
+    return;
+  }
   cv::Mat imageBGRA(tf->inputBGRA.clone());
+  pthread_mutex_unlock(&tf->inputBGRALock);
 
   if (tf->backgroundMask.empty()) {
     // First frame. Initialize the background mask.
@@ -467,7 +476,11 @@ void filter_video_tick(void *data, float seconds)
     blog(LOG_ERROR, "%s", e.what());
   }
 
+  if (pthread_mutex_trylock(&tf->outputBGRALock) == -1) {
+    return;
+  }
   tf->outputBGRA = imageBGRA.clone();
+  pthread_mutex_unlock(&tf->outputBGRALock);
 
   UNUSED_PARAMETER(seconds);
 }
@@ -476,6 +489,10 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
+	if (!obs_source_enabled(tf->source)) {
+		return;
+  }
+  
   obs_source_t *parent = obs_filter_get_parent(tf->source);
   if (!parent) {
     return;
@@ -483,6 +500,9 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   gs_texrender_t *texrender = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
   const uint32_t width = obs_source_get_width(parent);
   const uint32_t height = obs_source_get_height(parent);
+  if (width == 0 || height == 0) {
+    return;
+  }
   if (!gs_texrender_begin(texrender, width, height)) {
     gs_texrender_destroy(texrender);
     return;
@@ -504,7 +524,11 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   if (!gs_stagesurface_map(stagesurface, &video_data, &linesize)) {
     return;
   }
+  if (pthread_mutex_lock(&tf->inputBGRALock) == -1) {
+    return;
+  }
   tf->inputBGRA = cv::Mat(height, width, CV_8UC4, video_data, linesize);
+  pthread_mutex_unlock(&tf->inputBGRALock);
   gs_stagesurface_unmap(stagesurface);
   gs_stagesurface_destroy(stagesurface);
   gs_texrender_destroy(texrender);
@@ -513,7 +537,12 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
       static_cast<uint32_t>(tf->outputBGRA.rows) != height) {
     return;
   }
-  const uint8_t *textureData[] = {tf->outputBGRA.data};
+  if (pthread_mutex_lock(&tf->outputBGRALock) == -1) {
+    return;
+  }
+  const cv::Mat imageBGRA(tf->outputBGRA.clone());
+  pthread_mutex_unlock(&tf->outputBGRALock);
+  const uint8_t *textureData[] = {imageBGRA.data};
   gs_texture_t *texture = gs_texture_create(width, height, GS_BGRA, 1, textureData, 0);
   gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
   gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
