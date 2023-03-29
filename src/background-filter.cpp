@@ -26,6 +26,7 @@
 #include <memory>
 #include <exception>
 #include <fstream>
+#include <new>
 
 #include "plugin-macros.generated.h"
 #include "models/ModelSINET.h"
