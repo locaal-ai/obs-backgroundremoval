@@ -112,9 +112,6 @@ if(OS_WINDOWS)
   if(MSVC)
     target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE /W4)
   endif()
-
-  target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
-                             PRIVATE ${CMAKE_SOURCE_DIR}/../obs-studio/deps/w32-pthreads)
   # --- End of section ---
 
   # -- macOS specific build settings and tasks --
