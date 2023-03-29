@@ -81,9 +81,6 @@ struct background_removal_filter {
   int maskEveryXFramesCount = 0;
   int64_t blurBackground = 0;
 
-  cv::Mat inputBGRA;
-  cv::Mat outputBGRA;
-
 #if _WIN32
   const wchar_t *modelFilepath = nullptr;
 #else
