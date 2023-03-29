@@ -300,8 +300,6 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
 
   tf->source = source;
   tf->texrender = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
-  pthread_mutex_init(&tf->inputBGRALock, NULL);
-  pthread_mutex_init(&tf->outputBGRALock, NULL);
 
   std::string instanceName{"background-removal-inference"};
   tf->env.reset(new Ort::Env(OrtLoggingLevel::ORT_LOGGING_LEVEL_ERROR, instanceName.c_str()));
@@ -436,7 +434,7 @@ void filter_video_tick(void *data, float seconds)
   cv::Mat imageBGRA;
   {
     std::unique_lock<std::mutex> lock(tf->inputBGRALock, std::try_to_lock);
-    if(!lock.owns_lock()){
+    if (!lock.owns_lock()) {
       return;
     }
     imageBGRA = tf->inputBGRA.clone();
@@ -492,7 +490,7 @@ void filter_video_tick(void *data, float seconds)
 
   {
     std::unique_lock<std::mutex> lock(tf->inputBGRALock, std::try_to_lock);
-    if(!lock.owns_lock()){
+    if (!lock.owns_lock()) {
       return;
     }
     tf->outputBGRA = imageBGRA.clone();
