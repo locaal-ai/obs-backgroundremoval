@@ -1,10 +1,10 @@
 {
     "dependencies": {
         "obs-studio": {
-            "version": "28.0.1",
+            "version": "29.0.0-beta1",
             "repository": "https://github.com/obsproject/obs-studio.git",
             "branch": "master",
-            "hash": "e8dc70d0eef4503378d6ac300e680215eb5c9379"
+            "hash": "dd61943ddfc4036e1e0507f50395157303cce6eb"
         },
         "prebuilt": {
             "version": "2022-08-02",
@@ -75,9 +75,6 @@
             "platformSDK": "10.0.20348.0"
         },
         "linux-x86_64": {
-            "qtVersion": 6
-        },
-        "linux-aarch64": {
             "qtVersion": 6
         }
     },
