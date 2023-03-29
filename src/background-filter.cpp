@@ -68,6 +68,14 @@ struct background_removal_filter {
 
   obs_source_t *source;
 
+  uint8_t *inputData;
+  uint32_t inputLinesize;
+  uint32_t inputWidth;
+  uint32_t inputHeight;
+  uint8_t *outputData;
+  uint32_t outputWidth;
+  uint32_t outputHeight;
+
   cv::Mat backgroundMask;
   int maskEveryXFrames = 1;
   int maskEveryXFramesCount = 0;
@@ -307,6 +315,8 @@ static void filter_destroy(void *data)
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
   if (tf) {
+    bfree(tf->inputData);
+    bfree(tf->outputData);
     bfree(tf);
   }
 }
@@ -413,11 +423,10 @@ void filter_video_tick(void *data, float seconds)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
-  if (tf->inputBGRA.empty()) {
+  if (!tf->inputData || tf->inputWidth == 0 || tf->inputHeight == 0) {
     return;
   }
-
-  cv::Mat imageBGRA(tf->inputBGRA.clone());
+  cv::Mat imageBGRA(tf->inputHeight, tf->inputWidth, CV_8UC4, tf->inputData, tf->inputLinesize);
 
   if (tf->backgroundMask.empty()) {
     // First frame. Initialize the background mask.
@@ -467,7 +476,15 @@ void filter_video_tick(void *data, float seconds)
     blog(LOG_ERROR, "%s", e.what());
   }
 
-  tf->outputBGRA = imageBGRA.clone();
+  if (!tf->outputData || tf->outputWidth != static_cast<uint32_t>(imageBGRA.cols) || tf->outputHeight != static_cast<uint32_t>(imageBGRA.rows)) {
+    if (tf->outputData) {
+      bfree(tf->outputData);
+    }
+    tf->outputData = reinterpret_cast<uint8_t *>(bzalloc(imageBGRA.rows * imageBGRA.cols * 4));
+  }
+  std::memcpy(tf->outputData, imageBGRA.data, imageBGRA.rows * imageBGRA.cols * 4);
+  tf->outputWidth = imageBGRA.cols;
+  tf->outputHeight = imageBGRA.rows;
 
   UNUSED_PARAMETER(seconds);
 }
@@ -504,20 +521,28 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   if (!gs_stagesurface_map(stagesurface, &video_data, &linesize)) {
     return;
   }
-  tf->inputBGRA = cv::Mat(height, width, CV_8UC4, video_data, linesize);
+  if (!tf->inputData || tf->inputWidth != width || tf->inputHeight != height || tf->inputLinesize != linesize) {
+    if (tf->inputData) {
+      bfree(tf->inputData);
+    }
+    tf->inputData = reinterpret_cast<uint8_t *>(bzalloc(linesize * height * 4));
+  }
+  std::memcpy(tf->inputData, video_data, linesize * height * 4);
+  tf->inputLinesize = linesize;
+  tf->inputWidth = width;
+  tf->inputHeight = height;
   gs_stagesurface_unmap(stagesurface);
   gs_stagesurface_destroy(stagesurface);
   gs_texrender_destroy(texrender);
 
-  if (static_cast<uint32_t>(tf->outputBGRA.cols) != width ||
-      static_cast<uint32_t>(tf->outputBGRA.rows) != height) {
+  if (!tf->outputData || tf->outputWidth != width || tf->outputHeight != height) {
     return;
   }
-  const uint8_t *textureData[] = {tf->outputBGRA.data};
+  const uint8_t *textureData[] = {tf->outputData};
   gs_texture_t *texture = gs_texture_create(width, height, GS_BGRA, 1, textureData, 0);
   gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
   gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
-  gs_effect_set_texture_srgb(image, texture);
+  gs_effect_set_texture(image, texture);
   gs_blend_state_push();
   gs_reset_blend_state();
   while (gs_effect_loop(effect, "Draw")) {
