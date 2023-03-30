@@ -266,18 +266,19 @@ jobs:
           cp build_x86_64/installer-macos.generated.pkgproj build_arm64/
           cp build_x86_64/installer-macos.generated.pkgproj build_universal/
 
-      # - name: Package x86_64 Plugin
-      #   uses: ./plugin/.github/actions/package-plugin
-      #   with:
-      #     workingDirectory: ${{ github.workspace }}/plugin
-      #     target: x86_64
-      #     config: RelWithDebInfo
-      #     codesign: ${{ github.event_name != 'pull_request' && steps.setup.outputs.haveCodesignIdent == 'true' }}
-      #     notarize: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && steps.setup.outputs.haveNotarizationUser == 'true' }}
-      #     codesignIdent: ${{ env.CODESIGN_IDENT }}
-      #     installerIdent: ${{ env.CODESIGN_IDENT_INSTALLER }}
-      #     codesignUser: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
-      #     codesignPass: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+      - name: Package x86_64 Plugin
+        if: false
+        uses: ./plugin/.github/actions/package-plugin
+        with:
+          workingDirectory: ${{ github.workspace }}/plugin
+          target: x86_64
+          config: RelWithDebInfo
+          codesign: ${{ github.event_name != 'pull_request' && steps.setup.outputs.haveCodesignIdent == 'true' }}
+          notarize: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && steps.setup.outputs.haveNotarizationUser == 'true' }}
+          codesignIdent: ${{ env.CODESIGN_IDENT }}
+          installerIdent: ${{ env.CODESIGN_IDENT_INSTALLER }}
+          codesignUser: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
+          codesignPass: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
 
       - name: Extract x86_64 bundle
         working-directory: ${{ github.workspace }}/plugin
@@ -296,18 +297,19 @@ jobs:
         working-directory: ${{ github.workspace }}/plugin/release
         run: tar -xzf ${{ env.PLUGIN_NAME }}-macos-arm64.tar.gz
 
-      # - name: Package ARM64 Plugin
-      #   uses: ./plugin/.github/actions/package-plugin
-      #   with:
-      #     workingDirectory: ${{ github.workspace }}/plugin
-      #     target: arm64
-      #     config: RelWithDebInfo
-      #     codesign: ${{ github.event_name != 'pull_request' && steps.setup.outputs.haveCodesignIdent == 'true' }}
-      #     notarize: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && steps.setup.outputs.haveNotarizationUser == 'true' }}
-      #     codesignIdent: ${{ env.CODESIGN_IDENT }}
-      #     installerIdent: ${{ env.CODESIGN_IDENT_INSTALLER }}
-      #     codesignUser: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
-      #     codesignPass: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+      - name: Package ARM64 Plugin
+        if: false
+        uses: ./plugin/.github/actions/package-plugin
+        with:
+          workingDirectory: ${{ github.workspace }}/plugin
+          target: arm64
+          config: RelWithDebInfo
+          codesign: ${{ github.event_name != 'pull_request' && steps.setup.outputs.haveCodesignIdent == 'true' }}
+          notarize: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && steps.setup.outputs.haveNotarizationUser == 'true' }}
+          codesignIdent: ${{ env.CODESIGN_IDENT }}
+          installerIdent: ${{ env.CODESIGN_IDENT_INSTALLER }}
+          codesignUser: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
+          codesignPass: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
 
       - name: Extract arm64 bundle
         working-directory: ${{ github.workspace }}/plugin
