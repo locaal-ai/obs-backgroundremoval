@@ -504,20 +504,24 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
   if (!obs_source_enabled(tf->source)) {
+    obs_source_skip_video_filter(tf->source);
     return;
   }
 
   obs_source_t *parent = obs_filter_get_parent(tf->source);
   if (!parent) {
+    obs_source_skip_video_filter(tf->source);
     return;
   }
   const uint32_t width = obs_source_get_width(parent);
   const uint32_t height = obs_source_get_height(parent);
   if (width == 0 || height == 0) {
+    obs_source_skip_video_filter(tf->source);
     return;
   }
   gs_texrender_reset(tf->texrender);
   if (!gs_texrender_begin(tf->texrender, width, height)) {
+    obs_source_skip_video_filter(tf->source);
     return;
   }
   struct vec4 background;
@@ -545,6 +549,7 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   uint8_t *video_data;
   uint32_t linesize;
   if (!gs_stagesurface_map(tf->stagesurface, &video_data, &linesize)) {
+    obs_source_skip_video_filter(tf->source);
     return;
   }
   {
@@ -555,6 +560,7 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
 
   if (tf->outputBGRA.empty() || static_cast<uint32_t>(tf->outputBGRA.cols) != width ||
       static_cast<uint32_t>(tf->outputBGRA.rows) != height) {
+    obs_source_skip_video_filter(tf->source);
     return;
   }
   cv::Mat imageBGRA;
