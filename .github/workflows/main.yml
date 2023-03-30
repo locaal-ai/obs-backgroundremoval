@@ -267,6 +267,7 @@ jobs:
           cp build_x86_64/installer-macos.generated.pkgproj build_universal/
 
       - name: Package x86_64 Plugin
+        if: false
         uses: ./plugin/.github/actions/package-plugin
         with:
           workingDirectory: ${{ github.workspace }}/plugin
@@ -297,6 +298,7 @@ jobs:
         run: tar -xzf ${{ env.PLUGIN_NAME }}-macos-arm64.tar.gz
 
       - name: Package ARM64 Plugin
+        if: false
         uses: ./plugin/.github/actions/package-plugin
         with:
           workingDirectory: ${{ github.workspace }}/plugin
