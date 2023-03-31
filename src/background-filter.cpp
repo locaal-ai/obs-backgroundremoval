@@ -79,6 +79,8 @@ struct background_removal_filter {
   cv::Mat inputBGRA;
   cv::Mat outputBGRA;
 
+  bool isEnabled;
+
   std::mutex inputBGRALock;
   std::mutex outputBGRALock;
 
@@ -290,6 +292,18 @@ static void filter_update(void *data, obs_data_t *settings)
   }
 }
 
+static void filter_activate(void *data)
+{
+  struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
+  tf->isEnabled = true;
+}
+
+static void filter_deactivate(void *data)
+{
+  struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
+  tf->isEnabled = false;
+}
+
 /**                   FILTER CORE                     */
 
 static void *filter_create(obs_data_t *settings, obs_source_t *source)
@@ -426,6 +440,14 @@ void blend_images_with_mask(cv::Mat &dst, const cv::Mat &src, const cv::Mat &mas
 void filter_video_tick(void *data, float seconds)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
+
+  if (!tf->isEnabled) {
+    return;
+  }
+
+  if (!obs_source_enabled(tf->source)) {
+    return;
+  }
 
   if (tf->inputBGRA.empty()) {
     return;
@@ -594,6 +616,8 @@ struct obs_source_info background_removal_filter_info = {
   .get_defaults = filter_defaults,
   .get_properties = filter_properties,
   .update = filter_update,
+  .activate = filter_activate,
+  .deactivate = filter_deactivate,
   .video_tick = filter_video_tick,
   .video_render = filter_video_render,
 };
