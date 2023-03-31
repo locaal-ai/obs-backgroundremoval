@@ -427,6 +427,15 @@ void filter_video_tick(void *data, float seconds)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
+  if (!obs_source_enabled(tf->source)) {
+    return;
+  }
+
+  obs_source_t *parent = obs_filter_get_parent(tf->source);
+  if (!parent) {
+    return;
+  }
+
   if (tf->inputBGRA.empty()) {
     return;
   }
