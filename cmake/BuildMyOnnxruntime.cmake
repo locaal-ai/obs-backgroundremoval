@@ -89,7 +89,7 @@ endif()
 ExternalProject_Add(
   Ort
   GIT_REPOSITORY https://github.com/umireon/onnxruntime.git
-  GIT_TAG v1.14.1-umireon
+  GIT_TAG v1.14.1-umireon-2
   GIT_SHALLOW ON
   CONFIGURE_COMMAND "${Onnxruntime_PLATFORM_CONFIGURE}"
   BUILD_COMMAND
