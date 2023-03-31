@@ -20,14 +20,17 @@ if(OS_WINDOWS)
   set(PYTHON3 python)
   set(Onnxruntime_PLATFORM_OPTIONS --cmake_generator ${CMAKE_GENERATOR} --use_dml)
   if(Onnxruntime_CCACHE_EXE)
-    set(Onnxruntime_PLATFORM_CONFIGURE ${CMAKE_COMMAND} -E copy ${Onnxruntime_CCACHE_EXE}
-                                       ${CMAKE_BINARY_DIR}/cl.exe)
-    list(
-      APPEND
-      Onnxruntime_PLATFORM_OPTIONS
-      --cmake_extra_defines
-      CMAKE_VS_GLOBALS=CLToolExe=cl.exe$<SEMICOLON>CLToolPath=${CMAKE_BINARY_DIR}$<SEMICOLON>TrackFileAccess=false$<SEMICOLON>UseMultiToolTask=true$<SEMICOLON>DebugInformationFormat=OldStyle
-    )
+    if(Onnxruntime_CCACHE_EXE)
+      list(
+        APPEND
+        Onnxruntime_PLATFORM_OPTIONS
+        --cmake_generator
+        Ninja
+        --cmake_extra_defines
+        CMAKE_C_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE}
+        --cmake_extra_defines
+        CMAKE_CXX_COMPILER_LAUNCHER=${Onnxruntime_CCACHE_EXE})
+    endif()
   endif()
   set(Onnxruntime_PLATFORM_BYPRODUCT <INSTALL_DIR>/lib/DirectML.lib <INSTALL_DIR>/lib/DirectML.dll
                                      <INSTALL_DIR>/lib/DirectML.pdb)
