@@ -301,7 +301,7 @@ static void filter_activate(void *data)
 static void filter_deactivate(void *data)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
-  tf->isDisabled = false;
+  tf->isDisabled = true;
 }
 
 /**                   FILTER CORE                     */
@@ -441,7 +441,7 @@ void filter_video_tick(void *data, float seconds)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
-  if (!tf->isEnabled) {
+  if (tf->isDisabled) {
     return;
   }
 
