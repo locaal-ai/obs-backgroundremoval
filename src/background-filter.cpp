@@ -79,7 +79,7 @@ struct background_removal_filter {
   cv::Mat inputBGRA;
   cv::Mat outputBGRA;
 
-  bool isEnabled;
+  bool isDisabled;
 
   std::mutex inputBGRALock;
   std::mutex outputBGRALock;
@@ -295,13 +295,13 @@ static void filter_update(void *data, obs_data_t *settings)
 static void filter_activate(void *data)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
-  tf->isEnabled = true;
+  tf->isDisabled = false;
 }
 
 static void filter_deactivate(void *data)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
-  tf->isEnabled = false;
+  tf->isDisabled = false;
 }
 
 /**                   FILTER CORE                     */
