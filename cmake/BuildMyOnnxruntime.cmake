@@ -88,7 +88,7 @@ endif()
 
 ExternalProject_Add(
   Ort
-  GIT_REPOSITORY https://github.com/umireon/onnxruntime.git
+  GIT_REPOSITORY https://github.com/microsoft/onnxruntime.git
   GIT_TAG v1.14.1
   GIT_SHALLOW ON
   PATCH_COMMAND git apply < ${CMAKE_SOURCE_DIR}/cmake/onnxruntime-v1.14.1.patch
