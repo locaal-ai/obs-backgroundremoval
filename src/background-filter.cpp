@@ -530,13 +530,8 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
     return;
   }
 
-  obs_source_t *parent = obs_filter_get_parent(tf->source);
-  if (!parent) {
-    obs_source_skip_video_filter(tf->source);
-    return;
-  }
-  const uint32_t width = obs_source_get_width(parent);
-  const uint32_t height = obs_source_get_height(parent);
+  const uint32_t width = obs_source_get_width(tf->source);
+  const uint32_t height = obs_source_get_height(tf->source);
   if (width == 0 || height == 0) {
     obs_source_skip_video_filter(tf->source);
     return;
@@ -552,7 +547,7 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   gs_ortho(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height), -100.0f, 100.0f);
   gs_blend_state_push();
   gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
-  obs_source_video_render(parent);
+  obs_source_video_render(tf->source);
   gs_blend_state_pop();
   gs_texrender_end(tf->texrender);
 
