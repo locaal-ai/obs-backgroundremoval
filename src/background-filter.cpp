@@ -9,14 +9,12 @@
 #include <cpu_provider_factory.h>
 #endif
 
-#ifdef WITH_CUDA
+#ifdef __linux__
 #include <cuda_provider_factory.h>
 #endif
 
 #ifdef _WIN32
-#ifndef WITH_CUDA
 #include <dml_provider_factory.h>
-#endif
 #include <wchar.h>
 #endif // _WIN32
 
@@ -120,7 +118,7 @@ static obs_properties_t *filter_properties(void *data)
                                                       OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
   obs_property_list_add_string(p_use_gpu, obs_module_text("CPU"), USEGPU_CPU);
-#ifdef WITH_CUDA
+#ifdef __linux__
   obs_property_list_add_string(p_use_gpu, obs_module_text("GPUCUDA"), USEGPU_CUDA);
 #endif
 #if _WIN32
@@ -196,7 +194,7 @@ static void createOrtSession(struct background_removal_filter *tf)
 #endif
 
   try {
-#ifdef WITH_CUDA
+#ifdef __linux__
     if (tf->useGPU == USEGPU_CUDA) {
       Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0));
     }

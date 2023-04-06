@@ -64,10 +64,10 @@ elseif(OS_MACOS)
       <BINARY_DIR>/${Onnxruntime_BUILD_TYPE}/_deps/pytorch_cpuinfo-build/${Onnxruntime_LIB_PREFIX}/deps/clog/${CMAKE_STATIC_LIBRARY_PREFIX}clog${CMAKE_STATIC_LIBRARY_SUFFIX}
   )
   set(Onnxruntime_PROTOBUF_PREFIX ${CMAKE_STATIC_LIBRARY_PREFIX})
-else()
+else(OS_LINUX)
   set(PYTHON3 python3)
   set(Onnxruntime_PLATFORM_CONFIGURE "")
-  set(Onnxruntime_PLATFORM_OPTIONS --cmake_generator Ninja)
+  set(Onnxruntime_PLATFORM_OPTIONS --cmake_generator Ninja --use_cuda)
 
   if(Onnxruntime_CCACHE_EXE)
     list(APPEND Onnxruntime_PLATFORM_OPTIONS --cmake_extra_defines
