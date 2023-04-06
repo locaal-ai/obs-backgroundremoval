@@ -405,7 +405,7 @@ jobs:
           sudo apt-get update
           sudo apt-get -y install libcudnn8-dev
           echo "CUDA_HOME=/usr/local/cuda" >> $GITHUB_ENV
-          echo "CUDNN_HOME=/usr/local/cuda" >> $GITHUB_ENV
+          echo "CUDNN_HOME=/usr" >> $GITHUB_ENV
 
       - name: Build Plugin
         uses: ./plugin/.github/actions/build-plugin
