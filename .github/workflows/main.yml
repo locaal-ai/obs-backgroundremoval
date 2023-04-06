@@ -396,6 +396,11 @@ jobs:
             echo 'found=false' >> $GITHUB_OUTPUT
           fi
 
+      - name: Setup CUDA
+        uses: Jimver/cuda-toolkit@v0.2.10
+        with:
+          cuda: '12.1.0'
+
       - name: Build Plugin
         uses: ./plugin/.github/actions/build-plugin
         with:
