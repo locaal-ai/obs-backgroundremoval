@@ -1,9 +1,9 @@
 #include <obs-module.h>
 
 #if defined(__APPLE__)
-#include <core/session/onnxruntime_cxx_api.h>
-#include <core/providers/cpu/cpu_provider_factory.h>
-#include <core/providers/coreml/coreml_provider_factory.h>
+#include <onnxruntime_cxx_api.h>
+#include <cpu_provider_factory.h>
+#include <coreml_provider_factory.h>
 #else // __APPLE__
 #include <onnxruntime_cxx_api.h>
 #include <cpu_provider_factory.h>

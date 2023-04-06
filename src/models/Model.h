@@ -2,8 +2,8 @@
 #define MODEL_H
 
 #if defined(__APPLE__)
-#include <core/session/onnxruntime_cxx_api.h>
-#include <core/providers/cpu/cpu_provider_factory.h>
+#include <onnxruntime_cxx_api.h>
+#include <cpu_provider_factory.h>
 #else
 #include <onnxruntime_cxx_api.h>
 #include <cpu_provider_factory.h>
