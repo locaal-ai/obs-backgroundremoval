@@ -399,7 +399,7 @@ jobs:
       - name: Setup CUDA
         uses: Jimver/cuda-toolkit@v0.2.10
         with:
-          cuda: '11.4.4'
+          cuda: '11.6.2'
 
       - name: Set CUDA_HOME and CUDNN_HOME
         run: |
