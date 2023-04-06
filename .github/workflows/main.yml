@@ -341,7 +341,7 @@ jobs:
 
   linux_build:
     name: 02 - Linux
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: true
       matrix:
@@ -398,13 +398,15 @@ jobs:
 
       - name: Setup CUDA
         uses: Jimver/cuda-toolkit@v0.2.10
-        with:
-          cuda: '11.6.2'
-
-      - name: Set CUDA_HOME and CUDNN_HOME
         run: |
-          echo "CUDA_HOME=$CUDA_PATH" >> $GITHUB_ENV
-          echo "CUDNN_HOME=$CUDA_PATH" >> $GITHUB_ENV
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin
+          sudo mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
+          sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub
+          sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /"
+          sudo apt-get update
+          sudo apt-get -y install libcudnn8-dev
+          echo "CUDA_HOME=/usr/local/cuda" >> $GITHUB_ENV
+          echo "CUDNN_HOME=/usr/local/cuda" >> $GITHUB_ENV
 
       - name: Build Plugin
         uses: ./plugin/.github/actions/build-plugin
