@@ -7,6 +7,10 @@
 #include <coreml_provider_factory.h>
 #endif
 
+#ifdef __linux__
+#include <tensorrt_provider_factory.h>
+#endif
+
 #ifdef WITH_CUDA
 #include <cuda_provider_factory.h>
 #endif
@@ -43,6 +47,7 @@ const char *MODEL_PPHUMANSEG = "models/pphumanseg_fp32.onnx";
 const char *USEGPU_CPU = "cpu";
 const char *USEGPU_DML = "dml";
 const char *USEGPU_CUDA = "cuda";
+const char *USEGPU_TENSORRT = "tensorrt";
 const char *USEGPU_COREML = "coreml";
 
 struct background_removal_filter {
@@ -121,6 +126,9 @@ static obs_properties_t *filter_properties(void *data)
 #ifdef WITH_CUDA
   obs_property_list_add_string(p_use_gpu, obs_module_text("GPUCUDA"), USEGPU_CUDA);
 #endif
+#ifdef __linux__
+  obs_property_list_add_string(p_use_gpu, obs_module_text("GPUTensorRT"), USEGPU_TENSORRT);
+#endif
 #if _WIN32
   obs_property_list_add_string(p_use_gpu, obs_module_text("GPUDirectML"), USEGPU_DML);
 #endif
@@ -197,6 +205,11 @@ static void createOrtSession(struct background_removal_filter *tf)
 #ifdef WITH_CUDA
     if (tf->useGPU == USEGPU_CUDA) {
       Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0));
+    }
+#endif
+#ifdef __linux__
+    if (tf->useGPU == USEGPU_TENSORRT) {
+      Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_Tensorrt(sessionOptions, 0));
     }
 #endif
 #ifdef _WIN32
