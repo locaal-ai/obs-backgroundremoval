@@ -33,6 +33,5 @@ elseif(OS_LINUX)
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${Onnxruntime_LIB}")
   target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
                              PUBLIC "${onnxruntime_SOURCE_DIR}/include")
-  install(FILES "${Onnxruntime_LIBS}"
-          DESTINATION ".")
+  install(FILES "${Onnxruntime_LIBS}" DESTINATION ".")
 endif()
