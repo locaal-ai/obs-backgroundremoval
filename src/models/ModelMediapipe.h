@@ -26,13 +26,7 @@ class ModelMediaPipe : public Model {
     std::vector<cv::Mat> outputImageSplit;
     cv::split(outputImage, outputImageSplit);
 
-    // "Softmax"
-    cv::Mat outputA, outputB;
-    cv::exp(outputImageSplit[0], outputA);
-    cv::exp(outputImageSplit[1], outputB);
-    outputImage = outputA / (outputA + outputB);
-
-    cv::normalize(outputImage, outputImage, 1.0, 0.0, cv::NORM_MINMAX);
+    cv::normalize(outputImageSplit[0], outputImage, 1.0, 0.0, cv::NORM_MINMAX);
   }
 };
 
