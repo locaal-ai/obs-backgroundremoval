@@ -1,0 +1,55 @@
+uniform float4x4 ViewProj;
+
+uniform texture2d image;  	 // input RGBA
+uniform texture2d alphamask; // alpha mask
+
+// Aspect ratio conversion
+uniform float2 mul_val;
+uniform float2 add_val;
+
+sampler_state textureSampler {
+	Filter    = Linear;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertDataIn {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+struct VertDataOut {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+	float2 uv2 : TEXCOORD1;
+};
+
+VertDataOut VSDefault(VertDataIn v_in)
+{
+	VertDataOut vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	vert_out.uv2 = v_in.uv; // * mul_val + add_val;
+	return vert_out;
+}
+
+float4 PSAlphaMaskRGBA(VertDataOut v_in) : TARGET
+{
+	float4 inputRGBA = image.Sample(textureSampler, v_in.uv);
+	inputRGBA.rgb = max(float3(0.0, 0.0, 0.0), inputRGBA.rgb / inputRGBA.a);
+
+	float4 outputRGBA;
+	float a = (1.0 - alphamask.Sample(textureSampler, v_in.uv).r) * inputRGBA.a;
+	outputRGBA.rgb = inputRGBA.rgb * a;
+	outputRGBA.a = a;
+	return outputRGBA;
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSAlphaMaskRGBA(v_in);
+	}
+}
