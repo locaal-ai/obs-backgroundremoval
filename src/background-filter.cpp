@@ -399,14 +399,18 @@ static void processImageForBackground(struct background_removal_filter *tf,
       drawContours(backgroundMask, filteredContours, -1, cv::Scalar(255), -1);
     }
 
+    // Smooth mask with a fast filter on the small mask before the final resize
+    if (tf->smoothContour > 0.0) {
+      int k_size = (int)(3 + 11 * tf->smoothContour);
+      k_size += k_size % 2 == 0 ? 1 : 0;
+      cv::stackBlur(backgroundMask, backgroundMask, cv::Size(k_size, k_size));
+    }
+
     // Resize the size of the mask back to the size of the original input.
     cv::resize(backgroundMask, backgroundMask, imageBGRA.size());
 
-    // Smooth mask with a fast filter (box).
     if (tf->smoothContour > 0.0) {
-      int k_size = (int)(100 * tf->smoothContour);
-      cv::boxFilter(backgroundMask, backgroundMask, backgroundMask.depth(),
-                    cv::Size(k_size, k_size));
+      // If the mask was smoothed, apply a threshold to get a binary mask
       backgroundMask = backgroundMask > 128;
     }
   } catch (const std::exception &e) {
