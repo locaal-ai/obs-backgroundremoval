@@ -44,9 +44,11 @@ elseif(OS_LINUX)
     URL_HASH MD5=6a3866eb7dce86a17922c0662623f77e)
   FetchContent_MakeAvailable(Onnxruntime)
   set(Onnxruntime_LINK_LIBS
-      "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime.so.${Onnxruntime_VERSION}")
+      "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_shared.so"
+      "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime.so.${Onnxruntime_VERSION}"
+      )
   set(Onnxruntime_INSTALL_LIBS
-      ${Onnxruntime_LINK_LIBS} "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_shared.so"
+      ${Onnxruntime_LINK_LIBS}
       "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_cuda.so"
       "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_tensorrt.so")
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE ${Onnxruntime_LINK_LIBS})
@@ -54,4 +56,5 @@ elseif(OS_LINUX)
                              PUBLIC "${onnxruntime_SOURCE_DIR}/include")
   install(FILES ${Onnxruntime_INSTALL_LIBS} DESTINATION "${OBS_PLUGIN_DESTINATION}")
   set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
+  target_link_options(${CMAKE_PROJECT_NAME} PRIVATE "LINKER:-no-as-needed")
 endif()
