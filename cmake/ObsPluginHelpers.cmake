@@ -463,6 +463,12 @@ if(OS_MACOS)
       foreach(_DATA_FILE IN LISTS _DATA_FILES)
         file(RELATIVE_PATH _RELATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/data/ ${_DATA_FILE})
         get_filename_component(_RELATIVE_PATH ${_RELATIVE_PATH} PATH)
+
+        # ignore .DS_Store files
+        if(_DATA_FILE MATCHES ".DS_Store")
+          continue()
+        endif()
+
         target_sources(${target} PRIVATE ${_DATA_FILE})
         set_source_files_properties(${_DATA_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION
                                                              Resources/${_RELATIVE_PATH})

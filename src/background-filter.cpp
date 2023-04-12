@@ -78,7 +78,6 @@ struct background_removal_filter {
   int64_t blurBackground = 0;
 
   cv::Mat inputBGRA;
-  cv::Mat outputBGRA;
 
   bool isDisabled;
 
@@ -146,7 +145,7 @@ static obs_properties_t *filter_properties(void *data)
                          1, 300, 1);
 
   obs_properties_add_int_slider(props, "blur_background",
-                                obs_module_text("BlurBackgroundFactor0NoBlurUseColor"), 0, 100, 1);
+                                obs_module_text("BlurBackgroundFactor0NoBlurUseColor"), 0, 20, 1);
 
   UNUSED_PARAMETER(data);
   return props;
@@ -412,44 +411,15 @@ static void processImageForBackground(struct background_removal_filter *tf,
       drawContours(backgroundMask, filteredContours, -1, cv::Scalar(255), -1);
     }
 
-    // Smooth mask with a fast filter on the small mask before the final resize
+    // Smooth mask with a fast filter on the small mask
     if (tf->smoothContour > 0.0) {
       int k_size = (int)(3 + 11 * tf->smoothContour);
       k_size += k_size % 2 == 0 ? 1 : 0;
       cv::stackBlur(backgroundMask, backgroundMask, cv::Size(k_size, k_size));
       backgroundMask = backgroundMask > 128;
     }
-
-    // Resize the size of the mask back to the size of the original input.
-    // cv::resize(backgroundMask, backgroundMask, imageBGRA.size());
-
-    // if (tf->smoothContour > 0.0) {
-    //   // If the mask was smoothed, apply a threshold to get a binary mask
-    //   backgroundMask = backgroundMask > 128;
-    // }
   } catch (const std::exception &e) {
     blog(LOG_ERROR, "%s", e.what());
-  }
-}
-
-// Blend
-void blend_images_with_mask(cv::Mat &dst, const cv::Mat &src, const cv::Mat &mask)
-{
-  for (size_t i = 0; i < dst.total(); i++) {
-    const auto maskPixel = mask.at<uchar>((int)i);
-    if (maskPixel == 0) {
-      continue;
-    }
-
-    const auto &srcPixel = src.at<cv::Vec4b>((int)i);
-    auto &dstPixel = dst.at<cv::Vec4b>((int)i);
-
-    if (maskPixel == 255) {
-      dstPixel = srcPixel;
-    } else {
-      const float alpha = maskPixel / 255.0f;
-      dstPixel = dstPixel * (1.0f - alpha) + srcPixel * alpha;
-    }
   }
 }
 
@@ -504,36 +474,9 @@ void filter_video_tick(void *data, float seconds)
                       cv::Size(k_size, k_size));
       }
     }
-
-    // // Apply the mask back to the main image.
-    // if (tf->blurBackground > 0.0) {
-    //   // Blur the background (fast box filter)
-    //   int k_size = (int)(5 + tf->blurBackground);
-    //   k_size += k_size % 2 == 0 ? 1 : 0;
-
-    //   cv::Mat blurredBackground;
-    //   cv::stackBlur(imageBGRA, blurredBackground, cv::Size(k_size, k_size));
-
-    //   // Blend the blurred background with the main image
-    //   blend_images_with_mask(imageBGRA, blurredBackground, tf->backgroundMask);
-    // } else {
-    //   // Set the main image to the background color where the mask is 0
-    //   cv::Mat inverseMask = cv::Scalar(255) - tf->backgroundMask;
-    //   int from_to[] = {0, 3}; // alpha[0] -> bgra[3]
-    //   cv::mixChannels(&inverseMask, 1, &imageBGRA, 1, from_to, 1);
-    // }
   } catch (const std::exception &e) {
     blog(LOG_ERROR, "%s", e.what());
   }
-
-  // {
-  //   std::unique_lock<std::mutex> lock(tf->outputBGRALock, std::try_to_lock);
-  //   if (!lock.owns_lock()) {
-  //     return;
-  //   }
-
-  //   tf->outputBGRA = imageBGRA.clone();
-  // }
 
   UNUSED_PARAMETER(seconds);
 }
@@ -625,6 +568,12 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   }
   gs_eparam_t *param = gs_effect_get_param_by_name(tf->effect, "alphamask");
   gs_effect_set_texture(param, alphaTexture);
+  param = gs_effect_get_param_by_name(tf->effect, "blurSize");
+  gs_effect_set_int(param, (int)tf->blurBackground);
+  param = gs_effect_get_param_by_name(tf->effect, "xTexelSize");
+  gs_effect_set_float(param, 1.0f / width);
+  param = gs_effect_get_param_by_name(tf->effect, "yTexelSize");
+  gs_effect_set_float(param, 1.0f / height);
 
   gs_blend_state_push();
   gs_reset_blend_state();
