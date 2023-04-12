@@ -37,4 +37,13 @@ elseif(OS_WINDOWS)
   target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
                              PUBLIC "${onnxruntime_SOURCE_DIR}/build/native/include")
   install(FILES "${Onnxruntime_LIB}" "${DirectML_LIB}" DESTINATION "${OBS_PLUGIN_DESTINATION}")
+elseif(OS_LINUX)
+  FetchContent_Declare(
+    Onnxruntime
+    URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/onnxruntime-linux-x64-gpu-${Onnxruntime_VERSION}.tgz"
+    URL_HASH MD5=dfdb875999b119f2b85a1f4d75b3e131)
+  FetchContent_MakeAvailable(Onnxruntime)
+  set(Onnxruntime_LINK_LIBS "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_shared.so" "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime.so.${Onnxruntime_VERSION}")
+  set(Onnxruntime_INSTALL_LIBS "${Onnxruntime_LINK_LIBS}" "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_cuda.so" "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_tensorrt.so")
+
 endif()
