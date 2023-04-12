@@ -1,6 +1,7 @@
 include(FetchContent)
 
 set(Onnxruntime_VERSION "1.14.1")
+set(Onnxruntime_DirectML_VERSION "1.9.0")
 if(OS_MACOS)
   FetchContent_Declare(
     Onnxruntime
@@ -19,4 +20,21 @@ if(OS_MACOS)
       ${CMAKE_INSTALL_NAME_TOOL} -change "@rpath/libonnxruntime.${Onnxruntime_VERSION}.dylib"
       "@loader_path/../Frameworks/libonnxruntime.${Onnxruntime_VERSION}.dylib"
       $<TARGET_FILE:${CMAKE_PROJECT_NAME}>)
+elseif(OS_WINDOWS)
+  FetchContent_Declare(
+    Onnxruntime
+    URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/Microsoft.ML.OnnxRuntime.DirectML.${Onnxruntime_VERSION}.zip"
+    URL_HASH MD5=dfdb875999b119f2b85a1f4d75b3e131)
+  FetchContent_Declare(
+    DirectML
+    URL "https://globalcdn.nuget.org/packages/microsoft.ai.directml.${Onnxruntime_DirectML_VERSION}.nupkg"
+    URL_HASH MD5=59dad6fc48cfd052bf0fdccfa7b35b72)
+  FetchContent_MakeAvailable(Onnxruntime DirectML)
+  set(Onnxruntime_LIB "${onnxruntime_SOURCE_DIR}/runtimes/win-x64/native/onnxruntime.dll")
+  set(Onnxruntime_IMPLIB "${onnxruntime_SOURCE_DIR}/runtimes/win-x64/native/onnxruntime.lib")
+  set(DirectML_LIB "${directml_SOURCE_DIR}/bin/x64-win/DirectML.dll")
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${Onnxruntime_IMPLIB}")
+  target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
+                             PUBLIC "${onnxruntime_SOURCE_DIR}/build/native/include")
+  install(FILES "${Onnxruntime_LIB}" "${DirectML_LIB}" DESTINATION "${OBS_PLUGIN_DESTINATION}")
 endif()
