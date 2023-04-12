@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25.1)
+cmake_minimum_required(VERSION 3.16...3.21)
 
 set(CMAKE_CXX_STANDARD 20)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
