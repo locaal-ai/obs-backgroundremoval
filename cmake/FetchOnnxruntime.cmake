@@ -45,11 +45,9 @@ elseif(OS_LINUX)
   FetchContent_MakeAvailable(Onnxruntime)
   set(Onnxruntime_LINK_LIBS
       "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_shared.so"
-      "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime.so.${Onnxruntime_VERSION}"
-      )
+      "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime.so.${Onnxruntime_VERSION}")
   set(Onnxruntime_INSTALL_LIBS
-      ${Onnxruntime_LINK_LIBS}
-      "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_cuda.so"
+      ${Onnxruntime_LINK_LIBS} "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_cuda.so"
       "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_tensorrt.so")
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE ${Onnxruntime_LINK_LIBS})
   target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
