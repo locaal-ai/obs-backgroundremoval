@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25.1)
+cmake_minimum_required(VERSION 3.16...3.21)
 
 set(CMAKE_CXX_STANDARD 20)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -62,12 +62,7 @@ if(USE_SYSTEM_ONNXRUNTIME)
     message(FATAL_ERROR "System ONNX Runtime is only supported on Linux!")
   endif()
 else()
-  if(OS_MACOS OR OS_WINDOWS)
-    include(cmake/FetchOnnxruntime.cmake)
-  else()
-    include(cmake/BuildMyOnnxruntime.cmake)
-    target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Onnxruntime)
-  endif()
+  include(cmake/FetchOnnxruntime.cmake)
 endif()
 
 set(USE_SYSTEM_OPENCV
