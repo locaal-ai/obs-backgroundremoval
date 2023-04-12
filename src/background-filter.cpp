@@ -342,7 +342,7 @@ static void filter_destroy(void *data)
     if (tf->stagesurface) {
       gs_stagesurface_destroy(tf->stagesurface);
     }
-  	gs_effect_destroy(tf->effect);
+    gs_effect_destroy(tf->effect);
     obs_leave_graphics();
     tf->~background_removal_filter();
     bfree(tf);
@@ -558,8 +558,8 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   gs_texture_t *alphaTexture = nullptr;
   {
     std::lock_guard<std::mutex> lock(tf->outputBGRALock);
-    alphaTexture = gs_texture_create(tf->backgroundMask.cols, tf->backgroundMask.rows,
-      GS_R8, 1, (const uint8_t **)&tf->backgroundMask.data, 0);
+    alphaTexture = gs_texture_create(tf->backgroundMask.cols, tf->backgroundMask.rows, GS_R8, 1,
+                                     (const uint8_t **)&tf->backgroundMask.data, 0);
     if (!alphaTexture) {
       blog(LOG_ERROR, "Failed to create alpha texture");
       obs_source_skip_video_filter(tf->source);
