@@ -118,7 +118,7 @@ static obs_properties_t *filter_properties(void *data)
 
   obs_property_list_add_string(p_use_gpu, obs_module_text("CPU"), USEGPU_CPU);
 #ifdef __linux__
-  obs_property_list_add_string(p_use_gpu, obs_module_text("GPUTensorRT"), USEGPU_TensorRT);
+  obs_property_list_add_string(p_use_gpu, obs_module_text("GPUTensorRT"), USEGPU_TENSORRT);
 #endif
 #if _WIN32
   obs_property_list_add_string(p_use_gpu, obs_module_text("GPUDirectML"), USEGPU_DML);
