@@ -1,10 +1,10 @@
 uniform float4x4 ViewProj;
 
-uniform texture2d image;  	 // input RGBA
+uniform texture2d image;     // input RGBA
 uniform texture2d alphamask; // alpha mask
-uniform int blurSize;				 // Size of the blur kernel. 0 = no blur
-uniform float xTexelSize;		 // Size of texel in X coord
-uniform float yTexelSize;		 // Size of texel in Y coord
+uniform int blurSize;        // Size of the image blur kernel. 0 = no blur
+uniform float xTexelSize;    // Size of texel in X coord
+uniform float yTexelSize;    // Size of texel in Y coord
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -33,17 +33,15 @@ VertDataOut VSDefault(VertDataIn v_in)
 // Simple box blur around a point. k_size = left and right offset from middle
 float4 Blur(float2 texCoord, int k_size)
 {
-    float4 pixelsum;
-		float normalizeFactor = (k_size*2+1) * (k_size*2+1);
+	float4 pixelsum;
 
-    for (int i = -k_size; i <= k_size; i++) {
-			for (int j = -k_size; j <= k_size; j++) {
-				float2 offset = float2(i * xTexelSize, j * yTexelSize);
-				pixelsum += image.Sample(textureSampler, texCoord + offset);
-			}
+	for (int i = -k_size; i <= k_size; i++) {
+		for (int j = -k_size; j <= k_size; j++) {
+			pixelsum += image.Sample(textureSampler, texCoord + float2(i * xTexelSize, j * yTexelSize));
 		}
+	}
 
-    return pixelsum / normalizeFactor;
+	return pixelsum / ((k_size*2+1) * (k_size*2+1));
 }
 
 float4 PSAlphaMaskRGBA(VertDataOut v_in) : TARGET

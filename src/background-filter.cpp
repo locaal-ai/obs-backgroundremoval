@@ -395,29 +395,6 @@ static void processImageForBackground(struct background_removal_filter *tf,
     } else {
       backgroundMask = outputImage < tf->threshold;
     }
-
-    // Contour processing
-    if (tf->contourFilter > 0.0 && tf->contourFilter < 1.0) {
-      std::vector<std::vector<cv::Point>> contours;
-      findContours(backgroundMask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-      std::vector<std::vector<cv::Point>> filteredContours;
-      const int64_t contourSizeThreshold = (int64_t)(backgroundMask.total() * tf->contourFilter);
-      for (auto &contour : contours) {
-        if (cv::contourArea(contour) > contourSizeThreshold) {
-          filteredContours.push_back(contour);
-        }
-      }
-      backgroundMask.setTo(0);
-      drawContours(backgroundMask, filteredContours, -1, cv::Scalar(255), -1);
-    }
-
-    // Smooth mask with a fast filter on the small mask
-    if (tf->smoothContour > 0.0) {
-      int k_size = (int)(3 + 11 * tf->smoothContour);
-      k_size += k_size % 2 == 0 ? 1 : 0;
-      cv::stackBlur(backgroundMask, backgroundMask, cv::Size(k_size, k_size));
-      backgroundMask = backgroundMask > 128;
-    }
   } catch (const std::exception &e) {
     blog(LOG_ERROR, "%s", e.what());
   }
@@ -462,17 +439,52 @@ void filter_video_tick(void *data, float seconds)
       // Get the background mask previously generated.
       ; // Do nothing
     } else {
+      cv::Mat backgroundMask;
+
       // Process the image to find the mask.
-      processImageForBackground(tf, imageBGRA, tf->backgroundMask);
+      processImageForBackground(tf, imageBGRA, backgroundMask);
+
+      // Contour processing
+      if (tf->contourFilter > 0.0 && tf->contourFilter < 1.0) {
+        std::vector<std::vector<cv::Point>> contours;
+        findContours(backgroundMask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+        std::vector<std::vector<cv::Point>> filteredContours;
+        const int64_t contourSizeThreshold = (int64_t)(backgroundMask.total() * tf->contourFilter);
+        for (auto &contour : contours) {
+          if (cv::contourArea(contour) > contourSizeThreshold) {
+            filteredContours.push_back(contour);
+          }
+        }
+        backgroundMask.setTo(0);
+        drawContours(backgroundMask, filteredContours, -1, cv::Scalar(255), -1);
+      }
+
+      if (tf->smoothContour > 0.0) {
+        int k_size = (int)(3 + 11 * tf->smoothContour);
+        k_size += k_size % 2 == 0 ? 1 : 0;
+        cv::stackBlur(backgroundMask, backgroundMask, cv::Size(k_size, k_size));
+      }
+
+      // Resize the size of the mask back to the size of the original input.
+      cv::resize(backgroundMask, backgroundMask, imageBGRA.size());
+
+      if (tf->smoothContour > 0.0) {
+        // If the mask was smoothed, apply a threshold to get a binary mask
+        backgroundMask = backgroundMask > 128;
+      }
 
       if (tf->feather > 0.0) {
         // Feather (blur) the mask
-        const int k_size = (int)(3 + 4 * tf->feather);
-        cv::dilate(tf->backgroundMask, tf->backgroundMask, cv::Mat(), cv::Point(-1, -1),
+        int k_size = (int)(40 * tf->feather);
+        k_size += k_size % 2 == 0 ? 1 : 0;
+        cv::dilate(backgroundMask, backgroundMask, cv::Mat(), cv::Point(-1, -1),
                    k_size / 3);
-        cv::boxFilter(tf->backgroundMask, tf->backgroundMask, tf->backgroundMask.depth(),
+        cv::boxFilter(backgroundMask, backgroundMask, tf->backgroundMask.depth(),
                       cv::Size(k_size, k_size));
       }
+
+      // Save the mask for the next frame
+      backgroundMask.copyTo(tf->backgroundMask);
     }
   } catch (const std::exception &e) {
     blog(LOG_ERROR, "%s", e.what());
