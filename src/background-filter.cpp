@@ -571,7 +571,7 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   gs_eparam_t *xTexelSize = gs_effect_get_param_by_name(tf->effect, "xTexelSize");
   gs_eparam_t *yTexelSize = gs_effect_get_param_by_name(tf->effect, "yTexelSize");
 
-  gs_effect_set_texture(alphamask, alphamask_param);
+  gs_effect_set_texture(alphamask, alphaTexture);
   gs_effect_set_int(blurSize, (int)tf->blurBackground);
   gs_effect_set_float(xTexelSize, 1.0f / width);
   gs_effect_set_float(yTexelSize, 1.0f / height);
