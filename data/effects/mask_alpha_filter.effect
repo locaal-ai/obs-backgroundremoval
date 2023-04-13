@@ -54,15 +54,7 @@ float4 PSAlphaMaskRGBA(VertDataOut v_in) : TARGET
 	float4 outputRGBA;
 	float a = (1.0 - alphamask.Sample(textureSampler, v_in.uv).r) * inputRGBA.a;
 	if (blurSize > 0) {
-		if (a == 0) {
-			outputRGBA = Blur(v_in.uv, blurSize);
-		} else {
-			if (a == 1) {
-				outputRGBA.rgb = inputRGBA.rgb * a;
-			} else {
-				outputRGBA.rgb = inputRGBA.rgb * a + Blur(v_in.uv, blurSize).rgb * (1.0 - a);
-			}
-		}
+		outputRGBA.rgb = inputRGBA.rgb * a + Blur(v_in.uv, blurSize).rgb * (1.0 - a);
 		outputRGBA.a = 1;
 	} else {
 		outputRGBA.rgb = inputRGBA.rgb * a;
