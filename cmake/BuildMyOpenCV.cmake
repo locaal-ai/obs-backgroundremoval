@@ -1,5 +1,4 @@
 include(ExternalProject)
-include(GNUInstallDirs)
 
 string(REPLACE ";" "$<SEMICOLON>" CMAKE_OSX_ARCHITECTURES_ "${CMAKE_OSX_ARCHITECTURES}")
 
@@ -21,11 +20,11 @@ if(MSVC)
     message(FATAL_ERROR "Unsupported MSVC!")
   endif()
 else()
-  set(OpenCV_LIB_PATH ${CMAKE_INSTALL_LIBDIR})
-  set(OpenCV_LIB_PATH_3RD ${CMAKE_INSTALL_LIBDIR}/opencv4/3rdparty)
+  set(OpenCV_LIB_PATH lib)
+  set(OpenCV_LIB_PATH_3RD lib/opencv4/3rdparty)
   set(OpenCV_LIB_SUFFIX "")
   set(OpenCV_INSTALL_CCACHE ":")
-  set(OpenCV_PLATFORM_CMAKE_ARGS "")
+  set(OpenCV_PLATFORM_CMAKE_ARGS -DOPENCV_LIB_INSTALL_PATH=lib)
 endif()
 
 if(${CMAKE_BUILD_TYPE} STREQUAL Release OR ${CMAKE_BUILD_TYPE} STREQUAL RelWithDebInfo)
