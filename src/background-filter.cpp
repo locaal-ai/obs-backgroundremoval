@@ -477,8 +477,7 @@ void filter_video_tick(void *data, float seconds)
         // Feather (blur) the mask
         int k_size = (int)(40 * tf->feather);
         k_size += k_size % 2 == 0 ? 1 : 0;
-        cv::dilate(backgroundMask, backgroundMask, cv::Mat(), cv::Point(-1, -1),
-                   k_size / 3);
+        cv::dilate(backgroundMask, backgroundMask, cv::Mat(), cv::Point(-1, -1), k_size / 3);
         cv::boxFilter(backgroundMask, backgroundMask, tf->backgroundMask.depth(),
                       cv::Size(k_size, k_size));
       }
