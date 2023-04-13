@@ -590,7 +590,14 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   gs_blend_state_push();
   gs_reset_blend_state();
 
-  obs_source_process_filter_end(tf->source, tf->effect, 0, 0);
+  const char *techName;
+  if (tf->blurBackground > 0.0) {
+    techName = "DrawWithBlur";
+  } else {
+    techName = "DrawWithoutBlur";
+  }
+
+  obs_source_process_filter_tech_end(tf->source, tf->effect, 0, 0, techName);
 
   gs_blend_state_pop();
 
