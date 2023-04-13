@@ -566,14 +566,15 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
       return;
     }
   }
-  gs_eparam_t *param = gs_effect_get_param_by_name(tf->effect, "alphamask");
-  gs_effect_set_texture(param, alphaTexture);
-  param = gs_effect_get_param_by_name(tf->effect, "blurSize");
-  gs_effect_set_int(param, (int)tf->blurBackground);
-  param = gs_effect_get_param_by_name(tf->effect, "xTexelSize");
-  gs_effect_set_float(param, 1.0f / width);
-  param = gs_effect_get_param_by_name(tf->effect, "yTexelSize");
-  gs_effect_set_float(param, 1.0f / height);
+  gs_eparam_t *alphamask = gs_effect_get_param_by_name(tf->effect, "alphamask");
+  gs_eparam_t *blurSize = gs_effect_get_param_by_name(tf->effect, "blurSize");
+  gs_eparam_t *xTexelSize = gs_effect_get_param_by_name(tf->effect, "xTexelSize");
+  gs_eparam_t *yTexelSize = gs_effect_get_param_by_name(tf->effect, "yTexelSize");
+
+  gs_effect_set_texture(alphamask, alphamask_param);
+  gs_effect_set_int(blurSize, (int)tf->blurBackground);
+  gs_effect_set_float(xTexelSize, 1.0f / width);
+  gs_effect_set_float(yTexelSize, 1.0f / height);
 
   gs_blend_state_push();
   gs_reset_blend_state();
