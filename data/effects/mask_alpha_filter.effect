@@ -1,0 +1,87 @@
+uniform float4x4 ViewProj;
+
+uniform texture2d image;     // input RGBA
+uniform texture2d alphamask; // alpha mask
+uniform int blurSize;        // Size of the image blur kernel. 0 = no blur
+uniform float xTexelSize;    // Size of texel in X coord
+uniform float yTexelSize;    // Size of texel in Y coord
+
+sampler_state textureSampler {
+	Filter    = Linear;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertDataIn {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+struct VertDataOut {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertDataOut VSDefault(VertDataIn v_in)
+{
+	VertDataOut vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+// Simple box blur around a point. k_size = left and right offset from middle
+float4 Blur(float2 texCoord, int k_size)
+{
+	float4 pixelsum = float4(0.0, 0.0, 0.0, 0.0);
+
+	for (int i = -k_size; i <= k_size; i++) {
+		for (int j = -k_size; j <= k_size; j++) {
+			pixelsum += image.Sample(textureSampler, texCoord + float2(i * xTexelSize, j * yTexelSize));
+		}
+	}
+
+	return pixelsum / ((k_size*2+1) * (k_size*2+1));
+}
+
+float4 PSAlphaMaskRGBAWithBlur(VertDataOut v_in) : TARGET
+{
+	float4 inputRGBA = image.Sample(textureSampler, v_in.uv);
+	inputRGBA.rgb = max(float3(0.0, 0.0, 0.0), inputRGBA.rgb / inputRGBA.a);
+
+	float4 outputRGBA;
+	float a = (1.0 - alphamask.Sample(textureSampler, v_in.uv).r) * inputRGBA.a;
+	outputRGBA.rgb = inputRGBA.rgb * a + Blur(v_in.uv, blurSize).rgb * (1.0 - a);
+	outputRGBA.a = 1;
+	return outputRGBA;
+}
+
+float4 PSAlphaMaskRGBAWithoutBlur(VertDataOut v_in) : TARGET
+{
+	float4 inputRGBA = image.Sample(textureSampler, v_in.uv);
+	inputRGBA.rgb = max(float3(0.0, 0.0, 0.0), inputRGBA.rgb / inputRGBA.a);
+
+	float4 outputRGBA;
+	float a = (1.0 - alphamask.Sample(textureSampler, v_in.uv).r) * inputRGBA.a;
+	outputRGBA.rgb = inputRGBA.rgb * a;
+	outputRGBA.a = a;
+	return outputRGBA;
+}
+
+technique DrawWithBlur
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSAlphaMaskRGBAWithBlur(v_in);
+	}
+}
+
+technique DrawWithoutBlur
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSAlphaMaskRGBAWithoutBlur(v_in);
+	}
+}

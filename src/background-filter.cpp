@@ -44,6 +44,8 @@ const char *USEGPU_CUDA = "cuda";
 const char *USEGPU_TENSORRT = "tensorrt";
 const char *USEGPU_COREML = "coreml";
 
+const char *EFFECT_PATH = "effects/mask_alpha_filter.effect";
+
 struct background_removal_filter {
   std::unique_ptr<Ort::Session> session;
   std::unique_ptr<Ort::Env> env;
@@ -67,6 +69,7 @@ struct background_removal_filter {
   obs_source_t *source;
   gs_texrender_t *texrender;
   gs_stagesurf_t *stagesurface;
+  gs_effect_t *effect;
 
   cv::Mat backgroundMask;
   int maskEveryXFrames = 1;
@@ -74,7 +77,6 @@ struct background_removal_filter {
   int64_t blurBackground = 0;
 
   cv::Mat inputBGRA;
-  cv::Mat outputBGRA;
 
   bool isDisabled;
 
@@ -142,7 +144,7 @@ static obs_properties_t *filter_properties(void *data)
                          1, 300, 1);
 
   obs_properties_add_int_slider(props, "blur_background",
-                                obs_module_text("BlurBackgroundFactor0NoBlurUseColor"), 0, 100, 1);
+                                obs_module_text("BlurBackgroundFactor0NoBlurUseColor"), 0, 20, 1);
 
   UNUSED_PARAMETER(data);
   return props;
@@ -287,6 +289,15 @@ static void filter_update(void *data, obs_data_t *settings)
 
     createOrtSession(tf);
   }
+
+  obs_enter_graphics();
+
+  char *effect_path = obs_module_file(EFFECT_PATH);
+  gs_effect_destroy(tf->effect);
+  tf->effect = gs_effect_create_from_file(effect_path, NULL);
+  bfree(effect_path);
+
+  obs_leave_graphics();
 }
 
 static void filter_activate(void *data)
@@ -330,6 +341,7 @@ static void filter_destroy(void *data)
     if (tf->stagesurface) {
       gs_stagesurface_destroy(tf->stagesurface);
     }
+    gs_effect_destroy(tf->effect);
     obs_leave_graphics();
     tf->~background_removal_filter();
     bfree(tf);
@@ -382,59 +394,8 @@ static void processImageForBackground(struct background_removal_filter *tf,
     } else {
       backgroundMask = outputImage < tf->threshold;
     }
-
-    // Contour processing
-    if (tf->contourFilter > 0.0 && tf->contourFilter < 1.0) {
-      std::vector<std::vector<cv::Point>> contours;
-      findContours(backgroundMask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-      std::vector<std::vector<cv::Point>> filteredContours;
-      const int64_t contourSizeThreshold = (int64_t)(backgroundMask.total() * tf->contourFilter);
-      for (auto &contour : contours) {
-        if (cv::contourArea(contour) > contourSizeThreshold) {
-          filteredContours.push_back(contour);
-        }
-      }
-      backgroundMask.setTo(0);
-      drawContours(backgroundMask, filteredContours, -1, cv::Scalar(255), -1);
-    }
-
-    // Smooth mask with a fast filter on the small mask before the final resize
-    if (tf->smoothContour > 0.0) {
-      int k_size = (int)(3 + 11 * tf->smoothContour);
-      k_size += k_size % 2 == 0 ? 1 : 0;
-      cv::stackBlur(backgroundMask, backgroundMask, cv::Size(k_size, k_size));
-    }
-
-    // Resize the size of the mask back to the size of the original input.
-    cv::resize(backgroundMask, backgroundMask, imageBGRA.size());
-
-    if (tf->smoothContour > 0.0) {
-      // If the mask was smoothed, apply a threshold to get a binary mask
-      backgroundMask = backgroundMask > 128;
-    }
   } catch (const std::exception &e) {
     blog(LOG_ERROR, "%s", e.what());
-  }
-}
-
-// Blend
-void blend_images_with_mask(cv::Mat &dst, const cv::Mat &src, const cv::Mat &mask)
-{
-  for (size_t i = 0; i < dst.total(); i++) {
-    const auto maskPixel = mask.at<uchar>((int)i);
-    if (maskPixel == 0) {
-      continue;
-    }
-
-    const auto &srcPixel = src.at<cv::Vec4b>((int)i);
-    auto &dstPixel = dst.at<cv::Vec4b>((int)i);
-
-    if (maskPixel == 255) {
-      dstPixel = srcPixel;
-    } else {
-      const float alpha = maskPixel / 255.0f;
-      dstPixel = dstPixel * (1.0f - alpha) + srcPixel * alpha;
-    }
   }
 }
 
@@ -477,46 +438,54 @@ void filter_video_tick(void *data, float seconds)
       // Get the background mask previously generated.
       ; // Do nothing
     } else {
+      cv::Mat backgroundMask;
+
       // Process the image to find the mask.
-      processImageForBackground(tf, imageBGRA, tf->backgroundMask);
+      processImageForBackground(tf, imageBGRA, backgroundMask);
+
+      // Contour processing
+      if (tf->contourFilter > 0.0 && tf->contourFilter < 1.0) {
+        std::vector<std::vector<cv::Point>> contours;
+        findContours(backgroundMask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+        std::vector<std::vector<cv::Point>> filteredContours;
+        const int64_t contourSizeThreshold = (int64_t)(backgroundMask.total() * tf->contourFilter);
+        for (auto &contour : contours) {
+          if (cv::contourArea(contour) > contourSizeThreshold) {
+            filteredContours.push_back(contour);
+          }
+        }
+        backgroundMask.setTo(0);
+        drawContours(backgroundMask, filteredContours, -1, cv::Scalar(255), -1);
+      }
+
+      if (tf->smoothContour > 0.0) {
+        int k_size = (int)(3 + 11 * tf->smoothContour);
+        k_size += k_size % 2 == 0 ? 1 : 0;
+        cv::stackBlur(backgroundMask, backgroundMask, cv::Size(k_size, k_size));
+      }
+
+      // Resize the size of the mask back to the size of the original input.
+      cv::resize(backgroundMask, backgroundMask, imageBGRA.size());
+
+      if (tf->smoothContour > 0.0) {
+        // If the mask was smoothed, apply a threshold to get a binary mask
+        backgroundMask = backgroundMask > 128;
+      }
 
       if (tf->feather > 0.0) {
         // Feather (blur) the mask
-        const int k_size = (int)(40 * tf->feather);
-        cv::dilate(tf->backgroundMask, tf->backgroundMask, cv::Mat(), cv::Point(-1, -1),
-                   k_size / 3);
-        cv::boxFilter(tf->backgroundMask, tf->backgroundMask, tf->backgroundMask.depth(),
+        int k_size = (int)(40 * tf->feather);
+        k_size += k_size % 2 == 0 ? 1 : 0;
+        cv::dilate(backgroundMask, backgroundMask, cv::Mat(), cv::Point(-1, -1), k_size / 3);
+        cv::boxFilter(backgroundMask, backgroundMask, tf->backgroundMask.depth(),
                       cv::Size(k_size, k_size));
       }
-    }
 
-    // Apply the mask back to the main image.
-    if (tf->blurBackground > 0.0) {
-      // Blur the background (fast box filter)
-      int k_size = (int)(5 + tf->blurBackground);
-      k_size += k_size % 2 == 0 ? 1 : 0;
-
-      cv::Mat blurredBackground;
-      cv::stackBlur(imageBGRA, blurredBackground, cv::Size(k_size, k_size));
-
-      // Blend the blurred background with the main image
-      blend_images_with_mask(imageBGRA, blurredBackground, tf->backgroundMask);
-    } else {
-      // Set the main image to the background color where the mask is 0
-      cv::Mat inverseMask = cv::Scalar(255) - tf->backgroundMask;
-      int from_to[] = {0, 3}; // alpha[0] -> bgra[3]
-      cv::mixChannels(&inverseMask, 1, &imageBGRA, 1, from_to, 1);
+      // Save the mask for the next frame
+      backgroundMask.copyTo(tf->backgroundMask);
     }
   } catch (const std::exception &e) {
     blog(LOG_ERROR, "%s", e.what());
-  }
-
-  {
-    std::unique_lock<std::mutex> lock(tf->inputBGRALock, std::try_to_lock);
-    if (!lock.owns_lock()) {
-      return;
-    }
-    tf->outputBGRA = imageBGRA.clone();
   }
 
   UNUSED_PARAMETER(seconds);
@@ -524,6 +493,8 @@ void filter_video_tick(void *data, float seconds)
 
 static void filter_video_render(void *data, gs_effect_t *_effect)
 {
+  UNUSED_PARAMETER(_effect);
+
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
   if (!obs_source_enabled(tf->source)) {
@@ -581,30 +552,55 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   }
   gs_stagesurface_unmap(tf->stagesurface);
 
-  if (tf->outputBGRA.empty() || static_cast<uint32_t>(tf->outputBGRA.cols) != width ||
-      static_cast<uint32_t>(tf->outputBGRA.rows) != height) {
+  // Output the masked image
+
+  if (!tf->effect) {
+    // Effect failed to load, skip rendering
     obs_source_skip_video_filter(tf->source);
     return;
   }
-  cv::Mat imageBGRA;
+
+  if (!obs_source_process_filter_begin(tf->source, GS_RGBA, OBS_ALLOW_DIRECT_RENDERING)) {
+    obs_source_skip_video_filter(tf->source);
+    return;
+  }
+
+  gs_texture_t *alphaTexture = nullptr;
   {
     std::lock_guard<std::mutex> lock(tf->outputBGRALock);
-    imageBGRA = tf->outputBGRA.clone();
+    alphaTexture = gs_texture_create(tf->backgroundMask.cols, tf->backgroundMask.rows, GS_R8, 1,
+                                     (const uint8_t **)&tf->backgroundMask.data, 0);
+    if (!alphaTexture) {
+      blog(LOG_ERROR, "Failed to create alpha texture");
+      obs_source_skip_video_filter(tf->source);
+      return;
+    }
   }
-  const uint8_t *textureData[] = {imageBGRA.data};
-  gs_texture_t *texture = gs_texture_create(width, height, GS_BGRA, 1, textureData, 0);
-  gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
-  gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
-  gs_effect_set_texture(image, texture);
+  gs_eparam_t *alphamask = gs_effect_get_param_by_name(tf->effect, "alphamask");
+  gs_eparam_t *blurSize = gs_effect_get_param_by_name(tf->effect, "blurSize");
+  gs_eparam_t *xTexelSize = gs_effect_get_param_by_name(tf->effect, "xTexelSize");
+  gs_eparam_t *yTexelSize = gs_effect_get_param_by_name(tf->effect, "yTexelSize");
+
+  gs_effect_set_texture(alphamask, alphaTexture);
+  gs_effect_set_int(blurSize, (int)tf->blurBackground);
+  gs_effect_set_float(xTexelSize, 1.0f / width);
+  gs_effect_set_float(yTexelSize, 1.0f / height);
+
   gs_blend_state_push();
   gs_reset_blend_state();
-  while (gs_effect_loop(effect, "Draw")) {
-    gs_draw_sprite(texture, 0, width, height);
-  }
-  gs_blend_state_pop();
-  gs_texture_destroy(texture);
 
-  UNUSED_PARAMETER(_effect);
+  const char *techName;
+  if (tf->blurBackground > 0.0) {
+    techName = "DrawWithBlur";
+  } else {
+    techName = "DrawWithoutBlur";
+  }
+
+  obs_source_process_filter_tech_end(tf->source, tf->effect, 0, 0, techName);
+
+  gs_blend_state_pop();
+
+  gs_texture_destroy(alphaTexture);
 }
 
 struct obs_source_info background_removal_filter_info = {
