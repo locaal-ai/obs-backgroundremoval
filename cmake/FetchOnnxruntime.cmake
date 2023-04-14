@@ -44,8 +44,8 @@ elseif(OS_LINUX)
     URL_HASH MD5=6a3866eb7dce86a17922c0662623f77e)
   FetchContent_MakeAvailable(Onnxruntime)
   set(Onnxruntime_LINK_LIBS
-      "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_shared.so"
-      "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime.so.${Onnxruntime_VERSION}")
+      "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime.so.${Onnxruntime_VERSION}"
+      "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_shared.so")
   set(Onnxruntime_INSTALL_LIBS
       ${Onnxruntime_LINK_LIBS} "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_cuda.so"
       "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_tensorrt.so")
