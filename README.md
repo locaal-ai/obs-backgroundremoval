@@ -3,6 +3,7 @@
 A plugin for [OBS Studio](https://obsproject.com/) that allows you to replace the background in portrait images and video.
 
 - [Introduction](#introduction)
+- [Usage](#usage)
 - [Building](#building)
   - [MacOSX](#mac-osx)
   - [Linux (Ubuntu, Arch)](#linux)
@@ -39,6 +40,14 @@ The pretrained model weights used for portrait foreground segmentation are taken
 - https://github.com/PeterL1n/RobustVideoMatting
 
 Some more information about how I built it: https://www.morethantechnical.com/2021/04/15/obs-plugin-for-portrait-background-removal-with-onnx-sinet-model/
+
+## Usage
+
+Prerequisite: OBS 28+
+
+1. Download the OS specific plugin from [Latest Releases](https://github.com/royshil/obs-backgroundremoval/releases/latest).
+2. Install the plugin.
+3. Open the filter of any video capture device and see there is a 'Background Removal' available.
 
 ## Building
 
