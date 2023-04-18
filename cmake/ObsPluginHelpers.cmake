@@ -445,7 +445,7 @@ if(OS_MACOS)
     # If not building with Xcode, manually code-sign the plugin
     if(NOT XCODE)
       set(_COMMAND
-          "/usr/bin/codesign --force \\
+          "/usr/bin/codesign --deep --force \\
           --sign \\\"${OBS_BUNDLE_CODESIGN_IDENTITY}\\\" \\
           --options runtime \\
           --entitlements \\\"${CMAKE_CURRENT_FUNCTION_LIST_DIR}/bundle/macOS/entitlements.plist\\\" \\
