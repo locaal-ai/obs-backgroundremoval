@@ -24,7 +24,7 @@ else()
   set(OpenCV_LIB_PATH_3RD lib/opencv4/3rdparty)
   set(OpenCV_LIB_SUFFIX "")
   set(OpenCV_INSTALL_CCACHE ":")
-  set(OpenCV_PLATFORM_CMAKE_ARGS "")
+  set(OpenCV_PLATFORM_CMAKE_ARGS -DOPENCV_LIB_INSTALL_PATH=lib)
 endif()
 
 if(${CMAKE_BUILD_TYPE} STREQUAL Release OR ${CMAKE_BUILD_TYPE} STREQUAL RelWithDebInfo)
