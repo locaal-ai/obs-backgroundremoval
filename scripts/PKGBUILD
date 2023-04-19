@@ -18,5 +18,5 @@ build() {
 
 package() {
   cd "$pkgname-$pkgver"
-  cmake --install build --prefic "$pkgdir/usr"
+  cmake --install build --prefix "$pkgdir/usr"
 }
