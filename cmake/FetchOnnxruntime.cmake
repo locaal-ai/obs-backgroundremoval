@@ -51,6 +51,8 @@ elseif(OS_LINUX)
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE ${Onnxruntime_LINK_LIBS})
   target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
                              PUBLIC "${onnxruntime_SOURCE_DIR}/include")
-		     install(FILES ${Onnxruntime_INSTALL_LIBS} DESTINATION "${OBS_PLUGIN_DESTINATION}/${CMAKE_PROJECT_NAME}")
-  set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/${CMAKE_PROJECT_NAME}")
+  install(FILES ${Onnxruntime_INSTALL_LIBS}
+          DESTINATION "${OBS_PLUGIN_DESTINATION}/${CMAKE_PROJECT_NAME}")
+  set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES INSTALL_RPATH
+                                                         "$ORIGIN/${CMAKE_PROJECT_NAME}")
 endif()
