@@ -634,6 +634,7 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   gs_blend_state_pop();
 
   gs_texture_destroy(alphaTexture);
+  gs_texture_destroy(blurredTexture);
 }
 
 struct obs_source_info background_removal_filter_info = {
