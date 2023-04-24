@@ -165,7 +165,7 @@ static void filter_defaults(obs_data_t *settings)
 #endif
   obs_data_set_default_string(settings, "model_select", MODEL_MEDIAPIPE);
   obs_data_set_default_int(settings, "mask_every_x_frames", 1);
-  obs_properties_add_int_slider(settings, "blur_background", 0);
+  obs_data_set_default_int(settings, "blur_background", 0);
 }
 
 static void createOrtSession(struct background_removal_filter *tf)
