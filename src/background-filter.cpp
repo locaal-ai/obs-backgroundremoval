@@ -156,9 +156,16 @@ static void filter_defaults(obs_data_t *settings)
   obs_data_set_default_double(settings, "contour_filter", 0.05);
   obs_data_set_default_double(settings, "smooth_contour", 0.5);
   obs_data_set_default_double(settings, "feather", 0.0);
+#if _WIN32  
+  obs_data_set_default_string(settings, "useGPU", USEGPU_DML);
+#if defined(__APPLE__)
+  obs_data_set_default_string(settings, "useGPU", USEGPU_COREML);
+#else
   obs_data_set_default_string(settings, "useGPU", USEGPU_CPU);
+#endif
   obs_data_set_default_string(settings, "model_select", MODEL_MEDIAPIPE);
   obs_data_set_default_int(settings, "mask_every_x_frames", 1);
+  obs_properties_add_int_slider(settings, "blur_background", 0);
 }
 
 static void createOrtSession(struct background_removal_filter *tf)
