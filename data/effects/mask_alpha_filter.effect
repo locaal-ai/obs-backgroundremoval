@@ -31,20 +31,6 @@ VertDataOut VSDefault(VertDataIn v_in)
 	return vert_out;
 }
 
-// Simple box blur around a point. k_size = left and right offset from middle
-float4 Blur(float2 texCoord, int k_size)
-{
-	float4 pixelsum = float4(0.0, 0.0, 0.0, 0.0);
-
-	for (int i = -k_size; i <= k_size; i++) {
-		for (int j = -k_size; j <= k_size; j++) {
-			pixelsum += image.Sample(textureSampler, texCoord + float2(i * xTexelSize, j * yTexelSize));
-		}
-	}
-
-	return pixelsum / ((k_size*2+1) * (k_size*2+1));
-}
-
 float4 PSAlphaMaskRGBAWithBlur(VertDataOut v_in) : TARGET
 {
 	float4 inputRGBA = image.Sample(textureSampler, v_in.uv);
