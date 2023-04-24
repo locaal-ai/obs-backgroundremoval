@@ -159,8 +159,9 @@ static void filter_defaults(obs_data_t *settings)
 #if _WIN32
   obs_data_set_default_string(settings, "useGPU", USEGPU_DML);
 #elif defined(__APPLE__)
-  obs_data_set_default_string(settings, "useGPU", USEGPU_COREML);
+  obs_data_set_default_string(settings, "useGPU", USEGPU_CPU);
 #else
+  // Linux
   obs_data_set_default_string(settings, "useGPU", USEGPU_CPU);
 #endif
   obs_data_set_default_string(settings, "model_select", MODEL_MEDIAPIPE);
