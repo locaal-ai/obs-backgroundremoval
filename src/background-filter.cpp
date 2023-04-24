@@ -441,7 +441,9 @@ void filter_video_tick(void *data, float seconds)
       cv::Mat backgroundMask;
 
       // Process the image to find the mask.
+      obs_enter_graphics();
       processImageForBackground(tf, imageBGRA, backgroundMask);
+      obs_leave_graphics();
 
       // Contour processing
       if (tf->contourFilter > 0.0 && tf->contourFilter < 1.0) {
