@@ -1,7 +1,7 @@
 include(FetchContent)
 
 set(Onnxruntime_VERSION "1.14.1")
-set(Onnxruntime_DirectML_VERSION "1.9.0")
+set(Onnxruntime_DirectML_VERSION "1.10.1")
 if(OS_MACOS)
   FetchContent_Declare(
     Onnxruntime
@@ -28,7 +28,7 @@ elseif(OS_WINDOWS)
   FetchContent_Declare(
     DirectML
     URL "https://globalcdn.nuget.org/packages/microsoft.ai.directml.${Onnxruntime_DirectML_VERSION}.nupkg"
-    URL_HASH MD5=59dad6fc48cfd052bf0fdccfa7b35b72)
+    URL_HASH MD5=982eefb0301bcb242b5aa883bb1aeee5)
   FetchContent_MakeAvailable(Onnxruntime DirectML)
   set(Onnxruntime_LIB "${onnxruntime_SOURCE_DIR}/runtimes/win-x64/native/onnxruntime.dll")
   set(Onnxruntime_IMPLIB "${onnxruntime_SOURCE_DIR}/runtimes/win-x64/native/onnxruntime.lib")
