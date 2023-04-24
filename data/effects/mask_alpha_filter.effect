@@ -5,6 +5,7 @@ uniform texture2d alphamask; // alpha mask
 uniform int blurSize;        // Size of the image blur kernel. 0 = no blur
 uniform float xTexelSize;    // Size of texel in X coord
 uniform float yTexelSize;    // Size of texel in Y coord
+uniform texture2d blurredBackground; // input RGBA
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -51,7 +52,7 @@ float4 PSAlphaMaskRGBAWithBlur(VertDataOut v_in) : TARGET
 
 	float4 outputRGBA;
 	float a = (1.0 - alphamask.Sample(textureSampler, v_in.uv).r) * inputRGBA.a;
-	outputRGBA.rgb = inputRGBA.rgb * a + Blur(v_in.uv, blurSize).rgb * (1.0 - a);
+	outputRGBA.rgb = inputRGBA.rgb * a + blurredBackground.Sample(textureSampler, v_in.uv).rgb * (1.0 - a);
 	outputRGBA.a = 1;
 	return outputRGBA;
 }

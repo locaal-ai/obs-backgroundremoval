@@ -1,0 +1,50 @@
+uniform float4x4 ViewProj;
+uniform texture2d image;
+
+uniform int n;
+uniform float xTexelSize;
+uniform float yTexelSize;
+
+sampler_state textureSampler {
+	Filter    = Linear;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertDataIn {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+struct VertDataOut {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertDataOut VSDefault(VertDataOut v_in)
+{
+	VertDataOut vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+float4 PSKawaseBlur(VertDataOut v_in) : TARGET
+{
+    float4 sum = float4(0.0, 0.0, 0.0, 0.0);
+    sum += image.Sample(textureSampler, v_in.uv + float2( (n + 0.5) * xTexelSize,  (n + 0.5) * yTexelSize)) * 0.25;
+    sum += image.Sample(textureSampler, v_in.uv + float2(-(n + 0.5) * xTexelSize,  (n + 0.5) * yTexelSize)) * 0.25;
+    sum += image.Sample(textureSampler, v_in.uv + float2( (n + 0.5) * xTexelSize, -(n + 0.5) * yTexelSize)) * 0.25;
+    sum += image.Sample(textureSampler, v_in.uv + float2(-(n + 0.5) * xTexelSize, -(n + 0.5) * yTexelSize)) * 0.25;
+    sum.a = 1;
+    return sum;
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSKawaseBlur(v_in);
+	}
+}
