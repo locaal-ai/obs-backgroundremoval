@@ -576,10 +576,41 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
       return;
     }
   }
+  gs_texture_t *blurFirstStepTexture = nullptr;
+  if (tf->blurBackground > 0.0) {
+    blurFirstStepTexture = gs_texture_create(width, height, GS_RGBA, 1, nullptr, 0);
+    if (!blurFirstStepTexture) {
+      blog(LOG_ERROR, "Failed to create blur 1st step texture");
+      obs_source_skip_video_filter(tf->source);
+      return;
+    }
+  }
+
   gs_eparam_t *alphamask = gs_effect_get_param_by_name(tf->effect, "alphamask");
+  gs_eparam_t *imageparam = gs_effect_get_param_by_name(tf->effect, "image");
+  gs_eparam_t *blurFirstStep = gs_effect_get_param_by_name(tf->effect, "imageBlurFirstStepOut");
   gs_eparam_t *blurSize = gs_effect_get_param_by_name(tf->effect, "blurSize");
   gs_eparam_t *xTexelSize = gs_effect_get_param_by_name(tf->effect, "xTexelSize");
   gs_eparam_t *yTexelSize = gs_effect_get_param_by_name(tf->effect, "yTexelSize");
+
+  if (tf->blurBackground > 0.0) {
+    gs_effect_set_texture(blurFirstStep, blurFirstStepTexture);
+
+    gs_blend_state_push();
+    gs_reset_blend_state();
+
+    const char *techName = "BlurFirstStep";
+    gs_technique_begin(tf->effect, techName);
+    gs_technique_begin_pass(tf->effect, techName, 0);
+    gs_draw_sprite(blurFirstStepTexture, 0, 0, width, height);
+    gs_technique_end_pass(tf->effect);
+    gs_technique_end(tf->effect);
+
+    gs_blend_state_pop();
+
+    // Set the blurred texture as the input for the next pass
+    gs_effect_set_texture(imageparam, blurFirstStepTexture);
+  }
 
   gs_effect_set_texture(alphamask, alphaTexture);
   gs_effect_set_int(blurSize, (int)tf->blurBackground);
