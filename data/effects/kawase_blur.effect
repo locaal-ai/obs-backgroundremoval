@@ -1,9 +1,8 @@
 uniform float4x4 ViewProj;
 uniform texture2d image;
 
-uniform int n;
-uniform float xTexelSize;
-uniform float yTexelSize;
+uniform float xOffset;
+uniform float yOffset;
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -32,11 +31,11 @@ VertDataOut VSDefault(VertDataOut v_in)
 float4 PSKawaseBlur(VertDataOut v_in) : TARGET
 {
     float4 sum = float4(0.0, 0.0, 0.0, 0.0);
-    sum += image.Sample(textureSampler, v_in.uv + float2( (n + 0.5) * xTexelSize,  (n + 0.5) * yTexelSize)) * 0.25;
-    sum += image.Sample(textureSampler, v_in.uv + float2(-(n + 0.5) * xTexelSize,  (n + 0.5) * yTexelSize)) * 0.25;
-    sum += image.Sample(textureSampler, v_in.uv + float2( (n + 0.5) * xTexelSize, -(n + 0.5) * yTexelSize)) * 0.25;
-    sum += image.Sample(textureSampler, v_in.uv + float2(-(n + 0.5) * xTexelSize, -(n + 0.5) * yTexelSize)) * 0.25;
-    sum.a = 1;
+    sum += image.Sample(textureSampler, v_in.uv + float2( xOffset,  yOffset));
+    sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset,  yOffset));
+    sum += image.Sample(textureSampler, v_in.uv + float2( xOffset, -yOffset));
+    sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset, -yOffset));
+	sum *= 0.25;
     return sum;
 }
 

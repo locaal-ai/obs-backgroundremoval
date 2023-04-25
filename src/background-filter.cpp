@@ -501,18 +501,15 @@ void filter_video_tick(void *data, float seconds)
 static gs_texture_t *blur_background(struct background_removal_filter *tf, uint32_t width,
                                      uint32_t height)
 {
-  if (tf->blurBackground == 0.0) {
+  if (tf->blurBackground == 0.0 || !tf->kawaseBlurEffect) {
     return nullptr;
   }
   gs_texture_t *blurredTexture = gs_texture_create(width, height, GS_BGRA, 1, nullptr, 0);
   gs_copy_texture(blurredTexture, gs_texrender_get_texture(tf->texrender));
   gs_eparam_t *image = gs_effect_get_param_by_name(tf->kawaseBlurEffect, "image");
-  gs_eparam_t *n = gs_effect_get_param_by_name(tf->kawaseBlurEffect, "n");
-  gs_eparam_t *xTexelSize = gs_effect_get_param_by_name(tf->kawaseBlurEffect, "xTexelSize");
-  gs_eparam_t *yTexelSize = gs_effect_get_param_by_name(tf->kawaseBlurEffect, "yTexelSize");
+  gs_eparam_t *xOffset = gs_effect_get_param_by_name(tf->kawaseBlurEffect, "xOffset");
+  gs_eparam_t *yOffset = gs_effect_get_param_by_name(tf->kawaseBlurEffect, "yOffset");
 
-  gs_effect_set_float(xTexelSize, 1.0f / width);
-  gs_effect_set_float(yTexelSize, 1.0f / height);
   for (int i = 0; i < (int)tf->blurBackground; i++) {
     gs_texrender_reset(tf->texrender);
     if (!gs_texrender_begin(tf->texrender, width, height)) {
@@ -521,7 +518,8 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf, uint3
     }
 
     gs_effect_set_texture(image, blurredTexture);
-    gs_effect_set_int(n, i);
+    gs_effect_set_float(xOffset, (i + 0.5f) / width);
+    gs_effect_set_float(yOffset, (i + 0.5f) / height);
     while (gs_effect_loop(tf->kawaseBlurEffect, "Draw")) {
       gs_draw_sprite(blurredTexture, 0, width, height);
     }
