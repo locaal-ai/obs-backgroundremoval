@@ -363,47 +363,43 @@ static void processImageForBackground(struct background_removal_filter *tf,
     // Onnx runtime session is not initialized. Problem in initialization
     return;
   }
-  try {
-    // To RGB
-    cv::Mat imageRGB;
-    cv::cvtColor(imageBGRA, imageRGB, cv::COLOR_BGRA2RGB);
+  // To RGB
+  cv::Mat imageRGB;
+  cv::cvtColor(imageBGRA, imageRGB, cv::COLOR_BGRA2RGB);
 
-    // Resize to network input size
-    uint32_t inputWidth, inputHeight;
-    tf->model->getNetworkInputSize(tf->inputDims, inputWidth, inputHeight);
+  // Resize to network input size
+  uint32_t inputWidth, inputHeight;
+  tf->model->getNetworkInputSize(tf->inputDims, inputWidth, inputHeight);
 
-    cv::Mat resizedImageRGB;
-    cv::resize(imageRGB, resizedImageRGB, cv::Size(inputWidth, inputHeight));
+  cv::Mat resizedImageRGB;
+  cv::resize(imageRGB, resizedImageRGB, cv::Size(inputWidth, inputHeight));
 
-    // Prepare input to nework
-    cv::Mat resizedImage, preprocessedImage;
-    resizedImageRGB.convertTo(resizedImage, CV_32F);
+  // Prepare input to nework
+  cv::Mat resizedImage, preprocessedImage;
+  resizedImageRGB.convertTo(resizedImage, CV_32F);
 
-    tf->model->prepareInputToNetwork(resizedImage, preprocessedImage);
+  tf->model->prepareInputToNetwork(resizedImage, preprocessedImage);
 
-    tf->model->loadInputToTensor(preprocessedImage, inputWidth, inputHeight, tf->inputTensorValues);
+  tf->model->loadInputToTensor(preprocessedImage, inputWidth, inputHeight, tf->inputTensorValues);
 
-    // Run network inference
-    tf->model->runNetworkInference(tf->session, tf->inputNames, tf->outputNames, tf->inputTensor,
-                                   tf->outputTensor);
+  // Run network inference
+  tf->model->runNetworkInference(tf->session, tf->inputNames, tf->outputNames, tf->inputTensor,
+                                  tf->outputTensor);
 
-    // Get output
-    // Map network output mask to cv::Mat
-    cv::Mat outputImage = tf->model->getNetworkOutput(tf->outputDims, tf->outputTensorValues);
+  // Get output
+  // Map network output mask to cv::Mat
+  cv::Mat outputImage = tf->model->getNetworkOutput(tf->outputDims, tf->outputTensorValues);
 
-    // Assign output to input in some models that have temporal information
-    tf->model->assignOutputToInput(tf->outputTensorValues, tf->inputTensorValues);
+  // Assign output to input in some models that have temporal information
+  tf->model->assignOutputToInput(tf->outputTensorValues, tf->inputTensorValues);
 
-    // Post-process output
-    tf->model->postprocessOutput(outputImage);
+  // Post-process output
+  tf->model->postprocessOutput(outputImage);
 
-    if (tf->modelSelection == MODEL_SINET || tf->modelSelection == MODEL_MEDIAPIPE) {
-      backgroundMask = outputImage > tf->threshold;
-    } else {
-      backgroundMask = outputImage < tf->threshold;
-    }
-  } catch (const std::exception &e) {
-    blog(LOG_ERROR, "%s", e.what());
+  if (tf->modelSelection == MODEL_SINET || tf->modelSelection == MODEL_MEDIAPIPE) {
+    backgroundMask = outputImage > tf->threshold;
+  } else {
+    backgroundMask = outputImage < tf->threshold;
   }
 }
 
@@ -492,6 +488,9 @@ void filter_video_tick(void *data, float seconds)
       // Save the mask for the next frame
       backgroundMask.copyTo(tf->backgroundMask);
     }
+  } catch (const Ort::Exception &e) {
+    blog(LOG_ERROR, "ONNXRuntime Exception: %s", e.what());
+    // TODO: Fall back to CPU if it makes sense
   } catch (const std::exception &e) {
     blog(LOG_ERROR, "%s", e.what());
   }
