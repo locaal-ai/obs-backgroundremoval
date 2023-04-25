@@ -35,7 +35,7 @@ float4 PSKawaseBlur(VertDataOut v_in) : TARGET
     sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset,  yOffset));
     sum += image.Sample(textureSampler, v_in.uv + float2( xOffset, -yOffset));
     sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset, -yOffset));
-	sum *= 0.25;
+    sum *= 0.25;
     return sum;
 }
 
