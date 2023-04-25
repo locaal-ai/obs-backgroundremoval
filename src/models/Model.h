@@ -215,9 +215,8 @@ class Model {
       rawOutputNames.push_back(outputName.get());
     }
 
-    session->Run(Ort::RunOptions{nullptr},
-                 rawInputNames.data(), inputTensor.data(), inputNames.size(), rawOutputNames.data(),
-                 outputTensor.data(), outputNames.size());
+    session->Run(Ort::RunOptions{nullptr}, rawInputNames.data(), inputTensor.data(),
+                 inputNames.size(), rawOutputNames.data(), outputTensor.data(), outputNames.size());
   }
 };
 
