@@ -20,7 +20,7 @@ jobs:
       - name: "Chown files"
         run: "chown -R user:user ."
       - name: "Install build dependencies"
-        run: "pacman -Syu && yes | pacman -S cmake"
+        run: "pacman --noconfirm -Syu && pacman --noconfirm -S cmake"
       - name: "Make the package"
         working-directory: "scripts"
         run: "sudo -u user -- makepkg -s"
