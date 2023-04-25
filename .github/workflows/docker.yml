@@ -18,7 +18,7 @@ jobs:
         run: "useradd -m user"
       - uses: actions/checkout@v3
       - name: "Chown files"
-        run: "chown -R user:user"
+        run: "chown -R user:user ."
       - name: "Make the package"
         working-directory: "scripts"
         run: "sudo user && makepkg -s"
