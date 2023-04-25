@@ -15,7 +15,7 @@ jobs:
       image: "archlinux:base-devel"
     steps:
       - name: "Create and switch an user"
-        run: "useradd -m user && su user"
+        run: "cat /etc/passwd /etc/sudoers"
       - uses: actions/checkout@v3
       - name: "Make the package"
         working-directory: "${{ github.workspace }}/scripts"
