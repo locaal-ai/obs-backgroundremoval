@@ -15,12 +15,12 @@ jobs:
       image: "archlinux:base-devel"
     steps:
       - name: "Create an user"
-        run: "useradd -m user && printf 'user\tALL=(ALL:ALL) NOPASSWD: ALL' > /etc/sudoers.d/user"
+        run: "useradd -m user"
       - uses: actions/checkout@v3
       - name: "Chown files"
         run: "chown -R user:user ."
       - name: "Install build dependencies"
-        run: "pacman --noconfirm -Syu && pacman --noconfirm -S cmake"
+        run: "pacman --noconfirm -Syu && pacman --noconfirm -S cmake obs-studio opencv"
       - name: "Make the package"
         working-directory: "scripts"
-        run: "sudo -u user -- makepkg -s"
+        run: "sudo -u user -- makepkg"
