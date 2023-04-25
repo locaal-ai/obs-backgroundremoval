@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: "Create an user"
         run: "useradd -m user"
-      - uses: actions/checkout@v3
+      - uses: "actions/checkout@v3"
       - name: "Chown files"
         run: "chown -R user:user ."
       - name: "Install build dependencies"
