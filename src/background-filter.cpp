@@ -498,6 +498,40 @@ void filter_video_tick(void *data, float seconds)
   UNUSED_PARAMETER(seconds);
 }
 
+
+static gs_texture_t *blur_background(struct background_removal_filter *tf, uint32_t width, uint32_t height)
+{
+  if (tf->blurBackground == 0.0) {
+    return nullptr;
+  }
+  gs_texture_t *blurredTexture = gs_texture_create(width, height, GS_BGRA, 1, nullptr, 0);
+  gs_copy_texture(blurredTexture, gs_texrender_get_texture(tf->texrender));
+  gs_eparam_t *image = gs_effect_get_param_by_name(tf->kawaseBlurEffect, "image");
+  gs_eparam_t *n = gs_effect_get_param_by_name(tf->kawaseBlurEffect, "n");
+  gs_eparam_t *xTexelSize = gs_effect_get_param_by_name(tf->kawaseBlurEffect, "xTexelSize");
+  gs_eparam_t *yTexelSize = gs_effect_get_param_by_name(tf->kawaseBlurEffect, "yTexelSize");
+
+  gs_effect_set_float(xTexelSize, 1.0f / width);
+  gs_effect_set_float(yTexelSize, 1.0f / height);
+  for (int i = 0; i < (int)tf->blurBackground; i++) {
+    gs_texrender_reset(tf->texrender);
+    if (!gs_texrender_begin(tf->texrender, width, height)) {
+      blog(LOG_INFO, "Could not open background blur texrender!");
+      return blurredTexture;
+    }
+
+    gs_effect_set_texture(image, blurredTexture);
+    gs_effect_set_int(n, i);
+    while (gs_effect_loop(tf->kawaseBlurEffect, "Draw")) {
+      gs_draw_sprite(blurredTexture, 0, width, height);
+    }
+    gs_texrender_end(tf->texrender);
+    gs_copy_texture(blurredTexture, gs_texrender_get_texture(tf->texrender));
+  }
+  return blurredTexture;
+}
+
+
 static void filter_video_render(void *data, gs_effect_t *_effect)
 {
   UNUSED_PARAMETER(_effect);
@@ -561,29 +595,7 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
 
   // Output the masked image
 
-  gs_texture_t *blurredTexture = gs_texture_create(width, height, GS_BGRA, 1, nullptr, 0);
-  gs_copy_texture(blurredTexture, gs_texrender_get_texture(tf->texrender));
-  for (int i = 0; i < (int)tf->blurBackground; i++) {
-    gs_texrender_reset(tf->texrender);
-    if (!gs_texrender_begin(tf->texrender, width, height)) {
-      obs_source_skip_video_filter(tf->source);
-      return;
-    }
-    gs_eparam_t *image = gs_effect_get_param_by_name(tf->kawaseBlurEffect, "image");
-    gs_eparam_t *n = gs_effect_get_param_by_name(tf->kawaseBlurEffect, "n");
-    gs_eparam_t *xTexelSize = gs_effect_get_param_by_name(tf->kawaseBlurEffect, "xTexelSize");
-    gs_eparam_t *yTexelSize = gs_effect_get_param_by_name(tf->kawaseBlurEffect, "yTexelSize");
-
-    gs_effect_set_texture(image, blurredTexture);
-    gs_effect_set_int(n, i);
-    gs_effect_set_float(xTexelSize, 1.0f / width);
-    gs_effect_set_float(yTexelSize, 1.0f / height);
-    while (gs_effect_loop(tf->kawaseBlurEffect, "Draw")) {
-      gs_draw_sprite(blurredTexture, 0, width, height);
-    }
-    gs_texrender_end(tf->texrender);
-    gs_copy_texture(blurredTexture, gs_texrender_get_texture(tf->texrender));
-  }
+  gs_texture_t *blurredTexture = blur_background(tf, width, height);
 
   if (!tf->effect) {
     // Effect failed to load, skip rendering
@@ -617,7 +629,9 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   gs_effect_set_int(blurSize, (int)tf->blurBackground);
   gs_effect_set_float(xTexelSize, 1.0f / width);
   gs_effect_set_float(yTexelSize, 1.0f / height);
-  gs_effect_set_texture(blurredBackground, blurredTexture);
+  if (tf->blurBackground > 0.0) {
+    gs_effect_set_texture(blurredBackground, blurredTexture);
+  }
 
   gs_blend_state_push();
   gs_reset_blend_state();
