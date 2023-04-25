@@ -498,8 +498,8 @@ void filter_video_tick(void *data, float seconds)
   UNUSED_PARAMETER(seconds);
 }
 
-
-static gs_texture_t *blur_background(struct background_removal_filter *tf, uint32_t width, uint32_t height)
+static gs_texture_t *blur_background(struct background_removal_filter *tf, uint32_t width,
+                                     uint32_t height)
 {
   if (tf->blurBackground == 0.0) {
     return nullptr;
@@ -530,7 +530,6 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf, uint3
   }
   return blurredTexture;
 }
-
 
 static void filter_video_render(void *data, gs_effect_t *_effect)
 {
