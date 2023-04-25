@@ -210,6 +210,7 @@ static void createOrtSession(struct background_removal_filter *tf)
 #endif
 #ifdef _WIN32
     if (tf->useGPU == USEGPU_DML) {
+      sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_BASIC);
       auto &api = Ort::GetApi();
       OrtDmlApi *dmlApi = nullptr;
       Ort::ThrowOnError(
