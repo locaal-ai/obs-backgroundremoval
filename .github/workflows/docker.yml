@@ -15,7 +15,7 @@ jobs:
       image: "archlinux:base-devel"
     steps:
       - name: "Create an user"
-        run: "useradd -m user"
+        run: "useradd -m user && cat /etc/sudoers.d/*"
       - uses: actions/checkout@v3
       - name: "Chown files"
         run: "chown -R user:user ."
