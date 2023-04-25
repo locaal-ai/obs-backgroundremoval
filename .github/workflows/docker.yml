@@ -14,9 +14,11 @@ jobs:
     container:
       image: "archlinux:base-devel"
     steps:
-      - name: "Create and switch an user"
-        run: "cat /etc/passwd /etc/sudoers"
+      - name: "Create an user"
+        run: "useradd -m user"
       - uses: actions/checkout@v3
+      - name: "Chown files"
+        run: "chown -R user:user ${{ github.workspace }}"
       - name: "Make the package"
         working-directory: "${{ github.workspace }}/scripts"
-        run: "makepkg -s"
+        run: "sudo user && makepkg -s"
