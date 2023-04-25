@@ -202,7 +202,11 @@ static void createOrtSession(struct background_removal_filter *tf)
 #endif
 #ifdef _WIN32
     if (tf->useGPU == USEGPU_DML) {
-      Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
+      auto &api = Ort::GetApi();
+      OrtDmlApi *dmlApi = nullptr;
+      Ort::ThrowOnError(
+        api.GetExecutionProviderApi("DML", ORT_API_VERSION, (const void **)&dmlApi));
+      Ort::ThrowOnError(dmlApi->SessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
     }
 #endif
 #if defined(__APPLE__)
