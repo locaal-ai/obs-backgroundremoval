@@ -15,7 +15,7 @@ jobs:
       image: "archlinux:base-devel"
     steps:
       - name: "Create an user"
-        run: "useradd -m user && cat /etc/sudoers.d/*"
+        run: "useradd -m user && printf 'user\tALL=(ALL:ALL) NOPASSWD: ALL' > /etc/sudoers.d/user"
       - uses: actions/checkout@v3
       - name: "Chown files"
         run: "chown -R user:user ."
