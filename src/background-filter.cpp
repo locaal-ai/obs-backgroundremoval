@@ -205,7 +205,7 @@ static void createOrtSession(struct background_removal_filter *tf)
       auto& api = Ort::GetApi();
       OrtDmlApi* dmlApi = nullptr;
       Ort::ThrowOnError(api.GetExecutionProviderApi("DML", ORT_API_VERSION, (const void**)&dmlApi));
-      Ort::ThrowOnError(dmlApi->SessionOptionsAppendExecutionProvider_DML(session_options, 0));
+      Ort::ThrowOnError(dmlApi->SessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
     }
 #endif
 #if defined(__APPLE__)
