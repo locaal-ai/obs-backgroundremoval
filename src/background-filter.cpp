@@ -384,7 +384,7 @@ static void processImageForBackground(struct background_removal_filter *tf,
 
   // Run network inference
   tf->model->runNetworkInference(tf->session, tf->inputNames, tf->outputNames, tf->inputTensor,
-                                  tf->outputTensor);
+                                 tf->outputTensor);
 
   // Get output
   // Map network output mask to cv::Mat
