@@ -14,7 +14,7 @@ jobs:
     container:
       image: "archlinux:base-devel"
     steps:
-      - use: actions/checkout@v3
+      - uses: actions/checkout@v3
       - name: "Make the package"
         working-directory: "${{ github.workspace }}/scripts"
         run: "makepkg -s"
