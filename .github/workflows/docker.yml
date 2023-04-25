@@ -21,4 +21,4 @@ jobs:
         run: "chown -R user:user ."
       - name: "Make the package"
         working-directory: "scripts"
-        run: "sudo -u user -- makepkg -s"
+        run: "pacman -Sy && sudo -u user -- makepkg -s"
