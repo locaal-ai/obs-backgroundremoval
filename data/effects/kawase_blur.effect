@@ -30,13 +30,13 @@ VertDataOut VSDefault(VertDataOut v_in)
 
 float4 PSKawaseBlur(VertDataOut v_in) : TARGET
 {
-    float4 sum = float4(0.0, 0.0, 0.0, 0.0);
-    sum += image.Sample(textureSampler, v_in.uv + float2( xOffset,  yOffset));
-    sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset,  yOffset));
-    sum += image.Sample(textureSampler, v_in.uv + float2( xOffset, -yOffset));
-    sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset, -yOffset));
-    sum *= 0.25;
-    return sum;
+	float4 sum = float4(0.0, 0.0, 0.0, 0.0);
+	sum += image.Sample(textureSampler, v_in.uv + float2( xOffset,  yOffset));
+	sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset,  yOffset));
+	sum += image.Sample(textureSampler, v_in.uv + float2( xOffset, -yOffset));
+	sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset, -yOffset));
+	sum *= 0.25;
+	return sum;
 }
 
 technique Draw
