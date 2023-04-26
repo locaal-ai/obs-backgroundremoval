@@ -23,19 +23,18 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #ifdef _WIN32
 #include <string>
 #include <windows.h>
-static void AppendPath()
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
-  HMODULE mod;
-  char buf[MAX_PATH];
-  GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)&AppendPath, &mod);
-  GetModuleFileNameA(mod, buf, MAX_PATH);
-  std::string myPath = std::string(buf, std::strrchr(buf, '\\')) + "\\obs-backgroundremoval\\";
-    
-  char envPath[65536];
-  GetEnvironmentVariableA("PATH", envPath, 65536);
-  std::string newPath = myPath + ";" + envPath;
-  SetEnvironmentVariableA("PATH", newPath.c_str());
-  blog(LOG_INFO, "PATH %s", newPath.c_str());
+  wchar_t mainDllPathBuf[MAX_PATH];
+  GetModuleFileNameW(hinstDLL, myPathBuf, MAX_PATH);
+  *wcsrchr(myPathBuf, L'\\') = L'\0';
+
+  wchar_t auxDllPathBuf[MAX_PATH];
+  swprintf(auxDllPathBuf, MAX_PATH, L"%ls\\obs-backgroundremoval\\");
+  SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_USER_DIRS);
+  AddDllDirectory(auxDllPathBuf);
+  blog(LOG_INFO, "DLL PATH added: %ls", auxDllPathBuf);
+  return TRUE;
 }
 #endif
 
@@ -51,9 +50,6 @@ extern struct obs_source_info background_removal_filter_info;
 
 bool obs_module_load(void)
 {
-#ifdef _WIN32
-  AppendPath();
-#endif
   obs_register_source(&background_removal_filter_info);
   blog(LOG_INFO, "plugin loaded successfully (version %s)", PLUGIN_VERSION);
   return true;
