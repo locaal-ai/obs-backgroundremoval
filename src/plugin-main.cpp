@@ -23,23 +23,20 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #ifdef _WIN32
 #include <iostream>
 #include <windows.h>
-#include <tchar.h>
-BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpReserved)
+static void AppendPath()
 {
-  UNUSED_PARAMETER(lpReserved);
-  std::cout << "aaaaa" << std::endl;
-  if (dwReason == DLL_PROCESS_ATTACH) {
-    char myPathBuf[MAX_PATH];
-    GetModuleFileNameA(hInstDLL, myPathBuf, MAX_PATH);
-    std::string myPath = std::string(myPathBuf, std::strrchr(myPathBuf, '\\')) + "\\obs-backgroundremoval";
-
-    char envPath[MAX_PATH];
-    GetEnvironmentVariableA("PATH", envPath, MAX_PATH);
-    std::string newPath = myPath + ";" + envPath;
-    std::cout << newPath << std::endl;
-    SetEnvironmentVariableA("PATH", newPath.c_str());
-  }
-  return TRUE;
+  HMODULE mod;
+  char buf[MAX_PATH];
+  GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)&AppendPath, &mod);
+  GetModuleFileNameA(mod, buf, MAX_PATH);
+  std::string myPath = std::string(buf, std::strrchr(buf, '\\'));
+    
+  char envPath[65536];
+  GetEnvironmentVariableA("PATH", envPath, 65536);
+  std::string newPath = myPath + ";" + envPath;Z
+  
+  blog(LOG_INFO, "PATH %s", newPath.c_str());
+  SetEnvironmentVariableA("PATH", newPath.c_str());
 }
 #endif
 
@@ -55,6 +52,9 @@ extern struct obs_source_info background_removal_filter_info;
 
 bool obs_module_load(void)
 {
+#ifdef _WIN32
+  AppendPath();
+#endif
   obs_register_source(&background_removal_filter_info);
   blog(LOG_INFO, "plugin loaded successfully (version %s)", PLUGIN_VERSION);
   return true;
