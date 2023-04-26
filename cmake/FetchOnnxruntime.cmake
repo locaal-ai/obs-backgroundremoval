@@ -37,7 +37,8 @@ elseif(OS_WINDOWS)
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${Onnxruntime_IMPLIB}")
   target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
                              PUBLIC "${onnxruntime_SOURCE_DIR}/build/native/include")
-  install(FILES "${Onnxruntime_LIB}" "${DirectML_LIB}" DESTINATION "${OBS_PLUGIN_DESTINATION}/obs-backgroundremoval")
+  install(FILES "${Onnxruntime_LIB}" "${DirectML_LIB}"
+          DESTINATION "${OBS_PLUGIN_DESTINATION}/obs-backgroundremoval")
 elseif(OS_LINUX)
   FetchContent_Declare(
     Onnxruntime
