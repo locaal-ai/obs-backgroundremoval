@@ -21,7 +21,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include "plugin-macros.generated.h"
 
 #ifdef _WIN32
-#include <iostream>
+#include <string>
 #include <windows.h>
 static void AppendPath()
 {
@@ -29,14 +29,13 @@ static void AppendPath()
   char buf[MAX_PATH];
   GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)&AppendPath, &mod);
   GetModuleFileNameA(mod, buf, MAX_PATH);
-  std::string myPath = std::string(buf, std::strrchr(buf, '\\'));
+  std::string myPath = std::string(buf, std::strrchr(buf, '\\')) + "\\obs-backgroundremoval\\";
     
   char envPath[65536];
   GetEnvironmentVariableA("PATH", envPath, 65536);
-  std::string newPath = myPath + ";" + envPath;Z
-  
-  blog(LOG_INFO, "PATH %s", newPath.c_str());
+  std::string newPath = myPath + ";" + envPath;
   SetEnvironmentVariableA("PATH", newPath.c_str());
+  blog(LOG_INFO, "PATH %s", newPath.c_str());
 }
 #endif
 
