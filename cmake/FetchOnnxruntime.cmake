@@ -33,7 +33,7 @@ elseif(OS_WINDOWS)
   set(Onnxruntime_LIB "${onnxruntime_SOURCE_DIR}/runtimes/win-x64/native/onnxruntime.dll")
   set(Onnxruntime_IMPLIB "${onnxruntime_SOURCE_DIR}/runtimes/win-x64/native/onnxruntime.lib")
   set(DirectML_LIB "${directml_SOURCE_DIR}/bin/x64-win/DirectML.dll")
-  target_link_options((${CMAKE_PROJECT_NAME} PRIVATE "/DELAYLOAD:onnxruntime.dll")
+  target_link_options(${CMAKE_PROJECT_NAME} PRIVATE "/DELAYLOAD:onnxruntime.dll")
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${Onnxruntime_IMPLIB}")
   target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
                              PUBLIC "${onnxruntime_SOURCE_DIR}/build/native/include")
