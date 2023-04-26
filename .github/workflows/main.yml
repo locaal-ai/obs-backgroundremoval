@@ -122,16 +122,6 @@ jobs:
           restore-keys: |
             macos-${{ matrix.arch }}-ccache-plugin-
 
-      - name: Check for GitHub Labels
-        id: seekingTesters
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          if [[ -n "$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -s "${{ github.event.pull_request.url }}" | jq -e '.labels[] | select(.name == "Seeking Testers")')" ]] {
-            print 'found=true' >> $GITHUB_OUTPUT
-          } else {
-            print 'found=false' >> $GITHUB_OUTPUT
-          }
-
       - name: Install Apple Developer Certificate
         if: ${{ github.event_name != 'pull_request' && steps.setup.outputs.haveCodesignIdent == 'true' }}
         uses: apple-actions/import-codesign-certs@253ddeeac23f2bdad1646faac5c8c2832e800071
@@ -221,16 +211,6 @@ jobs:
 
           print "ccacheDate=$(date +"%Y-%m-%d")" >> $GITHUB_OUTPUT
           print "commitHash=${"$(git rev-parse HEAD)"[0,9]}" >> $GITHUB_OUTPUT
-
-      - name: Check for GitHub Labels
-        id: seekingTesters
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          if [[ -n "$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -s "${{ github.event.pull_request.url }}" | jq -e '.labels[] | select(.name == "Seeking Testers")')" ]] {
-            print 'found=true' >> $GITHUB_OUTPUT
-          } else {
-            print 'found=false' >> $GITHUB_OUTPUT
-          }
 
       - name: Install Apple Developer Certificate
         if: ${{ github.event_name != 'pull_request' && steps.setup.outputs.haveCodesignIdent == 'true' }}
@@ -333,7 +313,7 @@ jobs:
           codesignPass: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
 
       - name: Upload Installer Artifacts
-        if: ${{ success() && (github.event_name != 'pull_request' || steps.seekingTesters.outputs.found == 'true') }}
+        if: ${{ success() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{ env.PLUGIN_NAME }}-macos-all-${{ steps.setup.outputs.commitHash }}
@@ -385,17 +365,6 @@ jobs:
           restore-keys: |
             linux-${{ matrix.arch }}-ccache-plugin-
 
-      - name: Check for GitHub Labels
-        id: seekingTesters
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          ## GITHUB LABEL SCRIPT
-          if [[ -n "$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -s "${{ github.event.pull_request.url }}" | jq -e '.labels[] | select(.name == "Seeking Testers")')" ]]; then
-            echo 'found=true' >> $GITHUB_OUTPUT
-          else
-            echo 'found=false' >> $GITHUB_OUTPUT
-          fi
-
       - name: Build Plugin
         uses: ./plugin/.github/actions/build-plugin
         with:
@@ -411,7 +380,7 @@ jobs:
           config: RelWithDebInfo
 
       - name: Upload Build Artifact
-        if: ${{ success() && (github.event_name != 'pull_request' || steps.seekingTesters.outputs.found == 'true') }}
+        if: ${{ success() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{ env.PLUGIN_NAME }}-linux-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}
@@ -493,27 +462,6 @@ jobs:
           restore-keys: |
             windows-${{ matrix.arch }}-ccache-plugin-
 
-      - name: Check for GitHub Labels
-        id: seekingTesters
-        working-directory: ${{ github.workspace }}/plugin
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          ## GITHUB LABEL SCRIPT
-          $LabelFound = try {
-            $Params = @{
-              Authentication = 'Bearer'
-              Token = (ConvertTo-SecureString '${{ secrets.GITHUB_TOKEN }}' -AsPlainText)
-              Uri = '${{ github.event.pull_request.url }}'
-              UseBasicParsing = $true
-            }
-
-            (Invoke-RestMethod @Params).labels.name.contains('Seeking Testers')
-          } catch {
-            $false
-          }
-
-          "found=$(([string]${LabelFound}).ToLower())" >> $env:GITHUB_OUTPUT
-
       - name: Build Plugin
         uses: ./plugin/.github/actions/build-plugin
         with:
@@ -530,7 +478,7 @@ jobs:
           config: RelWithDebInfo
 
       - name: Upload Build Artifact
-        if: ${{ success() && (github.event_name != 'pull_request' || steps.seekingTesters.outputs.found == 'true') }}
+        if: ${{ success() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{ env.PLUGIN_NAME }}-windows-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}
