@@ -45,6 +45,7 @@ const char *USEGPU_TENSORRT = "tensorrt";
 const char *USEGPU_COREML = "coreml";
 
 const char *EFFECT_PATH = "effects/mask_alpha_filter.effect";
+const char *KAWASE_BLUR_EFFECT_PATH = "effects/kawase_blur.effect";
 
 struct background_removal_filter {
   std::unique_ptr<Ort::Session> session;
@@ -70,6 +71,7 @@ struct background_removal_filter {
   gs_texrender_t *texrender;
   gs_stagesurf_t *stagesurface;
   gs_effect_t *effect;
+  gs_effect_t *kawaseBlurEffect;
 
   cv::Mat backgroundMask;
   int maskEveryXFrames = 1;
@@ -309,6 +311,11 @@ static void filter_update(void *data, obs_data_t *settings)
   tf->effect = gs_effect_create_from_file(effect_path, NULL);
   bfree(effect_path);
 
+  char *kawaseBlurEffectPath = obs_module_file(KAWASE_BLUR_EFFECT_PATH);
+  gs_effect_destroy(tf->kawaseBlurEffect);
+  tf->kawaseBlurEffect = gs_effect_create_from_file(kawaseBlurEffectPath, NULL);
+  bfree(kawaseBlurEffectPath);
+
   obs_leave_graphics();
 }
 
@@ -502,6 +509,45 @@ void filter_video_tick(void *data, float seconds)
   UNUSED_PARAMETER(seconds);
 }
 
+static gs_texture_t *blur_background(struct background_removal_filter *tf, uint32_t width,
+                                     uint32_t height)
+{
+  if (tf->blurBackground == 0.0 || !tf->kawaseBlurEffect) {
+    return nullptr;
+  }
+  gs_texture_t *blurredTexture = gs_texture_create(width, height, GS_BGRA, 1, nullptr, 0);
+  gs_copy_texture(blurredTexture, gs_texrender_get_texture(tf->texrender));
+  gs_eparam_t *image = gs_effect_get_param_by_name(tf->kawaseBlurEffect, "image");
+  gs_eparam_t *xOffset = gs_effect_get_param_by_name(tf->kawaseBlurEffect, "xOffset");
+  gs_eparam_t *yOffset = gs_effect_get_param_by_name(tf->kawaseBlurEffect, "yOffset");
+
+  for (int i = 0; i < (int)tf->blurBackground; i++) {
+    gs_texrender_reset(tf->texrender);
+    if (!gs_texrender_begin(tf->texrender, width, height)) {
+      blog(LOG_INFO, "Could not open background blur texrender!");
+      return blurredTexture;
+    }
+
+    gs_effect_set_texture(image, blurredTexture);
+    gs_effect_set_float(xOffset, (i + 0.5f) / width);
+    gs_effect_set_float(yOffset, (i + 0.5f) / height);
+
+    struct vec4 background;
+    vec4_zero(&background);
+    gs_clear(GS_CLEAR_COLOR, &background, 0.0f, 0);
+    gs_ortho(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height), -100.0f, 100.0f);
+    gs_blend_state_push();
+    gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
+    while (gs_effect_loop(tf->kawaseBlurEffect, "Draw")) {
+      gs_draw_sprite(blurredTexture, 0, width, height);
+    }
+    gs_blend_state_pop();
+    gs_texrender_end(tf->texrender);
+    gs_copy_texture(blurredTexture, gs_texrender_get_texture(tf->texrender));
+  }
+  return blurredTexture;
+}
+
 static void filter_video_render(void *data, gs_effect_t *_effect)
 {
   UNUSED_PARAMETER(_effect);
@@ -565,6 +611,8 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
 
   // Output the masked image
 
+  gs_texture_t *blurredTexture = blur_background(tf, width, height);
+
   if (!tf->effect) {
     // Effect failed to load, skip rendering
     obs_source_skip_video_filter(tf->source);
@@ -591,11 +639,15 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   gs_eparam_t *blurSize = gs_effect_get_param_by_name(tf->effect, "blurSize");
   gs_eparam_t *xTexelSize = gs_effect_get_param_by_name(tf->effect, "xTexelSize");
   gs_eparam_t *yTexelSize = gs_effect_get_param_by_name(tf->effect, "yTexelSize");
+  gs_eparam_t *blurredBackground = gs_effect_get_param_by_name(tf->effect, "blurredBackground");
 
   gs_effect_set_texture(alphamask, alphaTexture);
   gs_effect_set_int(blurSize, (int)tf->blurBackground);
   gs_effect_set_float(xTexelSize, 1.0f / width);
   gs_effect_set_float(yTexelSize, 1.0f / height);
+  if (tf->blurBackground > 0.0) {
+    gs_effect_set_texture(blurredBackground, blurredTexture);
+  }
 
   gs_blend_state_push();
   gs_reset_blend_state();
@@ -612,6 +664,7 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   gs_blend_state_pop();
 
   gs_texture_destroy(alphaTexture);
+  gs_texture_destroy(blurredTexture);
 }
 
 struct obs_source_info background_removal_filter_info = {
