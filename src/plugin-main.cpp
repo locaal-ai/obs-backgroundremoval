@@ -32,7 +32,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 
     wchar_t auxDllPathBuf[MAX_PATH];
     swprintf(auxDllPathBuf, MAX_PATH, L"%ls\\obs-backgroundremoval\\", mainDllPathBuf);
-    SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_USER_DIRS);
+    SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
     AddDllDirectory(auxDllPathBuf);
     blog(LOG_INFO, "DLL PATH added: %ls", auxDllPathBuf);
   }
