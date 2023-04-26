@@ -21,21 +21,21 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include "plugin-macros.generated.h"
 
 #ifdef _WIN32
-#include <string>
 #include <windows.h>
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
-  UNUSED_PARAMETER(fdwReason);
   UNUSED_PARAMETER(lpvReserved);
-  wchar_t mainDllPathBuf[MAX_PATH];
-  GetModuleFileNameW(hinstDLL, mainDllPathBuf, MAX_PATH);
-  *wcsrchr(mainDllPathBuf, L'\\') = L'\0';
+  if (fdwReason == DLL_PROCESS_ATTACH) {
+    wchar_t mainDllPathBuf[MAX_PATH];
+    GetModuleFileNameW(hinstDLL, mainDllPathBuf, MAX_PATH);
+    *wcsrchr(mainDllPathBuf, L'\\') = L'\0';
 
-  wchar_t auxDllPathBuf[MAX_PATH];
-  swprintf(auxDllPathBuf, MAX_PATH, L"%ls\\obs-backgroundremoval\\", mainDllPathBuf);
-  SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_USER_DIRS);
-  AddDllDirectory(auxDllPathBuf);
-  blog(LOG_INFO, "DLL PATH added: %ls", auxDllPathBuf);
+    wchar_t auxDllPathBuf[MAX_PATH];
+    swprintf(auxDllPathBuf, MAX_PATH, L"%ls\\obs-backgroundremoval\\", mainDllPathBuf);
+    SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_USER_DIRS);
+    AddDllDirectory(auxDllPathBuf);
+    blog(LOG_INFO, "DLL PATH added: %ls", auxDllPathBuf);
+  }
   return TRUE;
 }
 #endif
