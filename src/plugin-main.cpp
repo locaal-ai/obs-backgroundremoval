@@ -20,6 +20,29 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 #include "plugin-macros.generated.h"
 
+#ifdef _WIN32
+#include <iostream>
+#include <windows.h>
+#include <tchar.h>
+BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpReserved)
+{
+  UNUSED_PARAMETER(lpReserved);
+  std::cout << "aaaaa" << std::endl;
+  if (dwReason == DLL_PROCESS_ATTACH) {
+    char myPathBuf[MAX_PATH];
+    GetModuleFileNameA(hInstDLL, myPathBuf, MAX_PATH);
+    std::string myPath = std::string(myPathBuf, std::strrchr(myPathBuf, '\\')) + "\\obs-backgroundremoval";
+
+    char envPath[MAX_PATH];
+    GetEnvironmentVariableA("PATH", envPath, MAX_PATH);
+    std::string newPath = myPath + ";" + envPath;
+    std::cout << newPath << std::endl;
+    SetEnvironmentVariableA("PATH", newPath.c_str());
+  }
+  return TRUE;
+}
+#endif
+
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 
