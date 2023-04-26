@@ -520,9 +520,17 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf, uint3
     gs_effect_set_texture(image, blurredTexture);
     gs_effect_set_float(xOffset, (i + 0.5f) / width);
     gs_effect_set_float(yOffset, (i + 0.5f) / height);
+
+    struct vec4 background;
+    vec4_zero(&background);
+    gs_clear(GS_CLEAR_COLOR, &background, 0.0f, 0);
+    gs_ortho(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height), -100.0f, 100.0f);
+    gs_blend_state_push();
+    gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
     while (gs_effect_loop(tf->kawaseBlurEffect, "Draw")) {
       gs_draw_sprite(blurredTexture, 0, width, height);
     }
+    gs_blend_state_pop();
     gs_texrender_end(tf->texrender);
     gs_copy_texture(blurredTexture, gs_texrender_get_texture(tf->texrender));
   }
