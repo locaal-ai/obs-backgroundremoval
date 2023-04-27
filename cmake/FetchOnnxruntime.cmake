@@ -36,13 +36,10 @@ elseif(OS_WINDOWS)
   foreach(lib_name IN LISTS Onnxruntime_LIB_NAMES)
     add_library(Onnxruntime::${lib_name} STATIC IMPORTED)
     set_target_properties(
-      Ort::${lib_name}
-      PROPERTIES
-        IMPORTED_LOCATION
-        ${onnxruntime_SOURCE_DIR}/lib/onnxruntime_${lib_name}.lib
-    )
+      Ort::${lib_name} PROPERTIES IMPORTED_LOCATION
+                                  ${onnxruntime_SOURCE_DIR}/lib/onnxruntime_${lib_name}.lib)
     set_target_properties(Ort::${lib_name} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                                              "${onnxruntime_SOURCE_DIR}/include")
+                                                      "${onnxruntime_SOURCE_DIR}/include")
     target_link_libraries(Ort INTERFACE Ort::${lib_name})
   endforeach()
 
@@ -52,13 +49,11 @@ elseif(OS_WINDOWS)
   foreach(lib_name IN LISTS Onnxruntime_EXTERNAL_LIB_NAMES)
     add_library(Onnxruntime::${lib_name} STATIC IMPORTED)
     set_target_properties(
-      Ort::${lib_name}
-      PROPERTIES
-        IMPORTED_LOCATION
-        ${onnxruntime_SOURCE_DIR}/lib/onnxruntime_${lib_name}.lib)
+      Ort::${lib_name} PROPERTIES IMPORTED_LOCATION
+                                  ${onnxruntime_SOURCE_DIR}/lib/onnxruntime_${lib_name}.lib)
     target_link_libraries(Onnxruntime INTERFACE Onnxruntime::${lib_name})
   endforeach()
-  
+
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Ort)
 
   install(FILES "${DirectML_LIB}" DESTINATION "${OBS_PLUGIN_DESTINATION}")
