@@ -27,22 +27,22 @@ elseif(OS_WINDOWS)
     URL "https://github.com/umireon/onnxruntime-static-win/releases/download/v${Onnxruntime_Static_Win_VERSION}/onnxruntime-static-win.zip"
     URL_HASH MD5=0c3a77fec6eeb65ee7966d5e60dd4932)
   FetchContent_MakeAvailable(Onnxruntime)
+  add_library(Ort INTERFACE)
   set(DirectML_LIB "${directml_SOURCE_DIR}/bin/DirectML.dll")
-  
   set(Onnxruntime_LIB_NAMES
       session;providers_shared;providers_dml;optimizer;providers;framework;graph;util;mlas;common;flatbuffers
   )
   foreach(lib_name IN LISTS Onnxruntime_LIB_NAMES)
     add_library(Onnxruntime::${lib_name} STATIC IMPORTED)
     set_target_properties(
-      Onnxruntime::${lib_name}
+      Ort::${lib_name}
       PROPERTIES
         IMPORTED_LOCATION
         ${onnxruntime_SOURCE_DIR}/lib/onnxruntime_${lib_name}.lib
     )
-    set_target_properties(Onnxruntime::${lib_name} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+    set_target_properties(Ort::${lib_name} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
                                                               "${onnxruntime_SOURCE_DIR}/include")
-    target_link_libraries(Onnxruntime INTERFACE Onnxruntime::${lib_name})
+    target_link_libraries(Ort INTERFACE Ort::${lib_name})
   endforeach()
 
   set(Onnxruntime_EXTERNAL_LIB_NAMES
@@ -51,14 +51,14 @@ elseif(OS_WINDOWS)
   foreach(lib_name IN LISTS Onnxruntime_EXTERNAL_LIB_NAMES)
     add_library(Onnxruntime::${lib_name} STATIC IMPORTED)
     set_target_properties(
-      Onnxruntime::${lib_name}
+      Ort::${lib_name}
       PROPERTIES
         IMPORTED_LOCATION
         ${onnxruntime_SOURCE_DIR}/lib/onnxruntime_${lib_name}.lib)
     target_link_libraries(Onnxruntime INTERFACE Onnxruntime::${lib_name})
   endforeach()
   
-  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Onnxruntime)
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Ort)
 
   install(FILES "${DirectML_LIB}" DESTINATION "${OBS_PLUGIN_DESTINATION}")
 elseif(OS_LINUX)
