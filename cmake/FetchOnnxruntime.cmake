@@ -34,7 +34,7 @@ elseif(OS_WINDOWS)
       session;providers_shared;providers_dml;optimizer;providers;framework;graph;util;mlas;common;flatbuffers
   )
   foreach(lib_name IN LISTS Onnxruntime_LIB_NAMES)
-    add_library(Onnxruntime::${lib_name} STATIC IMPORTED)
+    add_library(Ort::${lib_name} STATIC IMPORTED)
     set_target_properties(
       Ort::${lib_name}
       PROPERTIES
@@ -50,13 +50,13 @@ elseif(OS_WINDOWS)
       onnx;onnx_proto;libprotobuf-lite;re2;absl_throw_delegate;absl_hash;absl_city;absl_low_level_hash;absl_raw_hash_set
   )
   foreach(lib_name IN LISTS Onnxruntime_EXTERNAL_LIB_NAMES)
-    add_library(Onnxruntime::${lib_name} STATIC IMPORTED)
+    add_library(Ort::${lib_name} STATIC IMPORTED)
     set_target_properties(
       Ort::${lib_name}
       PROPERTIES
         IMPORTED_LOCATION
         ${onnxruntime_SOURCE_DIR}/lib/onnxruntime_${lib_name}.lib)
-    target_link_libraries(Onnxruntime INTERFACE Onnxruntime::${lib_name})
+    target_link_libraries(Ort INTERFACE Ort::${lib_name})
   endforeach()
   
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Ort)
