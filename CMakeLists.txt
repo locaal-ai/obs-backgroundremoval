@@ -40,7 +40,12 @@ if(USE_SYSTEM_ONNXRUNTIME)
     message(FATAL_ERROR "System ONNX Runtime is only supported on Linux!")
   endif()
 else()
-  include(cmake/FetchOnnxruntime.cmake)
+  if(OS_WINDOWS)
+    include(cmake/BuildMyOnnxruntime.cmake)
+    target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Onnxruntime)
+  else()
+    include(cmake/FetchOnnxruntime.cmake)
+  endif()
 endif()
 
 set(USE_SYSTEM_OPENCV
