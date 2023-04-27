@@ -1,7 +1,6 @@
 include(FetchContent)
 
 set(Onnxruntime_VERSION "1.14.1")
-set(Onnxruntime_Static_Win_VERSION "1.14.1-3")
 set(Onnxruntime_DirectML_VERSION "1.10.1")
 if(OS_MACOS)
   FetchContent_Declare(
@@ -24,8 +23,8 @@ if(OS_MACOS)
 elseif(OS_WINDOWS)
   FetchContent_Declare(
     Onnxruntime
-    URL "https://github.com/umireon/onnxruntime-static-win/releases/download/v${Onnxruntime_Static_Win_VERSION}/onnxruntime-static-win.zip"
-    URL_HASH MD5=0c3a77fec6eeb65ee7966d5e60dd4932)
+    URL "https://github.com/umireon/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}-3/onnxruntime-static-win.zip"
+    URL_HASH MD5=db27972f75ca435b6af553e9dbb3a806)
   FetchContent_MakeAvailable(Onnxruntime)
   set(DirectML_LIB "${directml_SOURCE_DIR}/bin/DirectML.dll")
 
