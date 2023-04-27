@@ -27,8 +27,9 @@ elseif(OS_WINDOWS)
     URL "https://github.com/umireon/onnxruntime-static-win/releases/download/v${Onnxruntime_Static_Win_VERSION}/onnxruntime-static-win.zip"
     URL_HASH MD5=0c3a77fec6eeb65ee7966d5e60dd4932)
   FetchContent_MakeAvailable(Onnxruntime)
-  add_library(Ort INTERFACE)
   set(DirectML_LIB "${directml_SOURCE_DIR}/bin/DirectML.dll")
+
+  add_library(Ort INTERFACE)
   set(Onnxruntime_LIB_NAMES
       session;providers_shared;providers_dml;optimizer;providers;framework;graph;util;mlas;common;flatbuffers
   )
@@ -46,7 +47,7 @@ elseif(OS_WINDOWS)
   endforeach()
 
   set(Onnxruntime_EXTERNAL_LIB_NAMES
-    onnx;onnx_proto;libprotobuf-lite;re2;absl_throw_delegate;absl_hash;absl_city;absl_low_level_hash;absl_raw_hash_set
+      onnx;onnx_proto;libprotobuf-lite;re2;absl_throw_delegate;absl_hash;absl_city;absl_low_level_hash;absl_raw_hash_set
   )
   foreach(lib_name IN LISTS Onnxruntime_EXTERNAL_LIB_NAMES)
     add_library(Onnxruntime::${lib_name} STATIC IMPORTED)
