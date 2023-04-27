@@ -1,6 +1,7 @@
 include(FetchContent)
 
 set(Onnxruntime_VERSION "1.14.1")
+set(Onnxruntime_Static_Win_VERSION "1.14.1-2")
 set(Onnxruntime_DirectML_VERSION "1.10.1")
 if(OS_MACOS)
   FetchContent_Declare(
@@ -23,20 +24,43 @@ if(OS_MACOS)
 elseif(OS_WINDOWS)
   FetchContent_Declare(
     Onnxruntime
-    URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/Microsoft.ML.OnnxRuntime.DirectML.${Onnxruntime_VERSION}.zip"
-    URL_HASH MD5=dfdb875999b119f2b85a1f4d75b3e131)
-  FetchContent_Declare(
-    DirectML
-    URL "https://globalcdn.nuget.org/packages/microsoft.ai.directml.${Onnxruntime_DirectML_VERSION}.nupkg"
-    URL_HASH MD5=982eefb0301bcb242b5aa883bb1aeee5)
-  FetchContent_MakeAvailable(Onnxruntime DirectML)
-  set(Onnxruntime_LIB "${onnxruntime_SOURCE_DIR}/runtimes/win-x64/native/onnxruntime.dll")
-  set(Onnxruntime_IMPLIB "${onnxruntime_SOURCE_DIR}/runtimes/win-x64/native/onnxruntime.lib")
-  set(DirectML_LIB "${directml_SOURCE_DIR}/bin/x64-win/DirectML.dll")
-  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${Onnxruntime_IMPLIB}")
-  target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
-                             PUBLIC "${onnxruntime_SOURCE_DIR}/build/native/include")
-  install(FILES "${Onnxruntime_LIB}" "${DirectML_LIB}" DESTINATION "${OBS_PLUGIN_DESTINATION}")
+    URL "https://github.com/umireon/onnxruntime-static-win/releases/download/v${Onnxruntime_Static_Win_VERSION}/onnxruntime-static-win.zip"
+    URL_HASH MD5=0c3a77fec6eeb65ee7966d5e60dd4932)
+  FetchContent_MakeAvailable(Onnxruntime)
+  set(DirectML_LIB "${directml_SOURCE_DIR}/bin/DirectML.dll")
+  
+  set(Onnxruntime_LIB_NAMES
+      session;providers_shared;providers_dml;optimizer;providers;framework;graph;util;mlas;common;flatbuffers
+  )
+  foreach(lib_name IN LISTS Onnxruntime_LIB_NAMES)
+    add_library(Onnxruntime::${lib_name} STATIC IMPORTED)
+    set_target_properties(
+      Onnxruntime::${lib_name}
+      PROPERTIES
+        IMPORTED_LOCATION
+        ${onnxruntime_SOURCE_DIR}/lib/onnxruntime_${lib_name}.lib
+    )
+    set_target_properties(Onnxruntime::${lib_name} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                              "${onnxruntime_SOURCE_DIR}/include")
+    target_link_libraries(Onnxruntime INTERFACE Onnxruntime::${lib_name})
+  endforeach()
+
+  set(Onnxruntime_EXTERNAL_LIB_NAMES
+    onnx;onnx_proto;libprotobuf-lite;re2;absl_throw_delegate;absl_hash;absl_city;absl_low_level_hash;absl_raw_hash_set
+  )
+  foreach(lib_name IN LISTS Onnxruntime_EXTERNAL_LIB_NAMES)
+    add_library(Onnxruntime::${lib_name} STATIC IMPORTED)
+    set_target_properties(
+      Onnxruntime::${lib_name}
+      PROPERTIES
+        IMPORTED_LOCATION
+        ${onnxruntime_SOURCE_DIR}/lib/onnxruntime_${lib_name}.lib)
+    target_link_libraries(Onnxruntime INTERFACE Onnxruntime::${lib_name})
+  endforeach()
+  
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Onnxruntime)
+
+  install(FILES "${DirectML_LIB}" DESTINATION "${OBS_PLUGIN_DESTINATION}")
 elseif(OS_LINUX)
   FetchContent_Declare(
     Onnxruntime
