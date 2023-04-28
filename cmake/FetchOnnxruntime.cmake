@@ -61,7 +61,7 @@ elseif(OS_WINDOWS)
 
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Ort)
 
-  install(IMPORTED_RUNTIME_ARTIFACTS Onnxruntime::DirectML DESTINATION "${OBS_PLUGIN_DESTINATION}")
+  install(IMPORTED_RUNTIME_ARTIFACTS Ort::DirectML DESTINATION "${OBS_PLUGIN_DESTINATION}")
 elseif(OS_LINUX)
   FetchContent_Declare(
     Onnxruntime
