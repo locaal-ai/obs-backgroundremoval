@@ -47,19 +47,16 @@ elseif(OS_WINDOWS)
   )
   foreach(lib_name IN LISTS Onnxruntime_EXTERNAL_LIB_NAMES)
     add_library(Ort::${lib_name} STATIC IMPORTED)
-    set_target_properties(
-      Ort::${lib_name}
-      PROPERTIES
-        IMPORTED_LOCATION
-        ${onnxruntime_SOURCE_DIR}/lib/${lib_name}.lib)
+    set_target_properties(Ort::${lib_name} PROPERTIES IMPORTED_LOCATION
+                                                      ${onnxruntime_SOURCE_DIR}/lib/${lib_name}.lib)
     target_link_libraries(Ort INTERFACE Ort::${lib_name})
   endforeach()
 
   add_library(Ort::DirectML SHARED IMPORTED)
   set_target_properties(Ort::DirectML PROPERTIES IMPORTED_LOCATION
-                                                         ${onnxruntime_SOURCE_DIR}/lib/DirectML.dll)
+                                                 ${onnxruntime_SOURCE_DIR}/lib/DirectML.dll)
   set_target_properties(Ort::DirectML PROPERTIES IMPORTED_IMPLIB
-                                                         ${onnxruntime_SOURCE_DIR}/lib/DirectML.lib)
+                                                 ${onnxruntime_SOURCE_DIR}/lib/DirectML.lib)
 
   target_link_libraries(Ort INTERFACE Ort::DirectML d3d12.lib dxgi.lib dxguid.lib)
 
