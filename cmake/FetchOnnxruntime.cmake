@@ -23,8 +23,8 @@ if(OS_MACOS)
 elseif(OS_WINDOWS)
   FetchContent_Declare(
     Onnxruntime
-    URL "https://github.com/umireon/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}-3/onnxruntime-static-win.zip"
-    URL_HASH MD5=db27972f75ca435b6af553e9dbb3a806)
+    URL "https://github.com/umireon/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}-4/onnxruntime-static-win.zip"
+    URL_HASH MD5=a8ae8f5707b651347a5bb8a1fac159bf)
   FetchContent_MakeAvailable(Onnxruntime)
   set(DirectML_LIB "${directml_SOURCE_DIR}/bin/DirectML.dll")
 
@@ -54,6 +54,8 @@ elseif(OS_WINDOWS)
         ${onnxruntime_SOURCE_DIR}/lib/${lib_name}.lib)
     target_link_libraries(Ort INTERFACE Ort::${lib_name})
   endforeach()
+
+  target_link_libraries(Ort INTERFACE d3d12.lib dxgi.lib dxguid.lib)
 
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Ort)
 
