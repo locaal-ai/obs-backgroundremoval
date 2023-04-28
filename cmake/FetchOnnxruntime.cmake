@@ -55,7 +55,7 @@ elseif(OS_WINDOWS)
     target_link_libraries(Ort INTERFACE Ort::${lib_name})
   endforeach()
 
-  target_link_libraries(Ort INTERFACE d3d12.lib dxgi.lib dxguid.lib)
+  target_link_libraries(Ort INTERFACE Ort::DirectML d3d12.lib dxgi.lib dxguid.lib)
 
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Ort)
 
