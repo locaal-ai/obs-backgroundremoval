@@ -54,9 +54,9 @@ elseif(OS_WINDOWS)
 
   add_library(Ort::DirectML SHARED IMPORTED)
   set_target_properties(Ort::DirectML PROPERTIES IMPORTED_LOCATION
-                                                 ${onnxruntime_SOURCE_DIR}/lib/DirectML.dll)
+                                                 ${onnxruntime_SOURCE_DIR}/bin/DirectML.dll)
   set_target_properties(Ort::DirectML PROPERTIES IMPORTED_IMPLIB
-                                                 ${onnxruntime_SOURCE_DIR}/lib/DirectML.lib)
+                                                 ${onnxruntime_SOURCE_DIR}/bin/DirectML.lib)
 
   target_link_libraries(Ort INTERFACE Ort::DirectML d3d12.lib dxgi.lib dxguid.lib)
 
