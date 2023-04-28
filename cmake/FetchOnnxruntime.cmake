@@ -23,20 +23,45 @@ if(OS_MACOS)
 elseif(OS_WINDOWS)
   FetchContent_Declare(
     Onnxruntime
-    URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/Microsoft.ML.OnnxRuntime.DirectML.${Onnxruntime_VERSION}.zip"
-    URL_HASH MD5=dfdb875999b119f2b85a1f4d75b3e131)
-  FetchContent_Declare(
-    DirectML
-    URL "https://globalcdn.nuget.org/packages/microsoft.ai.directml.${Onnxruntime_DirectML_VERSION}.nupkg"
-    URL_HASH MD5=982eefb0301bcb242b5aa883bb1aeee5)
-  FetchContent_MakeAvailable(Onnxruntime DirectML)
-  set(Onnxruntime_LIB "${onnxruntime_SOURCE_DIR}/runtimes/win-x64/native/onnxruntime.dll")
-  set(Onnxruntime_IMPLIB "${onnxruntime_SOURCE_DIR}/runtimes/win-x64/native/onnxruntime.lib")
-  set(DirectML_LIB "${directml_SOURCE_DIR}/bin/x64-win/DirectML.dll")
-  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${Onnxruntime_IMPLIB}")
-  target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
-                             PUBLIC "${onnxruntime_SOURCE_DIR}/build/native/include")
-  install(FILES "${Onnxruntime_LIB}" "${DirectML_LIB}" DESTINATION "${OBS_PLUGIN_DESTINATION}")
+    URL "https://github.com/umireon/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}-4/onnxruntime-static-win.zip"
+    URL_HASH MD5=a8ae8f5707b651347a5bb8a1fac159bf)
+  FetchContent_MakeAvailable(Onnxruntime)
+
+  add_library(Ort INTERFACE)
+  set(Onnxruntime_LIB_NAMES
+      session;providers_shared;providers_dml;optimizer;providers;framework;graph;util;mlas;common;flatbuffers
+  )
+  foreach(lib_name IN LISTS Onnxruntime_LIB_NAMES)
+    add_library(Ort::${lib_name} STATIC IMPORTED)
+    set_target_properties(
+      Ort::${lib_name} PROPERTIES IMPORTED_LOCATION
+                                  ${onnxruntime_SOURCE_DIR}/lib/onnxruntime_${lib_name}.lib)
+    set_target_properties(Ort::${lib_name} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                      ${onnxruntime_SOURCE_DIR}/include)
+    target_link_libraries(Ort INTERFACE Ort::${lib_name})
+  endforeach()
+
+  set(Onnxruntime_EXTERNAL_LIB_NAMES
+      onnx;onnx_proto;libprotobuf-lite;re2;absl_throw_delegate;absl_hash;absl_city;absl_low_level_hash;absl_raw_hash_set
+  )
+  foreach(lib_name IN LISTS Onnxruntime_EXTERNAL_LIB_NAMES)
+    add_library(Ort::${lib_name} STATIC IMPORTED)
+    set_target_properties(Ort::${lib_name} PROPERTIES IMPORTED_LOCATION
+                                                      ${onnxruntime_SOURCE_DIR}/lib/${lib_name}.lib)
+    target_link_libraries(Ort INTERFACE Ort::${lib_name})
+  endforeach()
+
+  add_library(Ort::DirectML SHARED IMPORTED)
+  set_target_properties(Ort::DirectML PROPERTIES IMPORTED_LOCATION
+                                                 ${onnxruntime_SOURCE_DIR}/bin/DirectML.dll)
+  set_target_properties(Ort::DirectML PROPERTIES IMPORTED_IMPLIB
+                                                 ${onnxruntime_SOURCE_DIR}/bin/DirectML.lib)
+
+  target_link_libraries(Ort INTERFACE Ort::DirectML d3d12.lib dxgi.lib dxguid.lib)
+
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Ort)
+
+  install(IMPORTED_RUNTIME_ARTIFACTS Ort::DirectML DESTINATION "${OBS_PLUGIN_DESTINATION}")
 elseif(OS_LINUX)
   FetchContent_Declare(
     Onnxruntime
