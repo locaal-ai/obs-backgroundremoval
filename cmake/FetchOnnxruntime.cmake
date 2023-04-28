@@ -26,7 +26,6 @@ elseif(OS_WINDOWS)
     URL "https://github.com/umireon/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}-4/onnxruntime-static-win.zip"
     URL_HASH MD5=a8ae8f5707b651347a5bb8a1fac159bf)
   FetchContent_MakeAvailable(Onnxruntime)
-  set(DirectML_LIB "${directml_SOURCE_DIR}/bin/DirectML.dll")
 
   add_library(Ort INTERFACE)
   set(Onnxruntime_LIB_NAMES
@@ -62,7 +61,7 @@ elseif(OS_WINDOWS)
 
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Ort)
 
-  install(FILES "${DirectML_LIB}" DESTINATION "${OBS_PLUGIN_DESTINATION}")
+  install(IMPORTED_RUNTIME_ARTIFACTS Onnxruntime::DirectML DESTINATION "${OBS_PLUGIN_DESTINATION}")
 elseif(OS_LINUX)
   FetchContent_Declare(
     Onnxruntime
