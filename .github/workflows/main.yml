@@ -118,7 +118,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ github.workspace }}/.ccache
-          key: macos-${{ matrix.arch }}-ccache-plugin-${{ hashFiles('CMakeLists.txt', 'cmake/*.cmake')}}
+          key: macos-${{ matrix.arch }}-ccache-plugin-${{ hashFiles('plugin/CMakeLists.txt', 'plugin/cmake/*.cmake') }}
 
       - name: Install Apple Developer Certificate
         if: ${{ github.event_name != 'pull_request' && steps.setup.outputs.haveCodesignIdent == 'true' }}
@@ -359,7 +359,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ github.workspace }}/.ccache
-          key: linux-${{ matrix.arch }}-ccache-plugin-${{ hashFiles('CMakeLists.txt', 'cmake/*.cmake')}}
+          key: linux-${{ matrix.arch }}-ccache-plugin-${{ hashFiles('plugin/CMakeLists.txt', 'plugin/cmake/*.cmake') }}
 
       - name: Build Plugin
         uses: ./plugin/.github/actions/build-plugin
@@ -454,7 +454,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ github.workspace }}/.ccache
-          key: windows-${{ matrix.arch }}-ccache-plugin-${{ hashFiles('CMakeLists.txt', 'cmake/*.cmake')}}
+          key: windows-${{ matrix.arch }}-ccache-plugin-${{ hashFiles('plugin/CMakeLists.txt', 'plugin/cmake/*.cmake') }}
 
       - name: Build Plugin
         uses: ./plugin/.github/actions/build-plugin
