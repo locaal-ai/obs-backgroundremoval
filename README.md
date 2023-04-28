@@ -74,23 +74,8 @@ Use the CI scripts again
 $ ./.github/scripts/build-linux.sh
 ```
 
-#### Archlinux (DEPRECATED: Need to revise this section)
-A `PKGBUILD` file is provided for making the plugin package
-```sh
-$ cd scripts
-$ makepkg -s
-```
-
-Building for Arch in Docker (host OS e.g. MacOSX):
-```sh
-$ docker pull archlinux:latest
-$ docker run -it -v $(pwd):/src archlinux:latest /bin/bash
-# pacman -Sy --needed --noconfirm sudo fakeroot binutils gcc make
-# useradd builduser -m
-# passwd -d builduser
-# printf 'builduser ALL=(ALL) ALL\n' | tee -a /etc/sudoers
-# sudo -u builduser bash -c 'cd /src/scripts && makepkg -s'
-```
+#### Arch Linux
+The community maintains AUR packages: https://aur.archlinux.org/packages/obs-backgroundremoval
 
 ### Windows
 
