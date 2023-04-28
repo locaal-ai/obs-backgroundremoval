@@ -22,6 +22,6 @@ sudo zypper install zsh cmake Mesa-libGL-devel \
   libpulse-devel libxkbcommon-devel
 </dev/null >.github/scripts/utils.zsh/check_linux
 CI=1 .github/scripts/build-linux.zsh --skip-deps
-cmake --install build_x86_64 --prefix /usr/local
+sudo cmake --install build_x86_64 --prefix /usr
 ```
 
