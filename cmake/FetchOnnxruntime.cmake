@@ -55,6 +55,12 @@ elseif(OS_WINDOWS)
     target_link_libraries(Ort INTERFACE Ort::${lib_name})
   endforeach()
 
+  add_library(Onnxruntime::DirectML SHARED IMPORTED)
+  set_target_properties(Onnxruntime::DirectML PROPERTIES IMPORTED_LOCATION
+                                                         ${onnxruntime_SOURCE_DIR}/lib/DirectML.dll)
+  set_target_properties(Onnxruntime::DirectML PROPERTIES IMPORTED_IMPLIB
+                                                         ${onnxruntime_SOURCE_DIR}/lib/DirectML.lib)
+
   target_link_libraries(Ort INTERFACE Ort::DirectML d3d12.lib dxgi.lib dxguid.lib)
 
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Ort)
