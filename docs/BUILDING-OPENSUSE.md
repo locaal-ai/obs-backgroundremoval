@@ -1,8 +1,10 @@
 ## Building on openSUSE
 
-NOTE: This instruction is unofficial and we will appreciate any pull requests for this instructions.
+NOTE: These instructions are unofficial and we will appreciate any pull requests to improve them.
 
-### Installing OBS
+Please follow the steps to install obs-backgrounremoval plugin on OpenSUSE.
+
+### Install OBS
 
 https://obsproject.com/wiki/unofficial-linux-builds#opensuse
 
