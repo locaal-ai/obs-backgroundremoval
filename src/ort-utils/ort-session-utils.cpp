@@ -152,7 +152,7 @@ bool runFilterModelInference(filter_data *tf, const cv::Mat &imageBGRA, cv::Mat 
                                  tf->outputTensor);
 
   // Get output
-  // Map network output mask to cv::Mat
+  // Map network output to cv::Mat
   cv::Mat outputImage = tf->model->getNetworkOutput(tf->outputDims, tf->outputTensorValues);
 
   // Assign output to input in some models that have temporal information
@@ -161,6 +161,7 @@ bool runFilterModelInference(filter_data *tf, const cv::Mat &imageBGRA, cv::Mat 
   // Post-process output
   tf->model->postprocessOutput(outputImage);
 
+  // Convert to CV_8U
   outputImage.convertTo(output, CV_8U);
 
   return true;

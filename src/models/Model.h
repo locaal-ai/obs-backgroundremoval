@@ -15,7 +15,10 @@ template<typename T> T vectorProduct(const std::vector<T> &v)
 {
   T product = 1;
   for (auto &i : v) {
-    product *= i;
+    // turn 0 or -1, which are usually used as "None" (meaning any size), to 1s
+    if (i > 0) {
+      product *= i;
+    }
   }
   return product;
 }
@@ -34,15 +37,33 @@ static void hwc_to_chw(cv::InputArray src, cv::OutputArray dst)
   cv::hconcat(channels, dst);
 }
 
+/**
+* Convert a CHW Mat to HWC
+* Assume the input Mat is a 3D tensor of shape (C, H, W), but the Mat header has
+* the correct shape (H, W, C). This function will swap the channels to make it
+* (H, W, C) on the data level.
+* @param src Input Mat, assume data is in CHW format, type is float32
+* @param dst Output Mat, data is in HWC format, type is float32
+*/
 static void chw_to_hwc_32f(cv::InputArray src, cv::OutputArray dst) {
-  const int channels = src.size[0];
-  const int height = src.size[1];
-  const int width = src.size[2];
+  const cv::Mat srcMat = src.getMat();
+  const int channels = srcMat.channels();
+  const int height = srcMat.rows;
+  const int width = srcMat.cols;
+  const int dtype = srcMat.type();
+  assert(dtype == CV_32F);
+  const int channelStride = height * width;
+
+  // Flatten to a vector of channels
+  cv::Mat flatMat = srcMat.reshape(1, 1);
 
   std::vector<cv::Mat> channelsVec(channels);
-  const int stride = height * width;
+  // Split the vector into channels
   for (int i = 0; i < channels; i++) {
-    channelsVec[i] = cv::Mat(height, width, CV_32FC1, src.getMat().ptr<float>(0) + i * stride);
+    channelsVec[i] = cv::Mat(height,
+                             width,
+                             CV_MAKE_TYPE(dtype, 1),
+                             flatMat.ptr<float>(0) + i * channelStride);
   }
 
   cv::merge(channelsVec, dst);
@@ -125,10 +146,24 @@ class Model {
     const auto outputTensorInfo = outputTypeInfo.GetTensorTypeAndShapeInfo();
     outputDims[0] = outputTensorInfo.GetShape();
 
+    // fix any -1 values in outputDims to 1
+    for (auto &i : outputDims[0]) {
+      if (i == -1) {
+        i = 1;
+      }
+    }
+
     // Get input shape
     const Ort::TypeInfo inputTypeInfo = session->GetInputTypeInfo(0);
     const auto inputTensorInfo = inputTypeInfo.GetTensorTypeAndShapeInfo();
     inputDims[0] = inputTensorInfo.GetShape();
+
+    // fix any -1 values in inputDims to 1
+    for (auto &i : inputDims[0]) {
+      if (i == -1) {
+        i = 1;
+      }
+    }
 
     if (inputDims[0].size() < 3 || outputDims[0].size() < 3) {
       blog(LOG_ERROR, "Input or output tensor dims are < 3. input = %d, output = %d",
@@ -191,6 +226,11 @@ class Model {
     preprocessedImage = resizedImage / 255.0;
   }
 
+  virtual void postprocessOutput(cv::Mat &output)
+  {
+    output = output * 255.0;  // Convert to 0-255 range
+  }
+
   virtual void loadInputToTensor(const cv::Mat &preprocessedImage, uint32_t inputWidth,
                                  uint32_t inputHeight,
                                  std::vector<std::vector<float>> &inputTensorValues)
@@ -213,10 +253,6 @@ class Model {
   virtual void assignOutputToInput(std::vector<std::vector<float>> &,
                                    std::vector<std::vector<float>> &)
   {
-  }
-
-  virtual void postprocessOutput(cv::Mat &output) {
-    output = output * 255.0;  // Convert to 0-255 range
   }
 
   virtual void runNetworkInference(const std::unique_ptr<Ort::Session> &session,
@@ -257,8 +293,9 @@ class ModelBCHW : public Model {
     hwc_to_chw(resizedImage, preprocessedImage);
   }
 
-  virtual void postprocessOutput(cv::Mat &output) {
-    chw_to_hwc(output, output);
+  virtual void postprocessOutput(cv::Mat &output)
+  {
+    chw_to_hwc_32f(output, output);
     output = output * 255.0;  // Convert to 0-255 range
   }
 

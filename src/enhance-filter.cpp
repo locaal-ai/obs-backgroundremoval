@@ -29,6 +29,7 @@
 #include "consts.h"
 #include "obs-utils/obs-utils.h"
 #include "ort-utils/ort-session-utils.h"
+#include "models/ModelTBEFN.h"
 
 struct enhance_filter : public filter_data {
   cv::Mat outputBGRA;
@@ -73,7 +74,7 @@ static void filter_update(void *data, obs_data_t *settings)
 
   if (tf->modelSelection.empty()) {
     tf->modelSelection = MODEL_ENHANCE;
-    tf->model.reset(new ModelBCHW);
+    tf->model.reset(new ModelTBEFN);
     createOrtSession(tf);
   }
 
@@ -136,6 +137,7 @@ static void filter_video_tick(void *data, float seconds)
     return;
   }
 
+  // Get input image from source rendering pipeline
   cv::Mat imageBGRA;
   {
     std::unique_lock<std::mutex> lock(tf->inputBGRALock, std::try_to_lock);
@@ -150,6 +152,7 @@ static void filter_video_tick(void *data, float seconds)
     return;
   }
 
+  // Put output image back to source rendering pipeline
   {
     std::unique_lock<std::mutex> lock(tf->outputLock, std::try_to_lock);
     if (!lock.owns_lock()) {
@@ -164,16 +167,21 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   UNUSED_PARAMETER(_effect);
 
   struct enhance_filter *tf = reinterpret_cast<enhance_filter *>(data);
+
+  // Get input from source
   uint32_t width, height;
   if (!getRGBAFromStageSurface(tf, width, height)) {
     obs_source_skip_video_filter(tf->source);
     return;
   }
 
+  // Engage filter
   if (!obs_source_process_filter_begin(tf->source, GS_RGBA, OBS_ALLOW_DIRECT_RENDERING)) {
     obs_source_skip_video_filter(tf->source);
     return;
   }
+
+  // Get output from neural network into texture
   gs_texture_t *outputTexture = nullptr;
   {
     std::lock_guard<std::mutex> lock(tf->outputLock);
@@ -186,6 +194,7 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
     }
   }
 
+  // Render texture
   gs_blend_state_push();
   gs_reset_blend_state();
 
