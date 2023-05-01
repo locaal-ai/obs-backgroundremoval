@@ -1,18 +1,8 @@
 #include <obs-module.h>
 
 #include <onnxruntime_cxx_api.h>
-#include <cpu_provider_factory.h>
-
-#if defined(__APPLE__)
-#include <coreml_provider_factory.h>
-#endif
-
-#ifdef __linux__
-#include <tensorrt_provider_factory.h>
-#endif
 
 #ifdef _WIN32
-#include <dml_provider_factory.h>
 #include <wchar.h>
 #endif // _WIN32
 
@@ -31,65 +21,25 @@
 #include "models/ModelSelfie.h"
 #include "models/ModelRVM.h"
 #include "models/ModelPPHumanSeg.h"
+#include "FilterData.h"
+#include "ort-utils/ort-session-utils.h"
+#include "obs-utils/obs-utils.h"
+#include "consts.h"
 
-const char *MODEL_SINET = "models/SINet_Softmax_simple.onnx";
-const char *MODEL_MEDIAPIPE = "models/mediapipe.onnx";
-const char *MODEL_SELFIE = "models/selfie_segmentation.onnx";
-const char *MODEL_RVM = "models/rvm_mobilenetv3_fp32.onnx";
-const char *MODEL_PPHUMANSEG = "models/pphumanseg_fp32.onnx";
-
-const char *USEGPU_CPU = "cpu";
-const char *USEGPU_DML = "dml";
-const char *USEGPU_CUDA = "cuda";
-const char *USEGPU_TENSORRT = "tensorrt";
-const char *USEGPU_COREML = "coreml";
-
-const char *EFFECT_PATH = "effects/mask_alpha_filter.effect";
-const char *KAWASE_BLUR_EFFECT_PATH = "effects/kawase_blur.effect";
-
-struct background_removal_filter {
-  std::unique_ptr<Ort::Session> session;
-  std::unique_ptr<Ort::Env> env;
-  std::vector<Ort::AllocatedStringPtr> inputNames;
-  std::vector<Ort::AllocatedStringPtr> outputNames;
-  std::vector<Ort::Value> inputTensor;
-  std::vector<Ort::Value> outputTensor;
-  std::vector<std::vector<int64_t>> inputDims;
-  std::vector<std::vector<int64_t>> outputDims;
-  std::vector<std::vector<float>> outputTensorValues;
-  std::vector<std::vector<float>> inputTensorValues;
+struct background_removal_filter : public filter_data {
   float threshold = 0.5f;
   cv::Scalar backgroundColor{0, 0, 0, 0};
   float contourFilter = 0.05f;
   float smoothContour = 0.5f;
   float feather = 0.0f;
-  std::string useGPU;
-  std::string modelSelection;
-  std::unique_ptr<Model> model;
-
-  obs_source_t *source;
-  gs_texrender_t *texrender;
-  gs_stagesurf_t *stagesurface;
-  gs_effect_t *effect;
-  gs_effect_t *kawaseBlurEffect;
 
   cv::Mat backgroundMask;
   int maskEveryXFrames = 1;
   int maskEveryXFramesCount = 0;
   int64_t blurBackground = 0;
 
-  cv::Mat inputBGRA;
-
-  bool isDisabled;
-
-  std::mutex inputBGRALock;
-  std::mutex outputBGRALock;
-
-#if _WIN32
-  const wchar_t *modelFilepath = nullptr;
-#else
-  const char *modelFilepath = nullptr;
-#endif
+  gs_effect_t *effect;
+  gs_effect_t *kawaseBlurEffect;
 };
 
 static const char *filter_getname(void *unused)
@@ -171,98 +121,6 @@ static void filter_defaults(obs_data_t *settings)
   obs_data_set_default_int(settings, "blur_background", 0);
 }
 
-static void createOrtSession(struct background_removal_filter *tf)
-{
-  if (tf->model.get() == nullptr) {
-    blog(LOG_ERROR, "Model object is not initialized");
-    return;
-  }
-
-  Ort::SessionOptions sessionOptions;
-
-  sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
-  if (tf->useGPU != USEGPU_CPU) {
-    sessionOptions.DisableMemPattern();
-    sessionOptions.SetExecutionMode(ExecutionMode::ORT_SEQUENTIAL);
-  }
-
-  char *modelFilepath_rawPtr = obs_module_file(tf->modelSelection.c_str());
-
-  if (modelFilepath_rawPtr == nullptr) {
-    blog(LOG_ERROR, "Unable to get model filename %s from plugin.", tf->modelSelection.c_str());
-    return;
-  }
-
-  std::string modelFilepath_s(modelFilepath_rawPtr);
-  bfree(modelFilepath_rawPtr);
-
-#if _WIN32
-  std::wstring modelFilepath_ws(modelFilepath_s.size(), L' ');
-  std::copy(modelFilepath_s.begin(), modelFilepath_s.end(), modelFilepath_ws.begin());
-  tf->modelFilepath = modelFilepath_ws.c_str();
-#else
-  tf->modelFilepath = modelFilepath_s.c_str();
-#endif
-
-  try {
-#ifdef __linux__
-    if (tf->useGPU == USEGPU_TENSORRT) {
-      Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_Tensorrt(sessionOptions, 0));
-    }
-#endif
-#ifdef _WIN32
-    if (tf->useGPU == USEGPU_DML) {
-      auto &api = Ort::GetApi();
-      OrtDmlApi *dmlApi = nullptr;
-      Ort::ThrowOnError(
-        api.GetExecutionProviderApi("DML", ORT_API_VERSION, (const void **)&dmlApi));
-      Ort::ThrowOnError(dmlApi->SessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
-    }
-#endif
-#if defined(__APPLE__)
-    if (tf->useGPU == USEGPU_COREML) {
-      uint32_t coreml_flags = 0;
-      coreml_flags |= COREML_FLAG_ENABLE_ON_SUBGRAPH;
-      Ort::ThrowOnError(
-        OrtSessionOptionsAppendExecutionProvider_CoreML(sessionOptions, coreml_flags));
-    }
-#endif
-    tf->session.reset(new Ort::Session(*tf->env, tf->modelFilepath, sessionOptions));
-  } catch (const std::exception &e) {
-    blog(LOG_ERROR, "%s", e.what());
-    return;
-  }
-
-  Ort::AllocatorWithDefaultOptions allocator;
-
-  tf->model->populateInputOutputNames(tf->session, tf->inputNames, tf->outputNames);
-
-  if (!tf->model->populateInputOutputShapes(tf->session, tf->inputDims, tf->outputDims)) {
-    blog(LOG_ERROR, "Unable to get model input and output shapes");
-    return;
-  }
-
-  for (size_t i = 0; i < tf->inputNames.size(); i++) {
-    blog(LOG_INFO, "Model %s input %d: name %s shape (%d dim) %d x %d x %d x %d",
-         tf->modelSelection.c_str(), (int)i, tf->inputNames[i].get(), (int)tf->inputDims[i].size(),
-         (int)tf->inputDims[i][0],
-         ((int)tf->inputDims[i].size() > 1) ? (int)tf->inputDims[i][1] : 0,
-         ((int)tf->inputDims[i].size() > 2) ? (int)tf->inputDims[i][2] : 0,
-         ((int)tf->inputDims[i].size() > 3) ? (int)tf->inputDims[i][3] : 0);
-  }
-  for (size_t i = 0; i < tf->outputNames.size(); i++) {
-    blog(LOG_INFO, "Model %s output %d: name %s shape (%d dim) %d x %d x %d x %d",
-         tf->modelSelection.c_str(), (int)i, tf->outputNames[i].get(),
-         (int)tf->outputDims[i].size(), (int)tf->outputDims[i][0],
-         ((int)tf->outputDims[i].size() > 1) ? (int)tf->outputDims[i][1] : 0,
-         ((int)tf->outputDims[i].size() > 2) ? (int)tf->outputDims[i][2] : 0,
-         ((int)tf->outputDims[i].size() > 3) ? (int)tf->outputDims[i][3] : 0);
-  }
-
-  // Allocate buffers
-  tf->model->allocateTensorBuffers(tf->inputDims, tf->outputDims, tf->outputTensorValues,
-                                   tf->inputTensorValues, tf->inputTensor, tf->outputTensor);
-}
 
 static void filter_update(void *data, obs_data_t *settings)
 {
@@ -361,6 +219,7 @@ static void filter_destroy(void *data)
       gs_stagesurface_destroy(tf->stagesurface);
     }
     gs_effect_destroy(tf->effect);
+    gs_effect_destroy(tf->kawaseBlurEffect);
     obs_leave_graphics();
     tf->~background_removal_filter();
     bfree(tf);
@@ -370,42 +229,10 @@ static void filter_destroy(void *data)
 static void processImageForBackground(struct background_removal_filter *tf,
                                       const cv::Mat &imageBGRA, cv::Mat &backgroundMask)
 {
-  if (tf->session.get() == nullptr) {
-    // Onnx runtime session is not initialized. Problem in initialization
+  cv::Mat outputImage;
+  if (!runFilterModelInference(tf, imageBGRA, outputImage)) {
     return;
   }
-  // To RGB
-  cv::Mat imageRGB;
-  cv::cvtColor(imageBGRA, imageRGB, cv::COLOR_BGRA2RGB);
-
-  // Resize to network input size
-  uint32_t inputWidth, inputHeight;
-  tf->model->getNetworkInputSize(tf->inputDims, inputWidth, inputHeight);
-
-  cv::Mat resizedImageRGB;
-  cv::resize(imageRGB, resizedImageRGB, cv::Size(inputWidth, inputHeight));
-
-  // Prepare input to nework
-  cv::Mat resizedImage, preprocessedImage;
-  resizedImageRGB.convertTo(resizedImage, CV_32F);
-
-  tf->model->prepareInputToNetwork(resizedImage, preprocessedImage);
-
-  tf->model->loadInputToTensor(preprocessedImage, inputWidth, inputHeight, tf->inputTensorValues);
-
-  // Run network inference
-  tf->model->runNetworkInference(tf->session, tf->inputNames, tf->outputNames, tf->inputTensor,
-                                 tf->outputTensor);
-
-  // Get output
-  // Map network output mask to cv::Mat
-  cv::Mat outputImage = tf->model->getNetworkOutput(tf->outputDims, tf->outputTensorValues);
-
-  // Assign output to input in some models that have temporal information
-  tf->model->assignOutputToInput(tf->outputTensorValues, tf->inputTensorValues);
-
-  // Post-process output
-  tf->model->postprocessOutput(outputImage);
 
   if (tf->modelSelection == MODEL_SINET || tf->modelSelection == MODEL_MEDIAPIPE) {
     backgroundMask = outputImage > tf->threshold;
@@ -554,60 +381,11 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
 
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
-  if (!obs_source_enabled(tf->source)) {
+  uint32_t width, height;
+  if (!getRGBAFromStageSurface(tf, width, height)) {
     obs_source_skip_video_filter(tf->source);
     return;
   }
-
-  obs_source_t *target = obs_filter_get_target(tf->source);
-  if (!target) {
-    obs_source_skip_video_filter(tf->source);
-    return;
-  }
-  const uint32_t width = obs_source_get_base_width(target);
-  const uint32_t height = obs_source_get_base_height(target);
-  if (width == 0 || height == 0) {
-    obs_source_skip_video_filter(tf->source);
-    return;
-  }
-  gs_texrender_reset(tf->texrender);
-  if (!gs_texrender_begin(tf->texrender, width, height)) {
-    obs_source_skip_video_filter(tf->source);
-    return;
-  }
-  struct vec4 background;
-  vec4_zero(&background);
-  gs_clear(GS_CLEAR_COLOR, &background, 0.0f, 0);
-  gs_ortho(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height), -100.0f, 100.0f);
-  gs_blend_state_push();
-  gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
-  obs_source_video_render(target);
-  gs_blend_state_pop();
-  gs_texrender_end(tf->texrender);
-
-  if (tf->stagesurface) {
-    uint32_t stagesurf_width = gs_stagesurface_get_width(tf->stagesurface);
-    uint32_t stagesurf_height = gs_stagesurface_get_height(tf->stagesurface);
-    if (stagesurf_width != width || stagesurf_height != height) {
-      gs_stagesurface_destroy(tf->stagesurface);
-      tf->stagesurface = nullptr;
-    }
-  }
-  if (!tf->stagesurface) {
-    tf->stagesurface = gs_stagesurface_create(width, height, GS_BGRA);
-  }
-  gs_stage_texture(tf->stagesurface, gs_texrender_get_texture(tf->texrender));
-  uint8_t *video_data;
-  uint32_t linesize;
-  if (!gs_stagesurface_map(tf->stagesurface, &video_data, &linesize)) {
-    obs_source_skip_video_filter(tf->source);
-    return;
-  }
-  {
-    std::lock_guard<std::mutex> lock(tf->inputBGRALock);
-    tf->inputBGRA = cv::Mat(height, width, CV_8UC4, video_data, linesize);
-  }
-  gs_stagesurface_unmap(tf->stagesurface);
 
   // Output the masked image
 
@@ -626,7 +404,7 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
 
   gs_texture_t *alphaTexture = nullptr;
   {
-    std::lock_guard<std::mutex> lock(tf->outputBGRALock);
+    std::lock_guard<std::mutex> lock(tf->outputLock);
     alphaTexture = gs_texture_create(tf->backgroundMask.cols, tf->backgroundMask.rows, GS_R8, 1,
                                      (const uint8_t **)&tf->backgroundMask.data, 0);
     if (!alphaTexture) {

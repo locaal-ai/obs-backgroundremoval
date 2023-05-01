@@ -29,10 +29,12 @@ MODULE_EXPORT const char *obs_module_description(void)
 }
 
 extern struct obs_source_info background_removal_filter_info;
+extern struct obs_source_info enhance_filter_info;
 
 bool obs_module_load(void)
 {
   obs_register_source(&background_removal_filter_info);
+  obs_register_source(&enhance_filter_info);
   blog(LOG_INFO, "plugin loaded successfully (version %s)", PLUGIN_VERSION);
   return true;
 }

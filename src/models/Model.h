@@ -2,21 +2,22 @@
 #define MODEL_H
 
 #include <onnxruntime_cxx_api.h>
-#include <cpu_provider_factory.h>
 
-#ifdef WITH_CUDA
-#include <cuda_provider_factory.h>
-#endif
 #ifdef _WIN32
-#ifndef WITH_CUDA
-#include <dml_provider_factory.h>
-#endif
 #include <wchar.h>
 #endif
 
+#include <opencv2/imgproc.hpp>
+#include <algorithm>
+
+
 template<typename T> T vectorProduct(const std::vector<T> &v)
 {
-  return accumulate(v.begin(), v.end(), (T)1, std::multiplies<T>());
+  T product = 1;
+  for (auto &i : v) {
+    product *= i;
+  }
+  return product;
 }
 
 static void hwc_to_chw(cv::InputArray src, cv::OutputArray dst)
@@ -33,9 +34,32 @@ static void hwc_to_chw(cv::InputArray src, cv::OutputArray dst)
   cv::hconcat(channels, dst);
 }
 
+static void chw_to_hwc_32f(cv::InputArray src, cv::OutputArray dst) {
+  const int channels = src.size[0];
+  const int height = src.size[1];
+  const int width = src.size[2];
+
+  std::vector<cv::Mat> channelsVec(channels);
+  const int stride = height * width;
+  for (int i = 0; i < channels; i++) {
+    channelsVec[i] = cv::Mat(height, width, CV_32FC1, src.getMat().ptr<float>(0) + i * stride);
+  }
+
+  cv::merge(channelsVec, dst);
+}
+
 /**
   * @brief Base class for all models
   *
+  * Assume that all models have one input and one output.
+  * The input is a 4D tensor of shape (1, H, W, C) where H and W are the height and width of
+  * the input image.
+  * The range of the input is [0, 255]. The input is in BGR format.
+  * The input is a 32-bit floating point tensor.
+  * This base model will convert the input to [0,1] and then the output to [0,255].
+  *
+  * Inheriting classes may override the methods for loading the model and running inference
+  * with different pre-post processing behavior (like BCHW instead of BHWC or different ranges).
 */
 class Model {
   private:
@@ -181,7 +205,7 @@ class Model {
     // BHWC
     uint32_t outputWidth = (int)outputDims[0].at(2);
     uint32_t outputHeight = (int)outputDims[0].at(1);
-    int32_t outputChannels = CV_32FC1;
+    int32_t outputChannels = CV_MAKE_TYPE(CV_32F, (int)outputDims[0].at(3));
 
     return cv::Mat(outputHeight, outputWidth, outputChannels, outputTensorValues[0].data());
   }
@@ -191,7 +215,9 @@ class Model {
   {
   }
 
-  virtual void postprocessOutput(cv::Mat &) {}
+  virtual void postprocessOutput(cv::Mat &output) {
+    output = output * 255.0;  // Convert to 0-255 range
+  }
 
   virtual void runNetworkInference(const std::unique_ptr<Ort::Session> &session,
                                    const std::vector<Ort::AllocatedStringPtr> &inputNames,
@@ -225,6 +251,17 @@ class ModelBCHW : public Model {
   ModelBCHW(/* args */) {}
   ~ModelBCHW() {}
 
+  virtual void prepareInputToNetwork(cv::Mat &resizedImage, cv::Mat &preprocessedImage)
+  {
+    resizedImage = resizedImage / 255.0;
+    hwc_to_chw(resizedImage, preprocessedImage);
+  }
+
+  virtual void postprocessOutput(cv::Mat &output) {
+    chw_to_hwc(output, output);
+    output = output * 255.0;  // Convert to 0-255 range
+  }
+
   virtual void getNetworkInputSize(const std::vector<std::vector<int64_t>> &inputDims,
                                    uint32_t &inputWidth, uint32_t &inputHeight)
   {
@@ -239,7 +276,7 @@ class ModelBCHW : public Model {
     // BCHW
     uint32_t outputWidth = (int)outputDims[0].at(3);
     uint32_t outputHeight = (int)outputDims[0].at(2);
-    int32_t outputChannels = CV_32FC1;
+    int32_t outputChannels = CV_MAKE_TYPE(CV_32F, (int)outputDims[0].at(1));
 
     return cv::Mat(outputHeight, outputWidth, outputChannels, outputTensorValues[0].data());
   }
