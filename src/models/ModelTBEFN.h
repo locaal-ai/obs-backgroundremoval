@@ -8,7 +8,7 @@ class ModelTBEFN : public ModelBCHW {
   virtual void postprocessOutput(cv::Mat &output)
   {
     // output is already BHWC ...
-    output = output * 255.0;  // Convert to 0-255 range
+    output = output * 255.0; // Convert to 0-255 range
   }
 
   virtual cv::Mat getNetworkOutput(const std::vector<std::vector<int64_t>> &outputDims,
@@ -21,7 +21,6 @@ class ModelTBEFN : public ModelBCHW {
 
     return cv::Mat(outputHeight, outputWidth, outputChannels, outputTensorValues[0].data());
   }
-
 };
 
 #endif /* MODELTBEFN_H */

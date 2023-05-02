@@ -10,7 +10,6 @@
 #include <opencv2/imgproc.hpp>
 #include <algorithm>
 
-
 template<typename T> T vectorProduct(const std::vector<T> &v)
 {
   T product = 1;
@@ -45,7 +44,8 @@ static void hwc_to_chw(cv::InputArray src, cv::OutputArray dst)
 * @param src Input Mat, assume data is in CHW format, type is float32
 * @param dst Output Mat, data is in HWC format, type is float32
 */
-static void chw_to_hwc_32f(cv::InputArray src, cv::OutputArray dst) {
+static void chw_to_hwc_32f(cv::InputArray src, cv::OutputArray dst)
+{
   const cv::Mat srcMat = src.getMat();
   const int channels = srcMat.channels();
   const int height = srcMat.rows;
@@ -60,10 +60,8 @@ static void chw_to_hwc_32f(cv::InputArray src, cv::OutputArray dst) {
   std::vector<cv::Mat> channelsVec(channels);
   // Split the vector into channels
   for (int i = 0; i < channels; i++) {
-    channelsVec[i] = cv::Mat(height,
-                             width,
-                             CV_MAKE_TYPE(dtype, 1),
-                             flatMat.ptr<float>(0) + i * channelStride);
+    channelsVec[i] =
+      cv::Mat(height, width, CV_MAKE_TYPE(dtype, 1), flatMat.ptr<float>(0) + i * channelStride);
   }
 
   cv::merge(channelsVec, dst);
@@ -228,7 +226,7 @@ class Model {
 
   virtual void postprocessOutput(cv::Mat &output)
   {
-    output = output * 255.0;  // Convert to 0-255 range
+    output = output * 255.0; // Convert to 0-255 range
   }
 
   virtual void loadInputToTensor(const cv::Mat &preprocessedImage, uint32_t inputWidth,
@@ -296,7 +294,7 @@ class ModelBCHW : public Model {
   virtual void postprocessOutput(cv::Mat &output)
   {
     chw_to_hwc_32f(output, output);
-    output = output * 255.0;  // Convert to 0-255 range
+    output = output * 255.0; // Convert to 0-255 range
   }
 
   virtual void getNetworkInputSize(const std::vector<std::vector<int64_t>> &inputDims,

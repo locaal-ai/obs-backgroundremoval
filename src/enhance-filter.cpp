@@ -27,7 +27,6 @@ struct enhance_filter : public filter_data {
   float blendFactor;
 };
 
-
 static const char *filter_getname(void *unused)
 {
   UNUSED_PARAMETER(unused);
@@ -200,7 +199,6 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
 
   gs_effect_set_texture(blendimage, outputTexture);
   gs_effect_set_float(blendFactor, tf->blendFactor);
-
 
   // Render texture
   gs_blend_state_push();

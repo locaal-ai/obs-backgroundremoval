@@ -19,7 +19,6 @@
 #include "ort-session-utils.h"
 #include "consts.h"
 
-
 void createOrtSession(filter_data *tf)
 {
   if (tf->model.get() == nullptr) {
@@ -116,7 +115,6 @@ void createOrtSession(filter_data *tf)
                                    tf->inputTensorValues, tf->inputTensor, tf->outputTensor);
 }
 
-
 bool runFilterModelInference(filter_data *tf, const cv::Mat &imageBGRA, cv::Mat &output)
 {
   if (tf->session.get() == nullptr) {
@@ -166,4 +164,3 @@ bool runFilterModelInference(filter_data *tf, const cv::Mat &imageBGRA, cv::Mat 
 
   return true;
 }
-

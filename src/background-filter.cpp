@@ -123,7 +123,6 @@ static void filter_defaults(obs_data_t *settings)
   obs_data_set_default_int(settings, "numThreads", 1);
 }
 
-
 static void filter_update(void *data, obs_data_t *settings)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
@@ -141,11 +140,8 @@ static void filter_update(void *data, obs_data_t *settings)
   const std::string newModel = obs_data_get_string(settings, "model_select");
   const uint32_t newNumThreads = (uint32_t)obs_data_get_int(settings, "numThreads");
 
-  if (tf->modelSelection.empty() ||
-      tf->modelSelection != newModel ||
-      tf->useGPU != newUseGpu ||
-      tf->numThreads != newNumThreads)
-  {
+  if (tf->modelSelection.empty() || tf->modelSelection != newModel || tf->useGPU != newUseGpu ||
+      tf->numThreads != newNumThreads) {
     // Re-initialize model if it's not already the selected one or switching inference device
     tf->modelSelection = newModel;
     tf->useGPU = newUseGpu;

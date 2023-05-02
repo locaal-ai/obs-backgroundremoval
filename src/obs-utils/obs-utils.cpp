@@ -11,7 +11,8 @@
   * @return true  if successful
   * @return false if unsuccessful
 */
-bool getRGBAFromStageSurface(filter_data* tf, uint32_t& width, uint32_t& height) {
+bool getRGBAFromStageSurface(filter_data *tf, uint32_t &width, uint32_t &height)
+{
 
   if (!obs_source_enabled(tf->source)) {
     return false;
