@@ -97,6 +97,7 @@ static obs_properties_t *filter_properties(void *data)
 
   obs_properties_add_int_slider(props, "blur_background",
                                 obs_module_text("BlurBackgroundFactor0NoBlurUseColor"), 0, 20, 1);
+  obs_properties_add_int_slider(props, "numThreads", obs_module_text("NumThreads"), 0, 8, 1);
 
   UNUSED_PARAMETER(data);
   return props;
@@ -119,6 +120,7 @@ static void filter_defaults(obs_data_t *settings)
   obs_data_set_default_string(settings, "model_select", MODEL_MEDIAPIPE);
   obs_data_set_default_int(settings, "mask_every_x_frames", 1);
   obs_data_set_default_int(settings, "blur_background", 0);
+  obs_data_set_default_int(settings, "numThreads", 1);
 }
 
 
@@ -137,11 +139,17 @@ static void filter_update(void *data, obs_data_t *settings)
 
   const std::string newUseGpu = obs_data_get_string(settings, "useGPU");
   const std::string newModel = obs_data_get_string(settings, "model_select");
+  const uint32_t newNumThreads = (uint32_t)obs_data_get_int(settings, "numThreads");
 
-  if (tf->modelSelection.empty() || tf->modelSelection != newModel || tf->useGPU != newUseGpu) {
+  if (tf->modelSelection.empty() ||
+      tf->modelSelection != newModel ||
+      tf->useGPU != newUseGpu ||
+      tf->numThreads != newNumThreads)
+  {
     // Re-initialize model if it's not already the selected one or switching inference device
     tf->modelSelection = newModel;
     tf->useGPU = newUseGpu;
+    tf->numThreads = newNumThreads;
 
     if (tf->modelSelection == MODEL_SINET) {
       tf->model.reset(new ModelSINET);

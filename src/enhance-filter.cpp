@@ -1,18 +1,8 @@
 #include <obs-module.h>
 
 #include <onnxruntime_cxx_api.h>
-#include <cpu_provider_factory.h>
-
-#if defined(__APPLE__)
-#include <coreml_provider_factory.h>
-#endif
-
-#ifdef __linux__
-#include <tensorrt_provider_factory.h>
-#endif
 
 #ifdef _WIN32
-#include <dml_provider_factory.h>
 #include <wchar.h>
 #endif // _WIN32
 
@@ -33,6 +23,8 @@
 
 struct enhance_filter : public filter_data {
   cv::Mat outputBGRA;
+  gs_effect_t *blendEffect;
+  float blendFactor;
 };
 
 
@@ -46,14 +38,16 @@ static obs_properties_t *filter_properties(void *data)
 {
   UNUSED_PARAMETER(data);
   obs_properties_t *props = obs_properties_create();
+  obs_properties_add_float_slider(props, "blend", obs_module_text("EffectStrengh"), 0.0, 1.0, 0.05);
+  obs_properties_add_int_slider(props, "numThreads", obs_module_text("NumThreads"), 0, 8, 1);
   return props;
 }
 
 static void filter_defaults(obs_data_t *settings)
 {
-  UNUSED_PARAMETER(settings);
+  obs_data_set_default_double(settings, "blend", 1.0);
+  obs_data_set_default_int(settings, "numThreads", 1);
 }
-
 
 static void filter_activate(void *data)
 {
@@ -72,20 +66,27 @@ static void filter_update(void *data, obs_data_t *settings)
   UNUSED_PARAMETER(settings);
   struct enhance_filter *tf = reinterpret_cast<enhance_filter *>(data);
 
-  if (tf->modelSelection.empty()) {
+  tf->blendFactor = (float)obs_data_get_double(settings, "blend");
+  const uint32_t newNumThreads = (uint32_t)obs_data_get_int(settings, "numThreads");
+
+  if (tf->modelSelection.empty() || tf->numThreads != newNumThreads) {
+    tf->numThreads = newNumThreads;
     tf->modelSelection = MODEL_ENHANCE;
     tf->model.reset(new ModelTBEFN);
+    tf->useGPU = USEGPU_CPU;
     createOrtSession(tf);
   }
 
-  // obs_enter_graphics();
+  if (tf->blendEffect == nullptr) {
+    obs_enter_graphics();
 
-  // char *effect_path = obs_module_file(EFFECT_PATH);
-  // gs_effect_destroy(tf->effect);
-  // tf->effect = gs_effect_create_from_file(effect_path, NULL);
-  // bfree(effect_path);
+    char *effect_path = obs_module_file(BLEND_EFFECT_PATH);
+    gs_effect_destroy(tf->blendEffect);
+    tf->blendEffect = gs_effect_create_from_file(effect_path, NULL);
+    bfree(effect_path);
 
-  // obs_leave_graphics();
+    obs_leave_graphics();
+  }
 }
 
 static void *filter_create(obs_data_t *settings, obs_source_t *source)
@@ -194,14 +195,22 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
     }
   }
 
+  gs_eparam_t *blendimage = gs_effect_get_param_by_name(tf->blendEffect, "blendimage");
+  gs_eparam_t *blendFactor = gs_effect_get_param_by_name(tf->blendEffect, "blendFactor");
+
+  gs_effect_set_texture(blendimage, outputTexture);
+  gs_effect_set_float(blendFactor, tf->blendFactor);
+
+
   // Render texture
   gs_blend_state_push();
   gs_reset_blend_state();
 
-  gs_effect_t* effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
-  while (gs_effect_loop(effect, "Draw")) {
-    obs_source_draw(outputTexture, 0, 0, width, height, false);
-  }
+  obs_source_process_filter_tech_end(tf->source, tf->blendEffect, 0, 0, "Draw");
+
+  // while (gs_effect_loop(tf->blendEffect, "Draw")) {
+  //   obs_source_draw(outputTexture, 0, 0, width, height, false);
+  // }
 
   gs_blend_state_pop();
 

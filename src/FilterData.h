@@ -6,8 +6,15 @@
 #include "models/Model.h"
 #include "ort-utils/ORTModelData.h"
 
+/**
+  * @brief The filter_data struct
+  *
+  * This struct is used to store the base data needed for ORT filters.
+  *
+*/
 struct filter_data : public ORTModelData {
   std::string useGPU;
+  uint32_t numThreads;
   std::string modelSelection;
   std::unique_ptr<Model> model;
 

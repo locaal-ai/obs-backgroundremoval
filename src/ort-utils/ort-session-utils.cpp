@@ -34,8 +34,8 @@ void createOrtSession(filter_data *tf)
     sessionOptions.DisableMemPattern();
     sessionOptions.SetExecutionMode(ExecutionMode::ORT_SEQUENTIAL);
   } else {
-    sessionOptions.SetInterOpNumThreads(1);
-    sessionOptions.SetIntraOpNumThreads(1);
+    sessionOptions.SetInterOpNumThreads(tf->numThreads);
+    sessionOptions.SetIntraOpNumThreads(tf->numThreads);
   }
 
   char *modelFilepath_rawPtr = obs_module_file(tf->modelSelection.c_str());

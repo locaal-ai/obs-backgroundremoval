@@ -16,5 +16,6 @@ const char * const USEGPU_COREML = "coreml";
 
 const char * const EFFECT_PATH = "effects/mask_alpha_filter.effect";
 const char * const KAWASE_BLUR_EFFECT_PATH = "effects/kawase_blur.effect";
+const char * const BLEND_EFFECT_PATH = "effects/blend_images.effect";
 
 #endif /* CONSTS_H */
