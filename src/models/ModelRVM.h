@@ -10,12 +10,6 @@ class ModelRVM : public ModelBCHW {
   ModelRVM(/* args */) {}
   ~ModelRVM() {}
 
-  virtual void prepareInputToNetwork(cv::Mat &resizedImage, cv::Mat &preprocessedImage)
-  {
-    resizedImage = resizedImage / 256.0;
-    hwc_to_chw(resizedImage, preprocessedImage);
-  }
-
   virtual void populateInputOutputNames(const std::unique_ptr<Ort::Session> &session,
                                         std::vector<Ort::AllocatedStringPtr> &inputNames,
                                         std::vector<Ort::AllocatedStringPtr> &outputNames)

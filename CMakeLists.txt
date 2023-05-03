@@ -10,7 +10,10 @@ set(PLUGIN_AUTHOR "Roy Shilkrot")
 set(MACOS_BUNDLEID "com.royshilkrot.obs-backgroundremoval")
 set(LINUX_MAINTAINER_EMAIL "roy.shil@gmail.com")
 
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin-main.cpp src/background-filter.cpp)
+target_sources(
+  ${CMAKE_PROJECT_NAME}
+  PRIVATE src/plugin-main.cpp src/ort-utils/ort-session-utils.cpp src/obs-utils/obs-utils.cpp
+          src/background-filter.cpp src/enhance-filter.cpp)
 
 # Import libobs as main plugin dependency
 find_package(libobs REQUIRED)
