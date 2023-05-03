@@ -6,7 +6,8 @@ const char *const MODEL_MEDIAPIPE = "models/mediapipe.onnx";
 const char *const MODEL_SELFIE = "models/selfie_segmentation.onnx";
 const char *const MODEL_RVM = "models/rvm_mobilenetv3_fp32.onnx";
 const char *const MODEL_PPHUMANSEG = "models/pphumanseg_fp32.onnx";
-const char *const MODEL_ENHANCE = "models/tbefn_fp32.onnx";
+const char *const MODEL_ENHANCE_TBEFN = "models/tbefn_fp32.onnx";
+const char *const MODEL_ENHANCE_URETINEX = "models/uretinex_net_180x320.onnx";
 
 const char *const USEGPU_CPU = "cpu";
 const char *const USEGPU_DML = "dml";

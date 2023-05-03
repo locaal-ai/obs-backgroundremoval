@@ -39,6 +39,12 @@ static obs_properties_t *filter_properties(void *data)
   obs_properties_t *props = obs_properties_create();
   obs_properties_add_float_slider(props, "blend", obs_module_text("EffectStrengh"), 0.0, 1.0, 0.05);
   obs_properties_add_int_slider(props, "numThreads", obs_module_text("NumThreads"), 0, 8, 1);
+  obs_property_t *p_model_select =
+    obs_properties_add_list(props, "model_select", obs_module_text("EnhancementModel"),
+                            OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+
+  obs_property_list_add_string(p_model_select, obs_module_text("TBEFN"), MODEL_ENHANCE_TBEFN);
+  obs_property_list_add_string(p_model_select, obs_module_text("URETINEX"), MODEL_ENHANCE_URETINEX);
   return props;
 }
 
@@ -46,6 +52,7 @@ static void filter_defaults(obs_data_t *settings)
 {
   obs_data_set_default_double(settings, "blend", 1.0);
   obs_data_set_default_int(settings, "numThreads", 1);
+  obs_data_set_default_string(settings, "model_select", MODEL_ENHANCE_TBEFN);
 }
 
 static void filter_activate(void *data)
@@ -67,10 +74,11 @@ static void filter_update(void *data, obs_data_t *settings)
 
   tf->blendFactor = (float)obs_data_get_double(settings, "blend");
   const uint32_t newNumThreads = (uint32_t)obs_data_get_int(settings, "numThreads");
+  const std::string newModel = obs_data_get_string(settings, "model_select");
 
-  if (tf->modelSelection.empty() || tf->numThreads != newNumThreads) {
+  if (tf->modelSelection.empty() || tf->modelSelection != newModel || tf->numThreads != newNumThreads) {
     tf->numThreads = newNumThreads;
-    tf->modelSelection = MODEL_ENHANCE;
+    tf->modelSelection = newModel;
     tf->model.reset(new ModelTBEFN);
     tf->useGPU = USEGPU_CPU;
     createOrtSession(tf);
