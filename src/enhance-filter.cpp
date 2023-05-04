@@ -20,6 +20,7 @@
 #include "obs-utils/obs-utils.h"
 #include "ort-utils/ort-session-utils.h"
 #include "models/ModelTBEFN.h"
+#include "models/ModelZeroDCE.h"
 
 struct enhance_filter : public filter_data {
   cv::Mat outputBGRA;
@@ -45,6 +46,8 @@ static obs_properties_t *filter_properties(void *data)
 
   obs_property_list_add_string(p_model_select, obs_module_text("TBEFN"), MODEL_ENHANCE_TBEFN);
   obs_property_list_add_string(p_model_select, obs_module_text("URETINEX"), MODEL_ENHANCE_URETINEX);
+  obs_property_list_add_string(p_model_select, obs_module_text("SGLLIE"), MODEL_ENHANCE_SGLLIE);
+  obs_property_list_add_string(p_model_select, obs_module_text("ZERODCE"), MODEL_ENHANCE_ZERODCE);
   return props;
 }
 
@@ -76,10 +79,17 @@ static void filter_update(void *data, obs_data_t *settings)
   const uint32_t newNumThreads = (uint32_t)obs_data_get_int(settings, "numThreads");
   const std::string newModel = obs_data_get_string(settings, "model_select");
 
-  if (tf->modelSelection.empty() || tf->modelSelection != newModel || tf->numThreads != newNumThreads) {
+  if (tf->modelSelection.empty() || tf->modelSelection != newModel ||
+      tf->numThreads != newNumThreads) {
     tf->numThreads = newNumThreads;
     tf->modelSelection = newModel;
-    tf->model.reset(new ModelTBEFN);
+    if (tf->modelSelection == MODEL_ENHANCE_TBEFN) {
+      tf->model.reset(new ModelTBEFN);
+    } else if (tf->modelSelection == MODEL_ENHANCE_ZERODCE) {
+      tf->model.reset(new ModelZeroDCE);
+    } else {
+      tf->model.reset(new ModelBCHW);
+    }
     tf->useGPU = USEGPU_CPU;
     createOrtSession(tf);
   }
@@ -166,6 +176,10 @@ static void filter_video_tick(void *data, float seconds)
     if (!lock.owns_lock()) {
       return;
     }
+
+    // TODO add high pass filter from original image to output image
+    // to reduce the blur effect of the small network output
+
     cv::cvtColor(outputImage, tf->outputBGRA, cv::COLOR_BGR2RGBA);
   }
 }
