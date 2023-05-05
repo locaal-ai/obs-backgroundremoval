@@ -44,11 +44,20 @@ static obs_properties_t *filter_properties(void *data)
   obs_property_t *p_model_select =
     obs_properties_add_list(props, "model_select", obs_module_text("EnhancementModel"),
                             OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
-
   obs_property_list_add_string(p_model_select, obs_module_text("TBEFN"), MODEL_ENHANCE_TBEFN);
   obs_property_list_add_string(p_model_select, obs_module_text("URETINEX"), MODEL_ENHANCE_URETINEX);
   obs_property_list_add_string(p_model_select, obs_module_text("SGLLIE"), MODEL_ENHANCE_SGLLIE);
   obs_property_list_add_string(p_model_select, obs_module_text("ZERODCE"), MODEL_ENHANCE_ZERODCE);
+  obs_property_list_add_string(p_use_gpu, obs_module_text("CPU"), USEGPU_CPU);
+#ifdef __linux__
+  obs_property_list_add_string(p_use_gpu, obs_module_text("GPUTensorRT"), USEGPU_TENSORRT);
+#endif
+#if _WIN32
+  obs_property_list_add_string(p_use_gpu, obs_module_text("GPUDirectML"), USEGPU_DML);
+#endif
+#if defined(__APPLE__)
+  obs_property_list_add_string(p_use_gpu, obs_module_text("CoreML"), USEGPU_COREML);
+#endif
   return props;
 }
 
@@ -57,6 +66,14 @@ static void filter_defaults(obs_data_t *settings)
   obs_data_set_default_double(settings, "blend", 1.0);
   obs_data_set_default_int(settings, "numThreads", 1);
   obs_data_set_default_string(settings, "model_select", MODEL_ENHANCE_TBEFN);
+  #if _WIN32
+  obs_data_set_default_string(settings, "useGPU", USEGPU_DML);
+#elif defined(__APPLE__)
+  obs_data_set_default_string(settings, "useGPU", USEGPU_CPU);
+#else
+  // Linux
+  obs_data_set_default_string(settings, "useGPU", USEGPU_CPU);
+#endif
 }
 
 static void filter_activate(void *data)
@@ -79,8 +96,9 @@ static void filter_update(void *data, obs_data_t *settings)
   tf->blendFactor = (float)obs_data_get_double(settings, "blend");
   const uint32_t newNumThreads = (uint32_t)obs_data_get_int(settings, "numThreads");
   const std::string newModel = obs_data_get_string(settings, "model_select");
+  const std::string newUseGpu = obs_data_get_string(settings, "useGPU");
 
-  if (tf->modelSelection.empty() || tf->modelSelection != newModel ||
+  if (tf->modelSelection.empty() || tf->modelSelection != newModel || tf->useGPU != newUseGpu ||
       tf->numThreads != newNumThreads) {
     tf->numThreads = newNumThreads;
     tf->modelSelection = newModel;
@@ -93,7 +111,7 @@ static void filter_update(void *data, obs_data_t *settings)
     } else {
       tf->model.reset(new ModelBCHW);
     }
-    tf->useGPU = USEGPU_CPU;
+    tf->useGPU = newUseGpu;
     createOrtSession(tf);
   }
 
