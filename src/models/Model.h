@@ -293,8 +293,9 @@ class ModelBCHW : public Model {
 
   virtual void postprocessOutput(cv::Mat &output)
   {
-    chw_to_hwc_32f(output, output);
-    output = output * 255.0; // Convert to 0-255 range
+    cv::Mat outputTransposed;
+    chw_to_hwc_32f(output, outputTransposed);
+    output = outputTransposed * 255.0; // Convert to 0-255 range
   }
 
   virtual void getNetworkInputSize(const std::vector<std::vector<int64_t>> &inputDims,
