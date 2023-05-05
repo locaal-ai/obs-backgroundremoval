@@ -66,7 +66,7 @@ static void filter_defaults(obs_data_t *settings)
   obs_data_set_default_double(settings, "blend", 1.0);
   obs_data_set_default_int(settings, "numThreads", 1);
   obs_data_set_default_string(settings, "model_select", MODEL_ENHANCE_TBEFN);
-  #if _WIN32
+#if _WIN32
   obs_data_set_default_string(settings, "useGPU", USEGPU_DML);
 #elif defined(__APPLE__)
   obs_data_set_default_string(settings, "useGPU", USEGPU_CPU);
