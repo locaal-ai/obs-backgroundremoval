@@ -21,6 +21,7 @@
 #include "ort-utils/ort-session-utils.h"
 #include "models/ModelTBEFN.h"
 #include "models/ModelZeroDCE.h"
+#include "models/ModelURetinex.h"
 
 struct enhance_filter : public filter_data {
   cv::Mat outputBGRA;
@@ -87,6 +88,8 @@ static void filter_update(void *data, obs_data_t *settings)
       tf->model.reset(new ModelTBEFN);
     } else if (tf->modelSelection == MODEL_ENHANCE_ZERODCE) {
       tf->model.reset(new ModelZeroDCE);
+    } else if (tf->modelSelection == MODEL_ENHANCE_URETINEX) {
+      tf->model.reset(new ModelURetinex);
     } else {
       tf->model.reset(new ModelBCHW);
     }
@@ -166,7 +169,12 @@ static void filter_video_tick(void *data, float seconds)
   }
 
   cv::Mat outputImage;
-  if (!runFilterModelInference(tf, imageBGRA, outputImage)) {
+  try {
+    if (!runFilterModelInference(tf, imageBGRA, outputImage)) {
+      return;
+    }
+  } catch (const std::exception &e) {
+    blog(LOG_ERROR, "Exception caught: %s", e.what());
     return;
   }
 
