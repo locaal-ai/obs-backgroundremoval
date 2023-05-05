@@ -206,9 +206,7 @@ static void filter_video_tick(void *data, float seconds)
       return;
     }
 
-    // TODO add high pass filter from original image to output image
-    // to reduce the blur effect of the small network output
-
+    // convert to RGBA
     cv::cvtColor(outputImage, tf->outputBGRA, cv::COLOR_BGR2RGBA);
   }
 }
@@ -247,19 +245,19 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
 
   gs_eparam_t *blendimage = gs_effect_get_param_by_name(tf->blendEffect, "blendimage");
   gs_eparam_t *blendFactor = gs_effect_get_param_by_name(tf->blendEffect, "blendFactor");
+  gs_eparam_t *xOffset = gs_effect_get_param_by_name(tf->blendEffect, "xOffset");
+  gs_eparam_t *yOffset = gs_effect_get_param_by_name(tf->blendEffect, "yOffset");
 
   gs_effect_set_texture(blendimage, outputTexture);
   gs_effect_set_float(blendFactor, tf->blendFactor);
+  gs_effect_set_float(xOffset, 1.0f / float(width));
+  gs_effect_set_float(yOffset, 1.0f / float(height));
 
   // Render texture
   gs_blend_state_push();
   gs_reset_blend_state();
 
   obs_source_process_filter_tech_end(tf->source, tf->blendEffect, 0, 0, "Draw");
-
-  // while (gs_effect_loop(tf->blendEffect, "Draw")) {
-  //   obs_source_draw(outputTexture, 0, 0, width, height, false);
-  // }
 
   gs_blend_state_pop();
 
