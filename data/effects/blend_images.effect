@@ -3,6 +3,8 @@ uniform float4x4 ViewProj;
 uniform texture2d image;      // input RGBA
 uniform texture2d blendimage; // input RGBA to blend
 uniform float blendFactor;    // how much to blend from each image
+uniform float xOffset;
+uniform float yOffset;
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -28,10 +30,25 @@ VertDataOut VSDefault(VertDataIn v_in)
 	return vert_out;
 }
 
+/**
+  * Kawase High Pass Filter
+  */
+float4 KawaseHighPass(VertDataOut v_in)
+{
+	float4 sum = float4(0.0, 0.0, 0.0, 0.0);
+	sum += image.Sample(textureSampler, v_in.uv + float2( xOffset,  yOffset));
+	sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset,  yOffset));
+	sum += image.Sample(textureSampler, v_in.uv + float2( xOffset, -yOffset));
+	sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset, -yOffset));
+	sum = image.Sample(textureSampler, v_in.uv) - sum * 0.25;
+	return sum;
+}
+
 float4 PSBlend(VertDataOut v_in) : TARGET
 {
 	float4 imageRGBA = image.Sample(textureSampler, v_in.uv);
-	float4 blendimageRGBA = blendimage.Sample(textureSampler, v_in.uv);
+  // Add high pass filter back to the blend image because the blend image is usually blurry
+	float4 blendimageRGBA = blendimage.Sample(textureSampler, v_in.uv) + KawaseHighPass(v_in);
 	return imageRGBA * (1.0 - blendFactor) + blendimageRGBA * blendFactor;
 }
 
