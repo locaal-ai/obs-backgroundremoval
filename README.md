@@ -38,9 +38,11 @@ The pretrained model weights used for portrait foreground segmentation are taken
 - https://github.com/PINTO0309/PINTO_model_zoo/tree/main/082_MediaPipe_Meet_Segmentation
 - https://github.com/PeterL1n/RobustVideoMatting
 
-Image enhancement models are taken from:
-- https://github.com/lukun199/TBEFN
+Image enhancement (low light) models are taken from:
 - https://github.com/PINTO0309/PINTO_model_zoo/tree/main/213_TBEFN
+- https://github.com/PINTO0309/PINTO_model_zoo/tree/main/372_URetinex-Net
+- https://github.com/PINTO0309/PINTO_model_zoo/tree/main/370_Semantic-Guided-Low-Light-Image-Enhancement
+- https://github.com/PINTO0309/PINTO_model_zoo/tree/main/243_Zero-DCE-improved
 
 Some more information about how I built it: https://www.morethantechnical.com/2021/04/15/obs-plugin-for-portrait-background-removal-with-onnx-sinet-model/
 
@@ -80,6 +82,9 @@ $ ./.github/scripts/build-linux.sh
 
 #### Arch Linux
 The community maintains AUR packages: https://aur.archlinux.org/packages/obs-backgroundremoval
+
+#### Flathub
+The plugin is available on flathub: https://github.com/flathub/com.obsproject.Studio.Plugin.BackgroundRemoval
 
 ### Windows
 
