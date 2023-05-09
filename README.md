@@ -86,6 +86,10 @@ The community maintains AUR packages: https://aur.archlinux.org/packages/obs-bac
 #### Flathub
 The plugin is available on flathub: https://github.com/flathub/com.obsproject.Studio.Plugin.BackgroundRemoval
 
+```sh
+$ flatpak install com.obsproject.Studio.Plugin.BackgroundRemoval
+```
+
 ### Windows
 
 Use the CI scripts again, for example:
