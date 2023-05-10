@@ -1,6 +1,6 @@
-# OBS Plugin: Portrait Background Removal / Virtual Green-screen
+# OBS Plugin: Portrait Background Removal / Virtual Green-screen and Low-Light Enhancement
 
-A plugin for [OBS Studio](https://obsproject.com/) that allows you to replace the background in portrait images and video.
+A plugin for [OBS Studio](https://obsproject.com/) that allows you to replace the background in portrait images and video, as well as enhance low-light scenes.
 
 - [Introduction](#introduction)
 - [Building](#building)
@@ -28,9 +28,11 @@ OBS Plugins forum: https://obsproject.com/forum/resources/background-removal-por
 
 GPU support:
 * Currently on Windows we support DirectML, which should reduce CPU usage by 95% and effectively use the systems accelerators (GPUs if available).
-* On Mac we support CoreML for acceleration, which is available on M1 and M2 (not Intel, sorry). Pure CPU inference will bring the CPU usage to >40%, which may get the machine warm or spin the cooling fans.
-* CUDA is not directly supported in this plugin, however it is supported by ONNX Runtime which we use. Perhaps in the future we will add CUDA support.
+* On Mac we support CoreML for acceleration, which is available on M1 and M2 (not Intel, sorry).
+* CUDA is supported in this plugin through TensorRT, however it is supported only on Linux.
 * The goal of this plugin is to be available for everyone on every system, even if they don't own a GPU.
+
+Number of CPU threads is controllable through the UI settings. A 2-thread setting works best.
 
 The pretrained model weights used for portrait foreground segmentation are taken from:
 - https://github.com/anilsathyan7/Portrait-Segmentation/tree/master/SINet
