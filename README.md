@@ -11,6 +11,9 @@ A plugin for [OBS Studio](https://obsproject.com/) that allows you to replace th
 ## Download
 Check out the [latest releases](https://github.com/royshil/obs-backgroundremoval/releases) for downloads and install instructions.
 
+## Requirements
+- OBS 28+
+
 ## Introduction
 
 This plugin is meant to make it easy to replace the background in portrait images and video.
