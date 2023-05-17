@@ -12,7 +12,9 @@ A plugin for [OBS Studio](https://obsproject.com/) that allows you to replace th
 Check out the [latest releases](https://github.com/royshil/obs-backgroundremoval/releases) for downloads and install instructions.
 
 ## Requirements
-- OBS 28+
+- OBS version 28+ ([download](https://obsproject.com/download))
+
+We do not support older versions of OBS since the plugin is using newer APIs.
 
 ## Introduction
 
