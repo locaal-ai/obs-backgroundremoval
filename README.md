@@ -1,5 +1,14 @@
 # OBS Plugin: Portrait Background Removal / Virtual Green-screen and Low-Light Enhancement
 
+<div align="center">
+  
+[![GitHub](https://img.shields.io/github/license/royshil/obs-backgroundremoval)](https://img.shields.io/github/license/royshil/obs-backgroundremoval)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/royshil/obs-backgroundremoval/main.yml)
+![GitHub all releases](https://img.shields.io/github/downloads/royshil/obs-backgroundremoval/total)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/royshil/obs-backgroundremoval)
+
+</div>
+
 A plugin for [OBS Studio](https://obsproject.com/) that allows you to replace the background in portrait images and video, as well as enhance low-light scenes.
 
 - [Introduction](#introduction)
