@@ -2,10 +2,10 @@
 
 <div align="center">
   
-[![GitHub](https://img.shields.io/github/license/royshil/obs-backgroundremoval)](https://img.shields.io/github/license/royshil/obs-backgroundremoval)
-![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/royshil/obs-backgroundremoval/main.yml)
-![GitHub all releases](https://img.shields.io/github/downloads/royshil/obs-backgroundremoval/total)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/royshil/obs-backgroundremoval)
+[![GitHub](https://img.shields.io/github/license/royshil/obs-backgroundremoval)](https://github.com/royshil/obs-backgroundremoval/blob/main/LICENSE)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/royshil/obs-backgroundremoval/main.yml)](https://github.com/royshil/obs-backgroundremoval/actions/workflows/main.yml)
+[![Total downloads](https://img.shields.io/github/downloads/royshil/obs-backgroundremoval/total)](https://github.com/royshil/obs-backgroundremoval/releases)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/royshil/obs-backgroundremoval)](https://github.com/royshil/obs-backgroundremoval/releases)
 
 </div>
 
