@@ -2,7 +2,7 @@
 
 NOTE: These instructions are unofficial and we will appreciate any pull requests to improve them.
 
-Please follow the steps to install obs-backgrounremoval plugin on OpenSUSE.
+Please follow the steps to install obs-backgroundremoval plugin on OpenSUSE.
 
 ### Install OBS
 
