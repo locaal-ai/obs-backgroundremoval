@@ -28,6 +28,15 @@ On Ubuntu, there are two ways to install OBS and you have to use the correspondi
 On linux distros other than Ubuntu, use the FlatHub installation of both OBS and this plugin.
 If you install OBS in a way other than FlatHub, you have to build this plugin by yourself (see instructions for building [below](#linux)).
 
+## Code Walkthrough
+This video on YouTube will take you through the major parts of the code and explain them.
+
+<div align="center">
+  <a href="https://youtu.be/iFQtcJg0Wsk" target="_blank">
+    <img width="50%" src="https://img.youtube.com/vi/iFQtcJg0Wsk/maxresdefault.jpg"/>
+  </a>
+</div>
+
 ## Requirements
 - OBS version 28+ ([download](https://obsproject.com/download))
 
