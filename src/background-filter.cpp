@@ -132,7 +132,6 @@ static void filter_update(void *data, obs_data_t *settings)
   tf->smoothContour = (float)obs_data_get_double(settings, "smooth_contour");
   tf->feather = (float)obs_data_get_double(settings, "feather");
   tf->maskEveryXFrames = (int)obs_data_get_int(settings, "mask_every_x_frames");
-  tf->maskEveryXFrames = (int)obs_data_get_int(settings, "mask_every_x_frames");
   tf->maskEveryXFramesCount = (int)(0);
   tf->blurBackground = obs_data_get_int(settings, "blur_background");
 
