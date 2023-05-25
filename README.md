@@ -1,5 +1,14 @@
 # OBS Plugin: Portrait Background Removal / Virtual Green-screen and Low-Light Enhancement
 
+<div align="center">
+  
+[![GitHub](https://img.shields.io/github/license/royshil/obs-backgroundremoval)](https://github.com/royshil/obs-backgroundremoval/blob/main/LICENSE)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/royshil/obs-backgroundremoval/main.yml)](https://github.com/royshil/obs-backgroundremoval/actions/workflows/main.yml)
+[![Total downloads](https://img.shields.io/github/downloads/royshil/obs-backgroundremoval/total)](https://github.com/royshil/obs-backgroundremoval/releases)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/royshil/obs-backgroundremoval)](https://github.com/royshil/obs-backgroundremoval/releases)
+
+</div>
+
 A plugin for [OBS Studio](https://obsproject.com/) that allows you to replace the background in portrait images and video, as well as enhance low-light scenes.
 
 - [Introduction](#introduction)
@@ -11,7 +20,7 @@ A plugin for [OBS Studio](https://obsproject.com/) that allows you to replace th
 ## Download
 Check out the [latest releases](https://github.com/royshil/obs-backgroundremoval/releases) for downloads and install instructions.
 
-### Linux installation
+### Linux Installation
 On Ubuntu, there are two ways to install OBS and you have to use the corresponding method to install this plugin.
 - If you installed OBS via the official PPA, download the deb package from the [releases](https://github.com/royshil/obs-backgroundremoval/releases) page and install it directly.
 - If you installed OBS via FlatHub, run the following command: `flatpak install com.obsproject.Studio.Plugin.BackgroundRemoval`
@@ -20,6 +29,15 @@ On openSUSE, please see [`docs/BUILDING-OPENSUSE.md`](docs/BUILDING-OPENSUSE.md)
 
 On other Linux distros, use the FlatHub installation of both OBS and this plugin.
 If you install OBS in a way other than FlatHub, you have to build this plugin by yourself (see instructions for building [below](#linux)).
+
+## Code Walkthrough
+This video on YouTube will take you through the major parts of the code and explain them.
+
+<div align="center">
+  <a href="https://youtu.be/iFQtcJg0Wsk" target="_blank">
+    <img width="50%" src="https://img.youtube.com/vi/iFQtcJg0Wsk/maxresdefault.jpg"/>
+  </a>
+</div>
 
 ## Requirements
 - OBS version 28+ ([download](https://obsproject.com/download))
@@ -100,8 +118,8 @@ $ ./.github/scripts/build-linux.sh
 #### Arch Linux
 The community maintains AUR packages: https://aur.archlinux.org/packages/obs-backgroundremoval
 
-#### Flathub
-The plugin is available on flathub: https://github.com/flathub/com.obsproject.Studio.Plugin.BackgroundRemoval
+#### FlatHub
+The plugin is available on FlatHub: https://github.com/flathub/com.obsproject.Studio.Plugin.BackgroundRemoval
 
 ```sh
 $ flatpak install com.obsproject.Studio.Plugin.BackgroundRemoval

@@ -1,5 +1,5 @@
 /*
-Plugin Name
+OBS Background Removal Filter Plugin
 Copyright (C) 2021 Roy Shilkrot roy.shil@gmail.com
 
 This program is free software; you can redistribute it and/or modify
