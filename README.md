@@ -14,7 +14,7 @@ A plugin for [OBS Studio](https://obsproject.com/) that allows you to replace th
 - [Introduction](#introduction)
 - [Building](#building)
   - [MacOSX](#mac-osx)
-  - [Linux (Ubuntu, Arch)](#linux)
+  - [Linux (Ubuntu, Arch, openSUSE)](#linux)
   - [Windows](#windows)
 
 ## Download
@@ -25,7 +25,9 @@ On Ubuntu, there are two ways to install OBS and you have to use the correspondi
 - If you installed OBS via the official PPA, download the deb package from the [releases](https://github.com/royshil/obs-backgroundremoval/releases) page and install it directly.
 - If you installed OBS via FlatHub, run the following command: `flatpak install com.obsproject.Studio.Plugin.BackgroundRemoval`
 
-On Linux distros other than Ubuntu, use the FlatHub installation of both OBS and this plugin.
+On openSUSE, please see [`docs/BUILDING-OPENSUSE.md`](docs/BUILDING-OPENSUSE.md).
+
+On other Linux distros, use the FlatHub installation of both OBS and this plugin.
 If you install OBS in a way other than FlatHub, you have to build this plugin by yourself (see instructions for building [below](#linux)).
 
 ## Code Walkthrough
