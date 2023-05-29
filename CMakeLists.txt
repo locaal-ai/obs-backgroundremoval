@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16...3.21)
 set(CMAKE_CXX_STANDARD 20)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
-project(obs-backgroundremoval VERSION 0.5.19)
+project(obs-backgroundremoval VERSION 1.0.0 LANGUAGES CXX)
 add_library(${CMAKE_PROJECT_NAME} MODULE)
 
 set(PLUGIN_AUTHOR "Roy Shilkrot")
