@@ -230,10 +230,7 @@ class Model {
     * @param output The output of the network. This function should ensure the output is with
     * values in the range 0-1 (float 32), and in the BHWC format
   */
-  virtual void postprocessOutput(cv::Mat &output)
-  {
-    UNUSED_PARAMETER(output);
-  }
+  virtual void postprocessOutput(cv::Mat &output) { UNUSED_PARAMETER(output); }
 
   virtual void loadInputToTensor(const cv::Mat &preprocessedImage, uint32_t inputWidth,
                                  uint32_t inputHeight,
