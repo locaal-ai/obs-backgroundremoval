@@ -237,10 +237,14 @@ static void processImageForBackground(struct background_removal_filter *tf,
     return;
   }
 
+  // outputImage is a single channel, uint8 image with values between 0 and 255
+  // We need to make tf->threshold (float [0,1]) be in that range
+  const uint8_t threshold_value = (uint8_t)(tf->threshold * 255.0f);
+
   if (tf->modelSelection == MODEL_SINET || tf->modelSelection == MODEL_MEDIAPIPE) {
-    backgroundMask = outputImage > tf->threshold;
+    backgroundMask = outputImage > threshold_value;
   } else {
-    backgroundMask = outputImage < tf->threshold;
+    backgroundMask = outputImage < threshold_value;
   }
 }
 

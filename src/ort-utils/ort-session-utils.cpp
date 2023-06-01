@@ -156,11 +156,11 @@ bool runFilterModelInference(filter_data *tf, const cv::Mat &imageBGRA, cv::Mat 
   // Assign output to input in some models that have temporal information
   tf->model->assignOutputToInput(tf->outputTensorValues, tf->inputTensorValues);
 
-  // Post-process output
+  // Post-process output. The image will now be in [0,1] float, BHWC format
   tf->model->postprocessOutput(outputImage);
 
-  // Convert to CV_8U
-  outputImage.convertTo(output, CV_8U);
+  // Convert [0,1] float to CV_8U [0,255]
+  outputImage.convertTo(output, CV_8U, 255.0);
 
   return true;
 }

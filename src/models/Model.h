@@ -224,9 +224,15 @@ class Model {
     preprocessedImage = resizedImage / 255.0;
   }
 
+  /**
+    * @brief Postprocess the output of the network
+    *
+    * @param output The output of the network. This function should ensure the output is with
+    * values in the range 0-1 (float 32), and in the BHWC format
+  */
   virtual void postprocessOutput(cv::Mat &output)
   {
-    output = output * 255.0; // Convert to 0-255 range
+    UNUSED_PARAMETER(output);
   }
 
   virtual void loadInputToTensor(const cv::Mat &preprocessedImage, uint32_t inputWidth,
@@ -295,7 +301,7 @@ class ModelBCHW : public Model {
   {
     cv::Mat outputTransposed;
     chw_to_hwc_32f(output, outputTransposed);
-    output = outputTransposed * 255.0; // Convert to 0-255 range
+    outputTransposed.copyTo(output);
   }
 
   virtual void getNetworkInputSize(const std::vector<std::vector<int64_t>> &inputDims,
