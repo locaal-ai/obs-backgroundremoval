@@ -56,13 +56,13 @@ static bool enable_threshold_modified(obs_properties_t *ppts, obs_property_t *p,
 {
   const bool enabled = obs_data_get_bool(settings, "enable_threshold");
   p = obs_properties_get(ppts, "threshold");
-  obs_property_set_enabled(p, enabled);
+  obs_property_set_visible(p, enabled);
   p = obs_properties_get(ppts, "contour_filter");
-  obs_property_set_enabled(p, enabled);
+  obs_property_set_visible(p, enabled);
   p = obs_properties_get(ppts, "smooth_contour");
-  obs_property_set_enabled(p, enabled);
+  obs_property_set_visible(p, enabled);
   p = obs_properties_get(ppts, "feather");
-  obs_property_set_enabled(p, enabled);
+  obs_property_set_visible(p, enabled);
 
   return true;
 }
