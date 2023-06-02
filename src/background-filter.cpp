@@ -71,8 +71,8 @@ static obs_properties_t *filter_properties(void *data)
 {
   obs_properties_t *props = obs_properties_create();
 
-  obs_property_t *p = obs_properties_add_bool(props, "enable_threshold",
-                                              obs_module_text("EnableThreshold"));
+  obs_property_t *p =
+    obs_properties_add_bool(props, "enable_threshold", obs_module_text("EnableThreshold"));
   obs_property_set_modified_callback(p, enable_threshold_modified);
 
   obs_properties_add_float_slider(props, "threshold", obs_module_text("Threshold"), 0.0, 1.0,
@@ -322,7 +322,8 @@ void filter_video_tick(void *data, float seconds)
           std::vector<std::vector<cv::Point>> contours;
           findContours(backgroundMask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
           std::vector<std::vector<cv::Point>> filteredContours;
-          const int64_t contourSizeThreshold = (int64_t)(backgroundMask.total() * tf->contourFilter);
+          const int64_t contourSizeThreshold =
+            (int64_t)(backgroundMask.total() * tf->contourFilter);
           for (auto &contour : contours) {
             if (cv::contourArea(contour) > contourSizeThreshold) {
               filteredContours.push_back(contour);
