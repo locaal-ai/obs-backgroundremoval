@@ -1,7 +1,7 @@
 # OBS Plugin: Portrait Background Removal / Virtual Green-screen and Low-Light Enhancement
 
 <div align="center">
-  
+
 [![GitHub](https://img.shields.io/github/license/royshil/obs-backgroundremoval)](https://github.com/royshil/obs-backgroundremoval/blob/main/LICENSE)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/royshil/obs-backgroundremoval/main.yml)](https://github.com/royshil/obs-backgroundremoval/actions/workflows/main.yml)
 [![Total downloads](https://img.shields.io/github/downloads/royshil/obs-backgroundremoval/total)](https://github.com/royshil/obs-backgroundremoval/releases)
@@ -57,7 +57,9 @@ If you like this work, which is given to you completely free of charge, please c
 
 OBS Plugins forum: https://obsproject.com/forum/resources/background-removal-portrait-segmentation.1260/
 
-![](demo.gif)
+Tutorial video on YouTube: https://youtu.be/veqNEsMqEE0
+
+[![](demo.gif)](https://youtu.be/veqNEsMqEE0)
 
 GPU support:
 * Currently on Windows we support DirectML, which should reduce CPU usage by 95% and effectively use the systems accelerators (GPUs if available).
