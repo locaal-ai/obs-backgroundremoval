@@ -22,11 +22,11 @@ class ModelMediaPipe : public Model {
 
   virtual void postprocessOutput(cv::Mat &outputImage)
   {
-    // take 1st channel
+    // take 2nd channel
     std::vector<cv::Mat> outputImageSplit;
     cv::split(outputImage, outputImageSplit);
 
-    cv::normalize(outputImageSplit[0], outputImage, 1.0, 0.0, cv::NORM_MINMAX);
+    outputImage = outputImageSplit[1];
   }
 };
 
