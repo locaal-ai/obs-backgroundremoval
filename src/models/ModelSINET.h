@@ -11,7 +11,7 @@ class ModelSINET : public ModelBCHW {
   virtual void prepareInputToNetwork(cv::Mat &resizedImage, cv::Mat &preprocessedImage)
   {
     resizedImage = (resizedImage - cv::Scalar(102.890434, 111.25247, 126.91212)) /
-      cv::Scalar(62.93292 * 255.0, 62.82138 * 255.0, 66.355705 * 255.0);
+                   cv::Scalar(62.93292 * 255.0, 62.82138 * 255.0, 66.355705 * 255.0);
     hwc_to_chw(resizedImage, preprocessedImage);
   }
 
