@@ -5,7 +5,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 project(
   obs-backgroundremoval
-  VERSION 1.0.1
+  VERSION 1.0.0
   LANGUAGES CXX)
 add_library(${CMAKE_PROJECT_NAME} MODULE)
 
@@ -13,17 +13,10 @@ set(PLUGIN_AUTHOR "Roy Shilkrot")
 set(MACOS_BUNDLEID "com.royshilkrot.obs-backgroundremoval")
 set(LINUX_MAINTAINER_EMAIL "roy.shil@gmail.com")
 
-# add library for ggml in 3rdparty
-add_library(whispercpp)
-target_include_directories(whispercpp PUBLIC 3rdparty/ggml)
-target_sources(whispercpp PRIVATE src/3rdparty/ggml.c src/3rdparty/ggml.h src/3rdparty/whisper.cpp
-                                  src/3rdparty/whisper.h)
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE whispercpp)
-
 target_sources(
   ${CMAKE_PROJECT_NAME}
   PRIVATE src/plugin-main.cpp src/ort-utils/ort-session-utils.cpp src/obs-utils/obs-utils.cpp
-          src/background-filter.cpp src/enhance-filter.cpp src/audio-filter.cpp)
+          src/background-filter.cpp src/enhance-filter.cpp)
 
 # Import libobs as main plugin dependency
 find_package(libobs REQUIRED)
