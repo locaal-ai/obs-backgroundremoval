@@ -1,12 +1,12 @@
 include(FetchContent)
 
-set(Onnxruntime_VERSION "1.14.1")
-set(Onnxruntime_DirectML_VERSION "1.10.1")
+set(Onnxruntime_VERSION "1.15.0")
+set(Onnxruntime_DirectML_VERSION "1.12.0")
 if(OS_MACOS)
   FetchContent_Declare(
     Onnxruntime
     URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/onnxruntime-osx-universal2-${Onnxruntime_VERSION}.tgz"
-    URL_HASH MD5=9725836c49deb09fc352a57dc8a1b806)
+    URL_HASH MD5=2e4ab73a7957cb26054e815e2adc78db)
   FetchContent_MakeAvailable(Onnxruntime)
   set(Onnxruntime_LIB "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime.${Onnxruntime_VERSION}.dylib")
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${Onnxruntime_LIB}")
@@ -23,8 +23,8 @@ if(OS_MACOS)
 elseif(OS_WINDOWS)
   FetchContent_Declare(
     Onnxruntime
-    URL "https://github.com/umireon/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}-4/onnxruntime-static-win.zip"
-    URL_HASH MD5=a8ae8f5707b651347a5bb8a1fac159bf)
+    URL "https://github.com/umireon/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}-1/onnxruntime-static-win.zip"
+    URL_HASH MD5=74183832a20de7619fa7b038d999c09c)
   FetchContent_MakeAvailable(Onnxruntime)
 
   add_library(Ort INTERFACE)
@@ -66,7 +66,7 @@ elseif(OS_LINUX)
   FetchContent_Declare(
     Onnxruntime
     URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/onnxruntime-linux-x64-gpu-${Onnxruntime_VERSION}.tgz"
-    URL_HASH MD5=6a3866eb7dce86a17922c0662623f77e)
+    URL_HASH MD5=eb050c36d4c3d1c990a08d7cb601a66c)
   FetchContent_MakeAvailable(Onnxruntime)
   set(Onnxruntime_LINK_LIBS
       "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime.so.${Onnxruntime_VERSION}")
