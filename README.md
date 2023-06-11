@@ -25,7 +25,7 @@ On Ubuntu, there are two ways to install OBS and you have to use the correspondi
 - If you installed OBS via the official PPA, download the deb package from the [releases](https://github.com/royshil/obs-backgroundremoval/releases) page and install it directly.
 - If you installed OBS via FlatHub, run the following command: `flatpak install com.obsproject.Studio.Plugin.BackgroundRemoval`
 
-This plugin can run Ubuntu 22.04 or later.
+The pre-built binary of this plugin can run Ubuntu 22.04 or later.
 
 On openSUSE, please see [`docs/BUILDING-OPENSUSE.md`](docs/BUILDING-OPENSUSE.md).
 
