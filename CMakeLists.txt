@@ -16,8 +16,13 @@ set(LINUX_MAINTAINER_EMAIL "roy.shil@gmail.com")
 
 target_sources(
   ${CMAKE_PROJECT_NAME}
-  PRIVATE src/plugin-main.c src/ort-utils/ort-session-utils.cpp src/obs-utils/obs-utils.cpp
-  src/background-filter-info.c src/background-filter.cpp src/enhance-filter.cpp src/enhance-filter-info.c)
+  PRIVATE src/plugin-main.c
+          src/ort-utils/ort-session-utils.cpp
+          src/obs-utils/obs-utils.cpp
+          src/background-filter-info.c
+          src/background-filter.cpp
+          src/enhance-filter.cpp
+          src/enhance-filter-info.c)
 
 # Import libobs as main plugin dependency
 find_package(libobs REQUIRED)

@@ -43,7 +43,7 @@ struct background_removal_filter : public filter_data {
   gs_effect_t *kawaseBlurEffect;
 };
 
-const char  *background_filter_getname(void *unused)
+const char *background_filter_getname(void *unused)
 {
   UNUSED_PARAMETER(unused);
   return obs_module_text("BackgroundRemoval");
@@ -67,7 +67,7 @@ static bool enable_threshold_modified(obs_properties_t *ppts, obs_property_t *p,
   return true;
 }
 
-obs_properties_t  *background_filter_properties(void *data)
+obs_properties_t *background_filter_properties(void *data)
 {
   obs_properties_t *props = obs_properties_create();
 
@@ -217,7 +217,7 @@ void background_filter_deactivate(void *data)
 
 /**                   FILTER CORE                     */
 
-void  *background_filter_create(obs_data_t *settings, obs_source_t *source)
+void *background_filter_create(obs_data_t *settings, obs_source_t *source)
 {
   void *data = bmalloc(sizeof(struct background_removal_filter));
   struct background_removal_filter *tf = new (data) background_removal_filter();
