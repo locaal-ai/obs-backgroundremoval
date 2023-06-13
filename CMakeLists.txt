@@ -1,12 +1,13 @@
 cmake_minimum_required(VERSION 3.16...3.21)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_CXX_STANDARD 11)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 project(
   obs-backgroundremoval
   VERSION 1.0.1
-  LANGUAGES CXX)
+  LANGUAGES C CXX)
 add_library(${CMAKE_PROJECT_NAME} MODULE)
 
 set(PLUGIN_AUTHOR "Roy Shilkrot")
@@ -15,8 +16,13 @@ set(LINUX_MAINTAINER_EMAIL "roy.shil@gmail.com")
 
 target_sources(
   ${CMAKE_PROJECT_NAME}
-  PRIVATE src/plugin-main.cpp src/ort-utils/ort-session-utils.cpp src/obs-utils/obs-utils.cpp
-          src/background-filter.cpp src/enhance-filter.cpp)
+  PRIVATE src/plugin-main.c
+          src/ort-utils/ort-session-utils.cpp
+          src/obs-utils/obs-utils.cpp
+          src/background-filter-info.c
+          src/background-filter.cpp
+          src/enhance-filter.cpp
+          src/enhance-filter-info.c)
 
 # Import libobs as main plugin dependency
 find_package(libobs REQUIRED)

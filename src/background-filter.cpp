@@ -1,4 +1,4 @@
-#include <obs-module.h>
+#include "background-filter.h"
 
 #include <onnxruntime_cxx_api.h>
 
@@ -43,7 +43,7 @@ struct background_removal_filter : public filter_data {
   gs_effect_t *kawaseBlurEffect;
 };
 
-static const char *filter_getname(void *unused)
+const char *background_filter_getname(void *unused)
 {
   UNUSED_PARAMETER(unused);
   return obs_module_text("BackgroundRemoval");
@@ -67,7 +67,7 @@ static bool enable_threshold_modified(obs_properties_t *ppts, obs_property_t *p,
   return true;
 }
 
-static obs_properties_t *filter_properties(void *data)
+obs_properties_t *background_filter_properties(void *data)
 {
   obs_properties_t *props = obs_properties_create();
 
@@ -124,7 +124,7 @@ static obs_properties_t *filter_properties(void *data)
   return props;
 }
 
-static void filter_defaults(obs_data_t *settings)
+void background_filter_defaults(obs_data_t *settings)
 {
   obs_data_set_default_bool(settings, "enable_threshold", true);
   obs_data_set_default_double(settings, "threshold", 0.5);
@@ -145,7 +145,7 @@ static void filter_defaults(obs_data_t *settings)
   obs_data_set_default_int(settings, "numThreads", 1);
 }
 
-static void filter_update(void *data, obs_data_t *settings)
+void background_filter_update(void *data, obs_data_t *settings)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
   tf->enableThreshold = (float)obs_data_get_bool(settings, "enable_threshold");
@@ -203,13 +203,13 @@ static void filter_update(void *data, obs_data_t *settings)
   obs_leave_graphics();
 }
 
-static void filter_activate(void *data)
+void background_filter_activate(void *data)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
   tf->isDisabled = false;
 }
 
-static void filter_deactivate(void *data)
+void background_filter_deactivate(void *data)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
   tf->isDisabled = true;
@@ -217,7 +217,7 @@ static void filter_deactivate(void *data)
 
 /**                   FILTER CORE                     */
 
-static void *filter_create(obs_data_t *settings, obs_source_t *source)
+void *background_filter_create(obs_data_t *settings, obs_source_t *source)
 {
   void *data = bmalloc(sizeof(struct background_removal_filter));
   struct background_removal_filter *tf = new (data) background_removal_filter();
@@ -229,12 +229,12 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
   tf->env.reset(new Ort::Env(OrtLoggingLevel::ORT_LOGGING_LEVEL_ERROR, instanceName.c_str()));
 
   tf->modelSelection = MODEL_MEDIAPIPE;
-  filter_update(tf, settings);
+  background_filter_update(tf, settings);
 
   return tf;
 }
 
-static void filter_destroy(void *data)
+void background_filter_destroy(void *data)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
@@ -271,7 +271,7 @@ static void processImageForBackground(struct background_removal_filter *tf,
   }
 }
 
-void filter_video_tick(void *data, float seconds)
+void background_filter_video_tick(void *data, float seconds)
 {
   struct background_removal_filter *tf = reinterpret_cast<background_removal_filter *>(data);
 
@@ -410,7 +410,7 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf, uint3
   return blurredTexture;
 }
 
-static void filter_video_render(void *data, gs_effect_t *_effect)
+void background_filter_video_render(void *data, gs_effect_t *_effect)
 {
   UNUSED_PARAMETER(_effect);
 
@@ -479,19 +479,3 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
   gs_texture_destroy(alphaTexture);
   gs_texture_destroy(blurredTexture);
 }
-
-struct obs_source_info background_removal_filter_info = {
-  .id = "background_removal",
-  .type = OBS_SOURCE_TYPE_FILTER,
-  .output_flags = OBS_SOURCE_VIDEO,
-  .get_name = filter_getname,
-  .create = filter_create,
-  .destroy = filter_destroy,
-  .get_defaults = filter_defaults,
-  .get_properties = filter_properties,
-  .update = filter_update,
-  .activate = filter_activate,
-  .deactivate = filter_deactivate,
-  .video_tick = filter_video_tick,
-  .video_render = filter_video_render,
-};
