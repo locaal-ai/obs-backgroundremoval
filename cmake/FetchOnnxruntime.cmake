@@ -68,18 +68,19 @@ elseif(OS_LINUX)
       Onnxruntime
       URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/onnxruntime-linux-aarch64-${Onnxruntime_VERSION}.tgz"
       URL_HASH MD5=b47638bb3c9507e56887d5c35d337071)
+    FetchContent_MakeAvailable(Onnxruntime)
     set(Onnxruntime_INSTALL_LIBS ${Onnxruntime_LINK_LIBS})
   else()
     FetchContent_Declare(
       Onnxruntime
       URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/onnxruntime-linux-x64-gpu-${Onnxruntime_VERSION}.tgz"
       URL_HASH MD5=eb050c36d4c3d1c990a08d7cb601a66c)
+    FetchContent_MakeAvailable(Onnxruntime)
     set(Onnxruntime_INSTALL_LIBS
         ${Onnxruntime_LINK_LIBS} "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_shared.so"
         "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_cuda.so"
         "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_tensorrt.so")
   endif()
-  FetchContent_MakeAvailable(Onnxruntime)
   set(Onnxruntime_LINK_LIBS
       "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime.so.${Onnxruntime_VERSION}")
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE ${Onnxruntime_LINK_LIBS})
