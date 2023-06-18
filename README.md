@@ -16,6 +16,8 @@ A plugin for [OBS Studio](https://obsproject.com/) that allows you to replace th
   - [MacOSX](#mac-osx)
   - [Linux (Ubuntu, Arch, openSUSE)](#linux)
   - [Windows](#windows)
+ 
+🚧 Check out our experimental [CleanStream](https://github.com/royshil/obs-cleanstream) OBS plugin for real-time filler word (uh,um) and profanity removal from live audio stream 🚧
 
 ## Download
 Check out the [latest releases](https://github.com/royshil/obs-backgroundremoval/releases) for downloads and install instructions.
@@ -24,6 +26,8 @@ Check out the [latest releases](https://github.com/royshil/obs-backgroundremoval
 On Ubuntu, there are two ways to install OBS and you have to use the corresponding method to install this plugin.
 - If you installed OBS via the official PPA, download the deb package from the [releases](https://github.com/royshil/obs-backgroundremoval/releases) page and install it directly.
 - If you installed OBS via FlatHub, run the following command: `flatpak install com.obsproject.Studio.Plugin.BackgroundRemoval`
+
+The pre-built binary of this plugin can run Ubuntu 22.04 or later.
 
 On openSUSE, please see [`docs/BUILDING-OPENSUSE.md`](docs/BUILDING-OPENSUSE.md).
 

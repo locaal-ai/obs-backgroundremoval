@@ -1,4 +1,4 @@
-#include <obs-module.h>
+#include "enhance-filter.h"
 
 #include <onnxruntime_cxx_api.h>
 
@@ -29,13 +29,13 @@ struct enhance_filter : public filter_data {
   float blendFactor;
 };
 
-static const char *filter_getname(void *unused)
+const char *enhance_filter_getname(void *unused)
 {
   UNUSED_PARAMETER(unused);
   return obs_module_text("EnhancePortrait");
 }
 
-static obs_properties_t *filter_properties(void *data)
+obs_properties_t *enhance_filter_properties(void *data)
 {
   UNUSED_PARAMETER(data);
   obs_properties_t *props = obs_properties_create();
@@ -64,7 +64,7 @@ static obs_properties_t *filter_properties(void *data)
   return props;
 }
 
-static void filter_defaults(obs_data_t *settings)
+void enhance_filter_defaults(obs_data_t *settings)
 {
   obs_data_set_default_double(settings, "blend", 1.0);
   obs_data_set_default_int(settings, "numThreads", 1);
@@ -79,19 +79,19 @@ static void filter_defaults(obs_data_t *settings)
 #endif
 }
 
-static void filter_activate(void *data)
+void enhance_filter_activate(void *data)
 {
   struct enhance_filter *tf = reinterpret_cast<enhance_filter *>(data);
   tf->isDisabled = false;
 }
 
-static void filter_deactivate(void *data)
+void enhance_filter_deactivate(void *data)
 {
   struct enhance_filter *tf = reinterpret_cast<enhance_filter *>(data);
   tf->isDisabled = true;
 }
 
-static void filter_update(void *data, obs_data_t *settings)
+void enhance_filter_update(void *data, obs_data_t *settings)
 {
   UNUSED_PARAMETER(settings);
   struct enhance_filter *tf = reinterpret_cast<enhance_filter *>(data);
@@ -130,7 +130,7 @@ static void filter_update(void *data, obs_data_t *settings)
   }
 }
 
-static void *filter_create(obs_data_t *settings, obs_source_t *source)
+void *enhance_filter_create(obs_data_t *settings, obs_source_t *source)
 {
   void *data = bmalloc(sizeof(struct enhance_filter));
   struct enhance_filter *tf = new (data) enhance_filter();
@@ -141,12 +141,12 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
   std::string instanceName{"enhance-portrait-inference"};
   tf->env.reset(new Ort::Env(OrtLoggingLevel::ORT_LOGGING_LEVEL_ERROR, instanceName.c_str()));
 
-  filter_update(tf, settings);
+  enhance_filter_update(tf, settings);
 
   return tf;
 }
 
-static void filter_destroy(void *data)
+void enhance_filter_destroy(void *data)
 {
   struct enhance_filter *tf = reinterpret_cast<enhance_filter *>(data);
 
@@ -162,7 +162,7 @@ static void filter_destroy(void *data)
   }
 }
 
-static void filter_video_tick(void *data, float seconds)
+void enhance_filter_video_tick(void *data, float seconds)
 {
   UNUSED_PARAMETER(seconds);
   struct enhance_filter *tf = reinterpret_cast<enhance_filter *>(data);
@@ -211,7 +211,7 @@ static void filter_video_tick(void *data, float seconds)
   }
 }
 
-static void filter_video_render(void *data, gs_effect_t *_effect)
+void enhance_filter_video_render(void *data, gs_effect_t *_effect)
 {
   UNUSED_PARAMETER(_effect);
 
@@ -263,19 +263,3 @@ static void filter_video_render(void *data, gs_effect_t *_effect)
 
   gs_texture_destroy(outputTexture);
 }
-
-struct obs_source_info enhance_filter_info = {
-  .id = "enhanceportrait",
-  .type = OBS_SOURCE_TYPE_FILTER,
-  .output_flags = OBS_SOURCE_VIDEO,
-  .get_name = filter_getname,
-  .create = filter_create,
-  .destroy = filter_destroy,
-  .get_defaults = filter_defaults,
-  .get_properties = filter_properties,
-  .update = filter_update,
-  .activate = filter_activate,
-  .deactivate = filter_deactivate,
-  .video_tick = filter_video_tick,
-  .video_render = filter_video_render,
-};
