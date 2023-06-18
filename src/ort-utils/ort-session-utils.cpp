@@ -56,7 +56,7 @@ void createOrtSession(filter_data *tf)
 #endif
 
   try {
-#ifdef __linux__
+#if defined(__linux__) && defined(__x86_64__)
     if (tf->useGPU == USEGPU_TENSORRT) {
       Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_Tensorrt(sessionOptions, 0));
     }
