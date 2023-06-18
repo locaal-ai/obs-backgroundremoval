@@ -17,6 +17,8 @@ A plugin for [OBS Studio](https://obsproject.com/) that allows you to replace th
   - [Linux (Ubuntu, Arch, openSUSE)](#linux)
   - [Windows](#windows)
 
+🚧 Check out the experimental [CleanStream](https://github.com/royshil/obs-cleanstream) OBS plugin for real-time filler word ("uh", "um") and profanity removal 🚧
+
 ## Download
 Check out the [latest releases](https://github.com/royshil/obs-backgroundremoval/releases) for downloads and install instructions.
 
