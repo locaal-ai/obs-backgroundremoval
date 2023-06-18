@@ -5,7 +5,7 @@
 #include <coreml_provider_factory.h>
 #endif
 
-#ifdef __linux__
+#if defined(__linux__) && defined(__x86_64__)
 #include <tensorrt_provider_factory.h>
 #endif
 
