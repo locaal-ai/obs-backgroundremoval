@@ -504,9 +504,7 @@ else()
       set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-linux-x86_64")
 
       set(CPACK_GENERATOR "DEB")
-      set(CPACK_DEBIAN_PACKAGE_DEPENDS
-          "obs-studio (>= 28.0.0)"
-      )
+      set(CPACK_DEBIAN_PACKAGE_DEPENDS "obs-studio (>= 28.0.0)")
 
       set(CPACK_OUTPUT_FILE_PREFIX ${CMAKE_SOURCE_DIR}/release)
 
