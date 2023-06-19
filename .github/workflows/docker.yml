@@ -32,7 +32,7 @@ jobs:
         uses: "docker/setup-qemu-action@v2"
       - uses: "actions/checkout@v3"
       - run: |
-          docker run -t\
+          docker run -t \
             --mount "type=bind,source=${{ github.workspace }},target=/workspace" \
             ubuntu:jammy \
             sh -c "cd /workspace &&
