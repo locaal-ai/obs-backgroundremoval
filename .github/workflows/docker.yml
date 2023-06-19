@@ -63,18 +63,7 @@ jobs:
             sh -c "cd /workspace/plugin &&
               apt-get update &&
               apt-get install -y sudo zsh &&
-              CI=1 ./.github/scripts/build-linux.sh
-            "
-
-      - name: "Package Plugin"
-        run: |
-          docker run -t \
-            --mount "type=bind,source=${{ github.workspace }},target=/workspace" \
-            --platform linux/arm64 \
-            ubuntu:jammy \
-            sh -c "cd /workspace/plugin &&
-              apt-get update &&
-              apt-get install -y sudo zsh &&
+              CI=1 ./.github/scripts/build-linux.sh &&
               CI=1 ./.github/scripts/package-linux.sh
             "
 
