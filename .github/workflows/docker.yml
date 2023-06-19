@@ -27,17 +27,47 @@ jobs:
 
   UbuntuArm64:
     runs-on: "ubuntu-latest"
+    env:
+      PLUGIN_NAME: "obs-backgroundremoval"
     steps:
       - name: "Set up QEMU"
         uses: "docker/setup-qemu-action@v2"
-      - uses: "actions/checkout@v3"
+
+      - name: "Checkout"
+        uses: "actions/checkout@v3"
+        with:
+          path: "plugin"
+          submodules: "recursive"
+
+      - name: "Checkout obs-studio"
+        uses: "actions/checkout@v3"
+        with:
+          repository: "obsproject/obs-studio"
+          path: "obs-studio"
+          fetch-depth: 0
+          submodules: "recursive"
+
+      - name: Setup Environment
+        working-directory: ${{ github.workspace }}/plugin
+        id: setup
+        run: |
+          ## SETUP ENVIRONMENT SCRIPT
+          echo "commitHash=$(git rev-parse HEAD | cut -c1-9)" >> $GITHUB_OUTPUT
+
       - run: |
           docker run -t \
             --mount "type=bind,source=${{ github.workspace }},target=/workspace" \
             ubuntu:jammy \
-            sh -c "cd /workspace &&
+            sh -c "cd /workspace/plugin &&
               apt-get update &&
               apt-get install -y sudo zsh &&
               CI=1 ./.github/scripts/build-linux.sh &&
               CI=1 ./.github/scripts/package-linux.sh
             "
+
+      - name: Upload Build Artifact
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.PLUGIN_NAME }}-linux-arm64-${{ steps.setup.outputs.commitHash }}
+          path: ${{ github.workspace }}/plugin/release/${{ env.PLUGIN_NAME }}-*-linux-arm64.*
