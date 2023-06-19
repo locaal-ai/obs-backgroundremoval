@@ -24,3 +24,22 @@ jobs:
       - name: "Make the package"
         working-directory: "scripts"
         run: "sudo -u user -- makepkg"
+
+  Fedora:
+    runs-on: "ubuntu-latest"
+    container:
+      image: "archlinux:latest"
+    steps:
+      - name: "Create an user"
+        run: "useradd -m user"
+      - uses: "actions/checkout@v3"
+      - name: "Chown files"
+        run: "chown -R user:user ."
+      - name: "Add RPM Fusion repository"
+        run: "dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
+      - name: "Install build dependencies"
+        run: "sudo dnf install obs-studio"
+      - name: "Configure the plugin"
+        run: "sudo -u user -- cmake -B build -DLINUX_PORTABLE=OFF"
+      - name: "Build the plugin"
+        run: "sudo -u user -- cmake --build build"
