@@ -39,14 +39,6 @@ jobs:
           path: "plugin"
           submodules: "recursive"
 
-      - name: "Checkout obs-studio"
-        uses: "actions/checkout@v3"
-        with:
-          repository: "obsproject/obs-studio"
-          path: "obs-studio"
-          fetch-depth: 0
-          submodules: "recursive"
-
       - name: Setup Environment
         working-directory: ${{ github.workspace }}/plugin
         id: setup
