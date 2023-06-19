@@ -27,8 +27,12 @@ jobs:
 
   UbuntuArm64:
     runs-on: "ubuntu-latest"
-    container:
-      image: "ubuntu:jammy"
-      options: "--platform=linux/arm64"
     steps:
+      - name: "Set up QEMU"
+        uses: "docker/setup-qemu-action@v2"
       - uses: "actions/checkout@v3"
+      - run: |
+          docker run \
+            --mount "type=bind,source=${{ github.workspace }},target=/workspace" \
+            ubuntu:jammy \
+            sh -c "cd /workspace && CI=1 ./.github/scripts/build-linux.sh"
