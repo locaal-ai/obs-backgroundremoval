@@ -32,13 +32,12 @@ jobs:
         uses: "docker/setup-qemu-action@v2"
       - uses: "actions/checkout@v3"
       - run: |
-          printf %s "
-            cd /workspace &&
-            apt-get update &&
-            apt-get install -y sudo zsh &&
-            CI=1 ./.github/scripts/build-linux.sh &&
-            CI=1 ./.github/scripts/package-linux.sh
-          " | docker run -it \
+          docker run -t\
             --mount "type=bind,source=${{ github.workspace }},target=/workspace" \
             ubuntu:jammy \
-            sh
+            sh -c "cd /workspace &&
+              apt-get update &&
+              apt-get install -y sudo zsh &&
+              CI=1 ./.github/scripts/build-linux.sh &&
+              CI=1 ./.github/scripts/package-linux.sh
+            "
