@@ -54,14 +54,25 @@ jobs:
           ## SETUP ENVIRONMENT SCRIPT
           echo "commitHash=$(git rev-parse HEAD | cut -c1-9)" >> $GITHUB_OUTPUT
 
-      - run: |
-          docker run -t \
+      - name: "Build Plugin"
+        run: |
+          docker run \
             --mount "type=bind,source=${{ github.workspace }},target=/workspace" \
             ubuntu:jammy \
             sh -c "cd /workspace/plugin &&
               apt-get update &&
               apt-get install -y sudo zsh &&
-              CI=1 ./.github/scripts/build-linux.sh &&
+              CI=1 ./.github/scripts/build-linux.sh
+            "
+
+      - name: "Package Plugin"
+        run: |
+          docker run \
+            --mount "type=bind,source=${{ github.workspace }},target=/workspace" \
+            ubuntu:jammy \
+            sh -c "cd /workspace/plugin &&
+              apt-get update &&
+              apt-get install -y sudo zsh &&
               CI=1 ./.github/scripts/package-linux.sh
             "
 
