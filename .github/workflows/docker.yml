@@ -35,7 +35,7 @@ jobs:
       - uses: "actions/checkout@v3"
       # - name: "Chown files"
       #   run: "chown -R user:user $GITHUB_WORKSPACE"
-      - run: echo $PATH
+      - run: echo $PATH && ls /usr/bin
       - name: "Add RPM Fusion repository"
         run: "dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
       # - name: "Install build dependencies"
