@@ -1,7 +1,6 @@
 include(FetchContent)
 
-set(Onnxruntime_VERSION "1.15.0")
-set(Onnxruntime_DirectML_VERSION "1.12.0")
+set(Onnxruntime_VERSION "1.15.1")
 if(OS_MACOS)
   FetchContent_Declare(
     Onnxruntime
