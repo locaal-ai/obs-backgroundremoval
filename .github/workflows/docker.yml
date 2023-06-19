@@ -35,4 +35,4 @@ jobs:
           docker run \
             --mount "type=bind,source=${{ github.workspace }},target=/workspace" \
             ubuntu:jammy \
-            sh -c "cd /workspace && apt install -y sudo zsh && CI=1 ./.github/scripts/build-linux.sh"
+            sh -c "cd /workspace && apt-get update && apt-get install -y sudo zsh && CI=1 ./.github/scripts/build-linux.sh"
