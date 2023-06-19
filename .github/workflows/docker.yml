@@ -56,7 +56,7 @@ jobs:
 
       - name: "Build Plugin"
         run: |
-          docker run \
+          docker run -t \
             --mount "type=bind,source=${{ github.workspace }},target=/workspace" \
             ubuntu:jammy \
             sh -c "cd /workspace/plugin &&
@@ -67,7 +67,7 @@ jobs:
 
       - name: "Package Plugin"
         run: |
-          docker run \
+          docker run -t \
             --mount "type=bind,source=${{ github.workspace }},target=/workspace" \
             ubuntu:jammy \
             sh -c "cd /workspace/plugin &&
