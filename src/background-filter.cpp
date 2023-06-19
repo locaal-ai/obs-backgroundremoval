@@ -92,7 +92,7 @@ obs_properties_t *background_filter_properties(void *data)
                                                       OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
   obs_property_list_add_string(p_use_gpu, obs_module_text("CPU"), USEGPU_CPU);
-#ifdef __linux__
+#if defined(__linux__) && defined(__x86_64__)
   obs_property_list_add_string(p_use_gpu, obs_module_text("GPUTensorRT"), USEGPU_TENSORRT);
 #endif
 #if _WIN32
