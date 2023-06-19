@@ -24,3 +24,11 @@ jobs:
       - name: "Make the package"
         working-directory: "scripts"
         run: "sudo -u user -- makepkg"
+
+  UbuntuArm64:
+    runs-on: "ubuntu-latest"
+    container:
+      image: "ubuntu:jammy"
+      options: "--platform=linux/arm64"
+    steps:
+      - uses: "actions/checkout@v3"
