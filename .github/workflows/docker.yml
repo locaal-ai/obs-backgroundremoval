@@ -58,6 +58,7 @@ jobs:
         run: |
           docker run -t \
             --mount "type=bind,source=${{ github.workspace }},target=/workspace" \
+            --platform linux/arm64 \
             ubuntu:jammy \
             sh -c "cd /workspace/plugin &&
               apt-get update &&
@@ -69,6 +70,7 @@ jobs:
         run: |
           docker run -t \
             --mount "type=bind,source=${{ github.workspace }},target=/workspace" \
+            --platform linux/arm64 \
             ubuntu:jammy \
             sh -c "cd /workspace/plugin &&
               apt-get update &&
