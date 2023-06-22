@@ -8,10 +8,20 @@ set(CUSTOM_ONNXRUNTIME_MD5
     ""
     CACHE STRING "MD5 Hash of a downloaded ONNX Runtime tarball")
 
+if(CUSTOM_ONNXRUNTIME_URL STREQUAL "")
+  set(USE_PREDEFINED_ONNXRUNTIME ON)
+else()
+  if(CUSTOM_ONNXRUNTIME_MD5 STREQUAL "")
+    message(FATAL_ERROR "Both of CUSTOM_ONNXRUNTIME_URL and CUSTOM_ONNXRUNTIME_MD5 must be present!")
+  else()
+    set(USE_PREDEFINED_ONNXRUNTIME OFF)
+  endif()
+endif()
+
 set(Onnxruntime_VERSION "1.15.1")
 
 if(OS_MACOS)
-  if(CUSTOM_ONNXRUNTIME_URL STREQUAL "")
+  if(USE_PREDEFINED_ONNXRUNTIME)
     FetchContent_Declare(
       Onnxruntime
       URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/onnxruntime-osx-universal2-${Onnxruntime_VERSION}.tgz"
@@ -36,7 +46,7 @@ if(OS_MACOS)
       "@loader_path/../Frameworks/libonnxruntime.${Onnxruntime_VERSION}.dylib"
       $<TARGET_FILE:${CMAKE_PROJECT_NAME}>)
 elseif(OS_WINDOWS)
-  if(CUSTOM_ONNXRUNTIME_URL STREQUAL "")
+  if(USE_PREDEFINED_ONNXRUNTIME)
     FetchContent_Declare(
       Onnxruntime
       URL "https://github.com/umireon/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}-1/onnxruntime-static-win.zip"
@@ -86,7 +96,7 @@ elseif(OS_WINDOWS)
   install(IMPORTED_RUNTIME_ARTIFACTS Ort::DirectML DESTINATION "${OBS_PLUGIN_DESTINATION}")
 elseif(OS_LINUX)
   if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
-    if(CUSTOM_ONNXRUNTIME_URL STREQUAL "")
+    if(USE_PREDEFINED_ONNXRUNTIME)
       FetchContent_Declare(
         Onnxruntime
         URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/onnxruntime-linux-aarch64-${Onnxruntime_VERSION}.tgz"
@@ -100,7 +110,7 @@ elseif(OS_LINUX)
     FetchContent_MakeAvailable(Onnxruntime)
     set(Onnxruntime_INSTALL_LIBS ${Onnxruntime_LINK_LIBS})
   else()
-    if(CUSTOM_ONNXRUNTIME_URL STREQUAL "")
+    if(USE_PREDEFINED_ONNXRUNTIME)
       FetchContent_Declare(
         Onnxruntime
         URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/onnxruntime-linux-x64-gpu-${Onnxruntime_VERSION}.tgz"
