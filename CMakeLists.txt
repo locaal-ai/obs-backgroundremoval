@@ -6,7 +6,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 project(
   obs-backgroundremoval
-  VERSION 1.0.1
+  VERSION 1.0.2
   LANGUAGES C CXX)
 add_library(${CMAKE_PROJECT_NAME} MODULE)
 
