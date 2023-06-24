@@ -1,5 +1,13 @@
 include(ExternalProject)
 
+set(OPENCV_URL
+    https://github.com/opencv/opencv/archive/refs/tags/4.7.0.tar.gz
+    CACHE STRING "URL of an OpenCV tarball")
+
+set(OPENCV_MD5
+    13e13244cb0cc6ec4f01eacd38d05d17
+    CACHE STRING "MD5 Hash of an OpenCV tarball")
+
 string(REPLACE ";" "$<SEMICOLON>" CMAKE_OSX_ARCHITECTURES_ "${CMAKE_OSX_ARCHITECTURES}")
 
 if(MSVC)
@@ -36,7 +44,8 @@ endif()
 ExternalProject_Add(
   OpenCV_Build
   DOWNLOAD_EXTRACT_TIMESTAMP true
-  URL https://github.com/opencv/opencv/archive/refs/tags/4.7.0.tar.gz
+  URL ${OPENCV_URL}
+  URL_HASH MD5=${OPENCV_MD5}
   PATCH_COMMAND ${OpenCV_INSTALL_CCACHE}
   BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config ${OpenCV_BUILD_TYPE}
   BUILD_BYPRODUCTS
