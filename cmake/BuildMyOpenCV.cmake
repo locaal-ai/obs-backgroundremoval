@@ -1,25 +1,12 @@
 include(ExternalProject)
 
-set(CUSTOM_OPENCV_URL
-    ""
-    CACHE STRING "URL of a downloaded OpenCV tarball")
+set(OPENCV_URL
+    https://github.com/opencv/opencv/archive/refs/tags/4.7.0.tar.gz
+    CACHE STRING "URL of an OpenCV tarball")
 
-set(CUSTOM_OPENCV_MD5
-    ""
-    CACHE STRING "MD5 Hash of a downloaded OpenCV tarball")
-
-if(CUSTOM_OPENCV_URL STREQUAL "")
-  set(OPENCV_URL https://github.com/opencv/opencv/archive/refs/tags/4.7.0.tar.gz)
-  set(OPENCV_MD5 13e13244cb0cc6ec4f01eacd38d05d17)
-else()
-  if(CUSTOM_OPENCV_MD5 STREQUAL "")
-    message(FATAL_ERROR "Both of CUSTOM_OPENCV_URL and CUSTOM_OPENCV_MD5 must be present!")
-  else()
-    set(USE_PREDEFINED_OPENCV OFF)
-    set(OPENCV_URL ${CUSTOM_OPENCV_URL})
-    set(OPENCV_MD5 ${CUSTOM_OPENCV_MD5})
-  endif()
-endif()
+set(OPENCV_MD5
+    13e13244cb0cc6ec4f01eacd38d05d17
+    CACHE STRING "MD5 Hash of an OpenCV tarball")
 
 string(REPLACE ";" "$<SEMICOLON>" CMAKE_OSX_ARCHITECTURES_ "${CMAKE_OSX_ARCHITECTURES}")
 
