@@ -135,6 +135,12 @@ elseif(OS_LINUX)
                              PUBLIC "${onnxruntime_SOURCE_DIR}/include")
   install(FILES ${Onnxruntime_INSTALL_LIBS}
           DESTINATION "${OBS_PLUGIN_DESTINATION}/${CMAKE_PROJECT_NAME}")
-  set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES INSTALL_RPATH
-                                                         "$ORIGIN/${CMAKE_PROJECT_NAME}")
+  if(LINUX_PORTABLE)
+    set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES INSTALL_RPATH
+                                                           "$ORIGIN/${CMAKE_PROJECT_NAME}")
+  else()
+    set_target_properties(
+      ${CMAKE_PROJECT_NAME} PROPERTIES INSTALL_RPATH
+                                       "${OBS_PLUGIN_DESTINATION}/${CMAKE_PROJECT_NAME}")
+  endif()
 endif()
