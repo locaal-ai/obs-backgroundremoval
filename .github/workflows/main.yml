@@ -505,7 +505,13 @@ jobs:
         arch: [x86_64]
     if: always()
     needs: [clang_check]
+    outputs:
+      commitHash: ${{ steps.setup.outputs.commitHash }}
     steps:
+      - name: Setup Environment
+        id: setup
+        run: |
+          echo "commitHash=$(git rev-parse HEAD | cut -c1-9)" >> $GITHUB_OUTPUT
       - name: "Create an user"
         run: "useradd -m user"
       - uses: "actions/checkout@v3"
@@ -524,7 +530,7 @@ jobs:
       - name: "Upload Build Artifact"
         uses: "actions/upload-artifact@v3"
         with:
-          name: ${{ env.PLUGIN_NAME }}-linux-${{ matrix.arch }}-${{ github.sha }}
+          name: ${{ env.PLUGIN_NAME }}-fedora-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}
           path: ${{ github.workspace }}/release/${{ env.PLUGIN_NAME }}-*-fedora-${{ matrix.arch }}.*
 
   make-release:
