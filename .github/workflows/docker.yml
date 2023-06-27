@@ -46,7 +46,7 @@ jobs:
       - name: "Install build dependencies"
         run: "dnf -y install cmake gcc-c++ obs-studio-devel"
       - name: "Configure the plugin"
-        run: "sudo -u user -- cmake -B build -DLINUX_PORTABLE=OFF"
+        run: "sudo -u user -- cmake -B build -DLINUX_PORTABLE=OFF -DCPACK_GENERATOR=RPM"
       - name: "Build the plugin"
         run: "sudo -u user -- cmake --build build"
       - name: "Package the plugin"

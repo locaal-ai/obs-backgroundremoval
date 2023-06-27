@@ -505,7 +505,7 @@ else()
 
       set(CPACK_GENERATOR
           "DEB"
-          CACHE STRING)
+          CACHE STRING "Packaging type")
       set(CPACK_DEBIAN_PACKAGE_DEPENDS "obs-studio (>= 28.0.0)")
       set(CPACK_RPM_PACKAGE_AUTOREQ OFF)
       set(CPACK_RPM_PACKAGE_REQUIRES "obs-studio >= 28.0.0")
