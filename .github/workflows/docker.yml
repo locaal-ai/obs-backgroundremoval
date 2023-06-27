@@ -30,7 +30,7 @@ jobs:
     env:
       PLUGIN_NAME: "obs-backgroundremoval"
     container:
-      image: "fedora:latest"
+      image: "fedora:37"
     steps:
       - name: Setup Environment
         id: setup
@@ -46,7 +46,7 @@ jobs:
       - name: "Install build dependencies"
         run: "dnf -y install cmake fedora-packager gcc-c++ obs-studio-devel rpmdevtools"
       - name: "Configure the plugin"
-        run: "sudo -u user -- cmake -B build -DLINUX_PORTABLE=OFF -DCPACK_GENERATOR=RPM"
+        run: "sudo -u user -- cmake -B build -DLINUX_PORTABLE=OFF -DCPACK_GENERATOR=RPM -DCMAKE_INSTALL_PREFIX=/usr"
       - name: "Build the plugin"
         run: "sudo -u user -- cmake --build build"
       - name: "Package the plugin"
