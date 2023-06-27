@@ -44,7 +44,7 @@ jobs:
       - name: "Add RPM Fusion repository"
         run: "dnf -y install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
       - name: "Install build dependencies"
-        run: "dnf -y install cmake gcc-c++ obs-studio-devel"
+        run: "dnf -y install cmake fedora-packager gcc-c++ obs-studio-devel rpmdevtools"
       - name: "Configure the plugin"
         run: "sudo -u user -- cmake -B build -DLINUX_PORTABLE=OFF -DCPACK_GENERATOR=RPM"
       - name: "Build the plugin"
