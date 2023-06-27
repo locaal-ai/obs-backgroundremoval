@@ -494,6 +494,44 @@ jobs:
           name: ${{ env.PLUGIN_NAME }}-windows-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}-installer
           path: ${{ github.workspace }}/plugin/release/${{ env.PLUGIN_NAME }}-*.exe
 
+  fedora_build:
+    name: 02 - Fedora
+    container:
+      image: "fedora:37"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        arch: [x86_64]
+    if: always()
+    needs: [clang_check]
+    outputs:
+      commitHash: ${{ steps.setup.outputs.commitHash }}
+    steps:
+      - name: Setup Environment
+        id: setup
+        run: echo "commitHash=$(git rev-parse HEAD | cut -c1-9)" >> $GITHUB_OUTPUT
+      - name: Create a user
+        run: useradd -m user
+      - uses: actions/checkout@v3
+      - name: Chown files
+        run: chown -R user:user .
+      - name: Add RPM Fusion repository
+        run: dnf -y install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+      - name: Install build dependencies
+        run: dnf -y install cmake fedora-packager gcc-c++ obs-studio-devel rpmdevtools
+      - name: Configure the plugin
+        run: sudo -u user -- cmake -B build -DLINUX_PORTABLE=OFF -DCPACK_GENERATOR=RPM -DCMAKE_INSTALL_PREFIX=/usr
+      - name: Build the plugin
+        run: sudo -u user -- cmake --build build
+      - name: Package the plugin
+        run: sudo -u user QA_RPATHS=18 -- cmake --build build -t package
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.PLUGIN_NAME }}-fedora-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}
+          path: ${{ github.workspace }}/release/${{ env.PLUGIN_NAME }}-*-fedora-${{ matrix.arch }}.*
+
   make-release:
     name: 03 - Create and upload release
     runs-on: ubuntu-22.04
