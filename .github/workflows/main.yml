@@ -525,7 +525,7 @@ jobs:
         uses: "actions/upload-artifact@v3"
         with:
           name: ${{ env.PLUGIN_NAME }}-linux-${{ matrix.arch }}-${{ github.sha }}
-          path: ${{ github.workspace }}/release/${{ env.PLUGIN_NAME }}-*-linux-${{ matrix.arch }}.*
+          path: ${{ github.workspace }}/release/${{ env.PLUGIN_NAME }}-*-fedora-${{ matrix.arch }}.*
 
   make-release:
     name: 03 - Create and upload release
