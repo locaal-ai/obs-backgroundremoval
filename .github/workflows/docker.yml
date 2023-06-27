@@ -34,7 +34,8 @@ jobs:
     steps:
       - name: Setup Environment
         id: setup
-        run: "echo "commitHash=$(git rev-parse HEAD | cut -c1-9)" >> $GITHUB_OUTPUT"
+        run: |
+          echo "commitHash=$(git rev-parse HEAD | cut -c1-9)" >> $GITHUB_OUTPUT
       - name: "Create an user"
         run: "useradd -m user"
       - uses: "actions/checkout@v3"
