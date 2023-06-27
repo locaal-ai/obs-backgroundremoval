@@ -27,9 +27,14 @@ jobs:
 
   Fedora:
     runs-on: "ubuntu-latest"
+    env:
+      PLUGIN_NAME: "obs-backgroundremoval"
     container:
       image: "fedora:latest"
     steps:
+      - name: Setup Environment
+        id: setup
+        run: "echo "commitHash=$(git rev-parse HEAD | cut -c1-9)" >> $GITHUB_OUTPUT"
       - name: "Create an user"
         run: "useradd -m user"
       - uses: "actions/checkout@v3"
@@ -43,3 +48,11 @@ jobs:
         run: "sudo -u user -- cmake -B build -DLINUX_PORTABLE=OFF"
       - name: "Build the plugin"
         run: "sudo -u user -- cmake --build build"
+      - name: "Package the plugin"
+        run: "sudo -u user -- cmake --build build -t package"
+      - name: "Upload Build Artifact"
+        uses: "actions/upload-artifact@v3"
+        with:
+          name: ${{ env.PLUGIN_NAME }}-linux-x86_64-${{ steps.setup.outputs.commitHash }}
+          path: ${{ github.workspace }}/release/${{ env.PLUGIN_NAME }}-*-linux-x86_64.*
+      
