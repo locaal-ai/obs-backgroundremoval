@@ -29,6 +29,7 @@ jobs:
     runs-on: "ubuntu-latest"
     env:
       PLUGIN_NAME: "obs-backgroundremoval"
+      QA_RPATHS: "18"
     container:
       image: "fedora:latest"
     steps:
