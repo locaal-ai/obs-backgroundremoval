@@ -6,13 +6,15 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 project(
   obs-backgroundremoval
-  VERSION 1.0.1
+  VERSION 1.0.3
   LANGUAGES C CXX)
 add_library(${CMAKE_PROJECT_NAME} MODULE)
 
 set(PLUGIN_AUTHOR "Roy Shilkrot")
+set(PLUGIN_PRETTY_NAME "OBS Background Removal plugin")
 set(MACOS_BUNDLEID "com.royshilkrot.obs-backgroundremoval")
 set(LINUX_MAINTAINER_EMAIL "roy.shil@gmail.com")
+set(PLUGIN_HOME_URL "https://github.com/royshil/obs-backgroundremoval")
 
 target_sources(
   ${CMAKE_PROJECT_NAME}
