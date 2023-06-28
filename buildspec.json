@@ -41,17 +41,17 @@
     },
     "platformConfig": {
         "macos": {
-            "bundleId": "com.example.obs-plugintemplate"
+            "bundleId": "com.royshilkrot.obs-backgroundremoval"
         }
     },
-    "name": "obs-plugintemplate",
-    "version": "1.0.0",
-    "author": "Your Name Here",
-    "website": "https://example.com",
-    "email": "me@example.com",
+    "name": "obs-backgroundremoval",
+    "version": "1.0.3",
+    "author": "Roy Shilkrot",
+    "website": "https://github.com/royshil/obs-backgroundremoval",
+    "email": "roy.shil@gmail.com",
     "uuids": {
-        "macosPackage": "00000000-0000-0000-0000-000000000000",
-        "macosInstaller": "00000000-0000-0000-0000-000000000000",
-        "windowsApp": "00000000-0000-0000-0000-000000000000"
+        "macosPackage": "c6b4a038-f7da-490a-b8ba-a31e29e337c9",
+        "macosInstaller": "368f7535-4e71-4587-952b-33ad935bf9f3",
+        "windowsApp": "1527c9ec-2638-4e3b-94d7-cc25d27cd725"
     }
 }
