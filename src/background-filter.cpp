@@ -367,12 +367,12 @@ void background_filter_video_tick(void *data, float seconds)
 						     cv::CHAIN_APPROX_SIMPLE);
 					std::vector<std::vector<cv::Point>>
 						filteredContours;
-					const int64_t contourSizeThreshold =
-						(int64_t)(backgroundMask.total() *
-							  tf->contourFilter);
+					const double contourSizeThreshold =
+						(double)(backgroundMask.total()) *
+							  tf->contourFilter;
 					for (auto &contour : contours) {
 						if (cv::contourArea(contour) >
-						    contourSizeThreshold) {
+						    (double)contourSizeThreshold) {
 							filteredContours
 								.push_back(
 									contour);
@@ -435,7 +435,7 @@ void background_filter_video_tick(void *data, float seconds)
 static gs_texture_t *blur_background(struct background_removal_filter *tf,
 				     uint32_t width, uint32_t height)
 {
-	if (tf->blurBackground == 0.0 || !tf->kawaseBlurEffect) {
+	if (tf->blurBackground == 0 || !tf->kawaseBlurEffect) {
 		return nullptr;
 	}
 	gs_texture_t *blurredTexture =
@@ -458,8 +458,8 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf,
 		}
 
 		gs_effect_set_texture(image, blurredTexture);
-		gs_effect_set_float(xOffset, (i + 0.5f) / width);
-		gs_effect_set_float(yOffset, (i + 0.5f) / height);
+		gs_effect_set_float(xOffset, ((float)i + 0.5f) / (float)width);
+		gs_effect_set_float(yOffset, ((float)i + 0.5f) / (float)height);
 
 		struct vec4 background;
 		vec4_zero(&background);
@@ -533,9 +533,9 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 
 	gs_effect_set_texture(alphamask, alphaTexture);
 	gs_effect_set_int(blurSize, (int)tf->blurBackground);
-	gs_effect_set_float(xTexelSize, 1.0f / width);
-	gs_effect_set_float(yTexelSize, 1.0f / height);
-	if (tf->blurBackground > 0.0) {
+	gs_effect_set_float(xTexelSize, 1.0f / (float)width);
+	gs_effect_set_float(yTexelSize, 1.0f / (float)height);
+	if (tf->blurBackground > 0) {
 		gs_effect_set_texture(blurredBackground, blurredTexture);
 	}
 
@@ -543,7 +543,7 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 	gs_reset_blend_state();
 
 	const char *techName;
-	if (tf->blurBackground > 0.0) {
+	if (tf->blurBackground > 0) {
 		techName = "DrawWithBlur";
 	} else {
 		techName = "DrawWithoutBlur";
