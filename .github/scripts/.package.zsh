@@ -189,9 +189,16 @@ ${_usage_host:-}"
 
       log_group "Packaging ${product_name}..."
       pushd ${project_root}
-      packagesbuild \
-        --build-folder ${project_root}/release/${config} \
-        ${project_root}/build_macos/installer-macos.generated.pkgproj
+      pkgbuild \
+        --component "${project_root}/release/obs-backgroundremoval.plugin" \
+        --install-location "/Library/Application Support/obs-studio/plugins" \
+        --scripts "${project_root}/cmake/macos/resources/scripts" \
+        "${project_root}/release/${product_name}-flat.pkg"
+      productbuild \
+        --distribution "${project_root}/cmake/macos/resources/Distribution.xml" \
+        --package-path "${project_root}/release" \
+        "${project_root}/release/${product_name}.pkg"
+      rm "${project_root}/release/${product_name}-flat.pkg"
 
       if (( codesign )) {
         read_codesign_installer
