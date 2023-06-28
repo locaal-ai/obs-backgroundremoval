@@ -47,7 +47,7 @@ set(CMAKE_XCODE_LINK_BUILD_PHASE_MODE KNOWN_LOCATION)
 
 # Enable codesigning with secure timestamp when not in Debug configuration (required for Notarization)
 set(CMAKE_XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS[variant=Release] "--deep --timestamp")
-set(CMAKE_XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS[variant=RelWithDebInfo] "--deep -timestamp")
+set(CMAKE_XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS[variant=RelWithDebInfo] "--deep --timestamp")
 set(CMAKE_XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS[variant=MinSizeRel] "--deep --timestamp")
 
 # Enable codesigning with hardened runtime option when not in Debug configuration (required for Notarization)
