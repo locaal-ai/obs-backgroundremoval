@@ -15,7 +15,7 @@
 #include <new>
 #include <mutex>
 
-#include "plugin-macros.generated.h"
+#include <plugin-support.h>
 #include "consts.h"
 #include "obs-utils/obs-utils.h"
 #include "ort-utils/ort-session-utils.h"
