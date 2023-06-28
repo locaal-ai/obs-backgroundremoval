@@ -15,7 +15,7 @@
 #include <new>
 #include <mutex>
 
-#include "plugin-macros.generated.h"
+#include <plugin-support.h>
 #include "models/ModelSINET.h"
 #include "models/ModelMediapipe.h"
 #include "models/ModelSelfie.h"
