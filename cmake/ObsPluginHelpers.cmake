@@ -17,8 +17,8 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
   set(OS_POSIX OFF)
 endif()
 
-# Old-Style plugin detected, find "modern" libobs variant instead and set global include directories
-# to fix "bad" plugin behavior
+# Old-Style plugin detected, find "modern" libobs variant instead and set global include directories to fix "bad" plugin
+# behavior
 if(DEFINED LIBOBS_INCLUDE_DIR AND NOT TARGET OBS::libobs)
   message(
     DEPRECATION
@@ -63,15 +63,14 @@ endif()
 #
 # * Use QT_VERSION value as a hint for desired Qt version
 # * If "AUTO" was specified, prefer Qt6 over Qt5
-# * Creates versionless targets of desired component if none had been created by Qt itself (Qt
-#   versions < 5.15)
+# * Creates versionless targets of desired component if none had been created by Qt itself (Qt versions < 5.15)
 #
 macro(find_qt)
   set(multiValueArgs COMPONENTS COMPONENTS_WIN COMPONENTS_MAC COMPONENTS_LINUX)
   cmake_parse_arguments(FIND_QT "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-  # Do not use versionless targets in the first step to avoid Qt::Core being clobbered by later
-  # opportunistic find_package runs
+  # Do not use versionless targets in the first step to avoid Qt::Core being clobbered by later opportunistic
+  # find_package runs
   set(QT_NO_CREATE_VERSIONLESS_TARGETS ON)
 
   # Loop until _QT_VERSION is set or FATAL_ERROR aborts script execution early
@@ -131,8 +130,7 @@ macro(find_qt)
   foreach(_COMPONENT IN LISTS _QT_COMPONENTS)
     if(NOT TARGET Qt::${_COMPONENT} AND TARGET Qt${_QT_VERSION}::${_COMPONENT})
       add_library(Qt::${_COMPONENT} INTERFACE IMPORTED)
-      set_target_properties(Qt::${_COMPONENT} PROPERTIES INTERFACE_LINK_LIBRARIES
-                                                         Qt${_QT_VERSION}::${_COMPONENT})
+      set_target_properties(Qt::${_COMPONENT} PROPERTIES INTERFACE_LINK_LIBRARIES Qt${_QT_VERSION}::${_COMPONENT})
     endif()
   endforeach()
 endmacro()
@@ -146,18 +144,13 @@ if(OS_POSIX)
   #
   # * Treat warnings as errors
   # * Enable extra warnings, https://clang.llvm.org/docs/DiagnosticsReference.html#wextra
-  # * Warning about usage of variable length array,
-  #   https://clang.llvm.org/docs/DiagnosticsReference.html#wvla
-  # * Warning about bad format specifiers,
-  #   https://clang.llvm.org/docs/DiagnosticsReference.html#wformat
+  # * Warning about usage of variable length array, https://clang.llvm.org/docs/DiagnosticsReference.html#wvla
+  # * Warning about bad format specifiers, https://clang.llvm.org/docs/DiagnosticsReference.html#wformat
   # * Warning about non-strings used as format strings,
   #   https://clang.llvm.org/docs/DiagnosticsReference.html#wformat-security
-  # * Warning about non-exhaustive switch blocks,
-  #   https://clang.llvm.org/docs/DiagnosticsReference.html#wswitch
-  # * Warning about unused parameters,
-  #   https://clang.llvm.org/docs/DiagnosticsReference.html#wunused-parameter
-  # * DISABLE warning about unused functions,
-  #   https://clang.llvm.org/docs/DiagnosticsReference.html#wunused-function
+  # * Warning about non-exhaustive switch blocks, https://clang.llvm.org/docs/DiagnosticsReference.html#wswitch
+  # * Warning about unused parameters, https://clang.llvm.org/docs/DiagnosticsReference.html#wunused-parameter
+  # * DISABLE warning about unused functions, https://clang.llvm.org/docs/DiagnosticsReference.html#wunused-function
   # * DISABLE warning about missing field initializers,
   #   https://clang.llvm.org/docs/DiagnosticsReference.html#wmissing-field-initializers
   # * DISABLE strict aliasing optimisations
@@ -238,14 +231,12 @@ else()
   string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} _HOST_ARCH)
 endif()
 
-if(_HOST_ARCH MATCHES "i[3-6]86|x86|x64|x86_64|amd64" AND NOT CMAKE_OSX_ARCHITECTURES STREQUAL
-                                                          "arm64")
+if(_HOST_ARCH MATCHES "i[3-6]86|x86|x64|x86_64|amd64" AND NOT CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
   # Enable MMX, SSE and SSE2 on compatible host systems (assuming no cross-compile)
   set(ARCH_SIMD_FLAGS -mmmx -msse -msse2)
 elseif(_HOST_ARCH MATCHES "arm64|arm64e|aarch64")
   # Enable available built-in SIMD support in Clang and GCC
-  if(CMAKE_C_COMPILER_ID MATCHES "^(Apple)?Clang|GNU" OR CMAKE_CXX_COMPILER_ID MATCHES
-                                                         "^(Apple)?Clang|GNU")
+  if(CMAKE_C_COMPILER_ID MATCHES "^(Apple)?Clang|GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang|GNU")
     include(CheckCCompilerFlag)
     include(CheckCXXCompilerFlag)
 
@@ -253,19 +244,17 @@ elseif(_HOST_ARCH MATCHES "arm64|arm64e|aarch64")
     check_cxx_compiler_flag("-fopenmp-simd" CXX_COMPILER_SUPPORTS_OPENMP_SIMD)
     target_compile_options(
       ${CMAKE_PROJECT_NAME}
-      PRIVATE
-        -DSIMDE_ENABLE_OPENMP
-        "$<$<AND:$<COMPILE_LANGUAGE:C>,$<BOOL:C_COMPILER_SUPPORTS_OPENMP_SIMD>>:-fopenmp-simd>"
-        "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:CXX_COMPILER_SUPPORTS_OPENMP_SIMD>>:-fopenmp-simd>")
+      PRIVATE -DSIMDE_ENABLE_OPENMP
+              "$<$<AND:$<COMPILE_LANGUAGE:C>,$<BOOL:C_COMPILER_SUPPORTS_OPENMP_SIMD>>:-fopenmp-simd>"
+              "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:CXX_COMPILER_SUPPORTS_OPENMP_SIMD>>:-fopenmp-simd>")
   endif()
 endif()
 
 # macOS specific settings
 if(OS_MACOS)
   # Set macOS-specific C++ standard library
-  target_compile_options(
-    ${CMAKE_PROJECT_NAME}
-    PRIVATE "$<$<COMPILE_LANG_AND_ID:OBJC,AppleClang,Clang>:-fcolor-diagnostics>" -stdlib=libc++)
+  target_compile_options(${CMAKE_PROJECT_NAME}
+                         PRIVATE "$<$<COMPILE_LANG_AND_ID:OBJC,AppleClang,Clang>:-fcolor-diagnostics>" -stdlib=libc++)
 
   # Set build architecture to host architecture by default
   if(NOT CMAKE_OSX_ARCHITECTURES)
@@ -288,9 +277,7 @@ if(OS_MACOS)
 
     set(CMAKE_OSX_DEPLOYMENT_TARGET
         ${_MACOS_DEPLOYMENT_TARGET}
-        CACHE STRING
-              "Minimum macOS version to target for deployment (at runtime); newer APIs weak linked"
-              FORCE)
+        CACHE STRING "Minimum macOS version to target for deployment (at runtime); newer APIs weak linked" FORCE)
     unset(_MACOS_DEPLOYMENT_TARGET)
   endif()
 
@@ -325,27 +312,26 @@ if(OS_MACOS)
       endif()
     else()
       unset(OBS_BUNDLE_CODESIGN_IDENTITY)
-      set_property(CACHE OBS_BUNDLE_CODESIGN_TEAM PROPERTY HELPSTRING
-                                                           "OBS code signing team for macOS")
+      set_property(CACHE OBS_BUNDLE_CODESIGN_TEAM PROPERTY HELPSTRING "OBS code signing team for macOS")
       set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE Automatic)
       set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM ${OBS_BUNDLE_CODESIGN_TEAM})
     endif()
   endif()
 
-  # Set path to entitlements property list for codesigning. Entitlements should match the host
-  # binary, in this case OBS.app.
+  # Set path to entitlements property list for codesigning. Entitlements should match the host binary, in this case
+  # OBS.app.
   set(OBS_CODESIGN_ENTITLEMENTS
       ${CMAKE_SOURCE_DIR}/cmake/bundle/macos/entitlements.plist
       CACHE INTERNAL "Path to codesign entitlements plist")
-  # Enable linker codesigning by default. Building OBS or plugins on host systems older than macOS
-  # 10.15 is not supported
+  # Enable linker codesigning by default. Building OBS or plugins on host systems older than macOS 10.15 is not
+  # supported
   set(OBS_CODESIGN_LINKER
       ON
       CACHE BOOL "Enable linker codesigning on macOS (macOS 11+ required)")
 
-  # Tell Xcode to pretend the linker signed binaries so that editing with install_name_tool
-  # preserves ad-hoc signatures. This option is supported by codesign on macOS 11 or higher. See
-  # CMake Issue 21854: https://gitlab.kitware.com/cmake/cmake/-/issues/21854
+  # Tell Xcode to pretend the linker signed binaries so that editing with install_name_tool preserves ad-hoc signatures.
+  # This option is supported by codesign on macOS 11 or higher. See CMake Issue 21854:
+  # https://gitlab.kitware.com/cmake/cmake/-/issues/21854
   if(OBS_CODESIGN_LINKER)
     set(CMAKE_XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "-o linker-signed")
   endif()
@@ -374,8 +360,7 @@ if(OS_MACOS)
     if(NOT DEFINED MACOSX_PLUGIN_BUNDLE_VERSION)
       message(
         FATAL_ERROR
-          "No 'MACOSX_PLUGIN_BUNDLE_VERSION' set, but is required to build plugin bundles on macOS - example: '25'"
-      )
+          "No 'MACOSX_PLUGIN_BUNDLE_VERSION' set, but is required to build plugin bundles on macOS - example: '25'")
     endif()
 
     if(NOT DEFINED MACOSX_PLUGIN_SHORT_VERSION_STRING)
@@ -410,8 +395,8 @@ if(OS_MACOS)
               NAMELINK_COMPONENT ${target}_Development)
 
     if(TARGET Qt::Core)
-      # Framework version has changed between Qt5 (uses wrong numerical version) and Qt6 (uses
-      # correct alphabetical version)
+      # Framework version has changed between Qt5 (uses wrong numerical version) and Qt6 (uses correct alphabetical
+      # version)
       if(${_QT_VERSION} EQUAL 5)
         set(_QT_FW_VERSION "${QT_VERSION}")
       else()
@@ -436,8 +421,7 @@ if(OS_MACOS)
                  BUNDLE ON
                  BUNDLE_EXTENSION "plugin"
                  OUTPUT_NAME ${target}
-                 MACOSX_BUNDLE_INFO_PLIST
-                 "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/bundle/macOS/Plugin-Info.plist.in"
+                 MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/bundle/macOS/Plugin-Info.plist.in"
                  XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${MACOSX_PLUGIN_GUI_IDENTIFIER}"
                  XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS
                  "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/bundle/macOS/entitlements.plist")
@@ -464,8 +448,7 @@ if(OS_MACOS)
         file(RELATIVE_PATH _RELATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/data/ ${_DATA_FILE})
         get_filename_component(_RELATIVE_PATH ${_RELATIVE_PATH} PATH)
         target_sources(${target} PRIVATE ${_DATA_FILE})
-        set_source_files_properties(${_DATA_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION
-                                                             Resources/${_RELATIVE_PATH})
+        set_source_files_properties(${_DATA_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/${_RELATIVE_PATH})
         string(REPLACE "\\" "\\\\" _GROUP_NAME ${_RELATIVE_PATH})
         source_group("Resources\\${_GROUP_NAME}" FILES ${_DATA_FILE})
       endforeach()
@@ -542,8 +525,7 @@ else()
       #   https://docs.microsoft.com/en-us/cpp/build/reference/compiler-option-warning-level?view=msvc-170
       # * Enable treating all warnings as errors,
       #   https://docs.microsoft.com/en-us/cpp/build/reference/compiler-option-warning-level?view=msvc-170
-      # * RelWithDebInfo ONLY - Enable expanding of all functions not explicitly marked for no
-      #   inlining,
+      # * RelWithDebInfo ONLY - Enable expanding of all functions not explicitly marked for no inlining,
       #   https://docs.microsoft.com/en-us/cpp/build/reference/ob-inline-function-expansion?view=msvc-170
       # * Enable UNICODE support,
       #   https://docs.microsoft.com/en-us/windows/win32/learnwin32/working-with-strings#unicode-and-ansi-functions
@@ -591,8 +573,7 @@ else()
 
   # Helper function for plugin targets (Windows and Linux version)
   function(setup_plugin_target target)
-    # Set prefix to empty string to avoid automatic naming of generated library, i.e.
-    # "lib<YOUR_PLUGIN_NAME>"
+    # Set prefix to empty string to avoid automatic naming of generated library, i.e. "lib<YOUR_PLUGIN_NAME>"
     set_target_properties(${target} PROPERTIES PREFIX "")
 
     # Set install directories
@@ -640,10 +621,8 @@ else()
     add_custom_command(
       TARGET ${target}
       POST_BUILD
-      COMMAND
-        "${CMAKE_COMMAND}" -DCMAKE_INSTALL_PREFIX=${OBS_OUTPUT_DIR}
-        -DCMAKE_INSTALL_COMPONENT=obs_rundir -DCMAKE_INSTALL_CONFIG_NAME=$<CONFIG> -P
-        ${CMAKE_CURRENT_BINARY_DIR}/cmake_install.cmake
+      COMMAND "${CMAKE_COMMAND}" -DCMAKE_INSTALL_PREFIX=${OBS_OUTPUT_DIR} -DCMAKE_INSTALL_COMPONENT=obs_rundir
+              -DCMAKE_INSTALL_CONFIG_NAME=$<CONFIG> -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_install.cmake
       COMMENT "Installing to plugin rundir"
       VERBATIM)
   endfunction()
@@ -669,8 +648,8 @@ else()
   if(OS_WINDOWS)
     # Additional Windows-only helper function to copy plugin to existing OBS development directory:
     #
-    # Copies plugin with associated PDB symbol files as well as contents of data directory into the
-    # OBS rundir as specified by "OBS_BUILD_DIR".
+    # Copies plugin with associated PDB symbol files as well as contents of data directory into the OBS rundir as
+    # specified by "OBS_BUILD_DIR".
     function(setup_target_for_testing target destination)
       install(
         FILES $<TARGET_FILE:${target}>
@@ -695,10 +674,8 @@ else()
       add_custom_command(
         TARGET ${target}
         POST_BUILD
-        COMMAND
-          "${CMAKE_COMMAND}" -DCMAKE_INSTALL_PREFIX=${OBS_BUILD_DIR}/rundir
-          -DCMAKE_INSTALL_COMPONENT=obs_testing -DCMAKE_INSTALL_CONFIG_NAME=$<CONFIG> -P
-          ${CMAKE_CURRENT_BINARY_DIR}/cmake_install.cmake
+        COMMAND "${CMAKE_COMMAND}" -DCMAKE_INSTALL_PREFIX=${OBS_BUILD_DIR}/rundir -DCMAKE_INSTALL_COMPONENT=obs_testing
+                -DCMAKE_INSTALL_CONFIG_NAME=$<CONFIG> -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_install.cmake
         COMMENT "Installing to OBS test directory"
         VERBATIM)
     endfunction()

@@ -13,26 +13,26 @@
   *
 */
 struct filter_data : public ORTModelData {
-  std::string useGPU;
-  uint32_t numThreads;
-  std::string modelSelection;
-  std::unique_ptr<Model> model;
+	std::string useGPU;
+	uint32_t numThreads;
+	std::string modelSelection;
+	std::unique_ptr<Model> model;
 
-  obs_source_t *source;
-  gs_texrender_t *texrender;
-  gs_stagesurf_t *stagesurface;
+	obs_source_t *source;
+	gs_texrender_t *texrender;
+	gs_stagesurf_t *stagesurface;
 
-  cv::Mat inputBGRA;
+	cv::Mat inputBGRA;
 
-  bool isDisabled;
+	bool isDisabled;
 
-  std::mutex inputBGRALock;
-  std::mutex outputLock;
+	std::mutex inputBGRALock;
+	std::mutex outputLock;
 
 #if _WIN32
-  const wchar_t *modelFilepath = nullptr;
+	const wchar_t *modelFilepath = nullptr;
 #else
-  const char *modelFilepath = nullptr;
+	const char *modelFilepath = nullptr;
 #endif
 };
 

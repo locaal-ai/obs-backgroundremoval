@@ -12,28 +12,28 @@
 
 template<typename T> T vectorProduct(const std::vector<T> &v)
 {
-  T product = 1;
-  for (auto &i : v) {
-    // turn 0 or -1, which are usually used as "None" (meaning any size), to 1s
-    if (i > 0) {
-      product *= i;
-    }
-  }
-  return product;
+	T product = 1;
+	for (auto &i : v) {
+		// turn 0 or -1, which are usually used as "None" (meaning any size), to 1s
+		if (i > 0) {
+			product *= i;
+		}
+	}
+	return product;
 }
 
 static void hwc_to_chw(cv::InputArray src, cv::OutputArray dst)
 {
-  std::vector<cv::Mat> channels;
-  cv::split(src, channels);
+	std::vector<cv::Mat> channels;
+	cv::split(src, channels);
 
-  // Stretch one-channel images to vector
-  for (auto &img : channels) {
-    img = img.reshape(1, 1);
-  }
+	// Stretch one-channel images to vector
+	for (auto &img : channels) {
+		img = img.reshape(1, 1);
+	}
 
-  // Concatenate three vectors to one
-  cv::hconcat(channels, dst);
+	// Concatenate three vectors to one
+	cv::hconcat(channels, dst);
 }
 
 /**
@@ -46,25 +46,26 @@ static void hwc_to_chw(cv::InputArray src, cv::OutputArray dst)
 */
 static void chw_to_hwc_32f(cv::InputArray src, cv::OutputArray dst)
 {
-  const cv::Mat srcMat = src.getMat();
-  const int channels = srcMat.channels();
-  const int height = srcMat.rows;
-  const int width = srcMat.cols;
-  const int dtype = srcMat.type();
-  assert(dtype == CV_32F);
-  const int channelStride = height * width;
+	const cv::Mat srcMat = src.getMat();
+	const int channels = srcMat.channels();
+	const int height = srcMat.rows;
+	const int width = srcMat.cols;
+	const int dtype = srcMat.type();
+	assert(dtype == CV_32F);
+	const int channelStride = height * width;
 
-  // Flatten to a vector of channels
-  cv::Mat flatMat = srcMat.reshape(1, 1);
+	// Flatten to a vector of channels
+	cv::Mat flatMat = srcMat.reshape(1, 1);
 
-  std::vector<cv::Mat> channelsVec(channels);
-  // Split the vector into channels
-  for (int i = 0; i < channels; i++) {
-    channelsVec[i] =
-      cv::Mat(height, width, CV_MAKE_TYPE(dtype, 1), flatMat.ptr<float>(0) + i * channelStride);
-  }
+	std::vector<cv::Mat> channelsVec(channels);
+	// Split the vector into channels
+	for (int i = 0; i < channels; i++) {
+		channelsVec[i] =
+			cv::Mat(height, width, CV_MAKE_TYPE(dtype, 1),
+				flatMat.ptr<float>(0) + i * channelStride);
+	}
 
-  cv::merge(channelsVec, dst);
+	cv::merge(channelsVec, dst);
 }
 
 /**
@@ -81,250 +82,292 @@ static void chw_to_hwc_32f(cv::InputArray src, cv::OutputArray dst)
   * with different pre-post processing behavior (like BCHW instead of BHWC or different ranges).
 */
 class Model {
-  private:
-  /* data */
-  public:
-  Model(/* args */){};
-  virtual ~Model(){};
+private:
+	/* data */
+public:
+	Model(/* args */){};
+	virtual ~Model(){};
 
-  const char *name;
-
-#if _WIN32
-  const std::wstring
-#else
-  const std::string
-#endif
-  getModelFilepath(const std::string &modelSelection)
-  {
-    char *modelFilepath_rawPtr = obs_module_file(modelSelection.c_str());
-
-    if (modelFilepath_rawPtr == nullptr) {
-      blog(LOG_ERROR, "Unable to get model filename %s from plugin.", modelSelection.c_str());
-      return nullptr;
-    }
-
-    std::string modelFilepath_s(modelFilepath_rawPtr);
-    bfree(modelFilepath_rawPtr);
+	const char *name;
 
 #if _WIN32
-    std::wstring modelFilepath_ws(modelFilepath_s.size(), L' ');
-    std::copy(modelFilepath_s.begin(), modelFilepath_s.end(), modelFilepath_ws.begin());
-    return modelFilepath_ws;
+	const std::wstring
 #else
-    return modelFilepath_s;
+	const std::string
 #endif
-  }
+	getModelFilepath(const std::string &modelSelection)
+	{
+		char *modelFilepath_rawPtr =
+			obs_module_file(modelSelection.c_str());
 
-  virtual void populateInputOutputNames(const std::unique_ptr<Ort::Session> &session,
-                                        std::vector<Ort::AllocatedStringPtr> &inputNames,
-                                        std::vector<Ort::AllocatedStringPtr> &outputNames)
-  {
-    Ort::AllocatorWithDefaultOptions allocator;
+		if (modelFilepath_rawPtr == nullptr) {
+			blog(LOG_ERROR,
+			     "Unable to get model filename %s from plugin.",
+			     modelSelection.c_str());
+			return nullptr;
+		}
 
-    inputNames.clear();
-    outputNames.clear();
-    inputNames.push_back(session->GetInputNameAllocated(0, allocator));
-    outputNames.push_back(session->GetOutputNameAllocated(0, allocator));
-  }
+		std::string modelFilepath_s(modelFilepath_rawPtr);
+		bfree(modelFilepath_rawPtr);
 
-  virtual bool populateInputOutputShapes(const std::unique_ptr<Ort::Session> &session,
-                                         std::vector<std::vector<int64_t>> &inputDims,
-                                         std::vector<std::vector<int64_t>> &outputDims)
-  {
-    // Assuming model only has one input and one output image
+#if _WIN32
+		std::wstring modelFilepath_ws(modelFilepath_s.size(), L' ');
+		std::copy(modelFilepath_s.begin(), modelFilepath_s.end(),
+			  modelFilepath_ws.begin());
+		return modelFilepath_ws;
+#else
+		return modelFilepath_s;
+#endif
+	}
 
-    inputDims.clear();
-    outputDims.clear();
+	virtual void populateInputOutputNames(
+		const std::unique_ptr<Ort::Session> &session,
+		std::vector<Ort::AllocatedStringPtr> &inputNames,
+		std::vector<Ort::AllocatedStringPtr> &outputNames)
+	{
+		Ort::AllocatorWithDefaultOptions allocator;
 
-    inputDims.push_back(std::vector<int64_t>());
-    outputDims.push_back(std::vector<int64_t>());
+		inputNames.clear();
+		outputNames.clear();
+		inputNames.push_back(
+			session->GetInputNameAllocated(0, allocator));
+		outputNames.push_back(
+			session->GetOutputNameAllocated(0, allocator));
+	}
 
-    // Get output shape
-    const Ort::TypeInfo outputTypeInfo = session->GetOutputTypeInfo(0);
-    const auto outputTensorInfo = outputTypeInfo.GetTensorTypeAndShapeInfo();
-    outputDims[0] = outputTensorInfo.GetShape();
+	virtual bool
+	populateInputOutputShapes(const std::unique_ptr<Ort::Session> &session,
+				  std::vector<std::vector<int64_t>> &inputDims,
+				  std::vector<std::vector<int64_t>> &outputDims)
+	{
+		// Assuming model only has one input and one output image
 
-    // fix any -1 values in outputDims to 1
-    for (auto &i : outputDims[0]) {
-      if (i == -1) {
-        i = 1;
-      }
-    }
+		inputDims.clear();
+		outputDims.clear();
 
-    // Get input shape
-    const Ort::TypeInfo inputTypeInfo = session->GetInputTypeInfo(0);
-    const auto inputTensorInfo = inputTypeInfo.GetTensorTypeAndShapeInfo();
-    inputDims[0] = inputTensorInfo.GetShape();
+		inputDims.push_back(std::vector<int64_t>());
+		outputDims.push_back(std::vector<int64_t>());
 
-    // fix any -1 values in inputDims to 1
-    for (auto &i : inputDims[0]) {
-      if (i == -1) {
-        i = 1;
-      }
-    }
+		// Get output shape
+		const Ort::TypeInfo outputTypeInfo =
+			session->GetOutputTypeInfo(0);
+		const auto outputTensorInfo =
+			outputTypeInfo.GetTensorTypeAndShapeInfo();
+		outputDims[0] = outputTensorInfo.GetShape();
 
-    if (inputDims[0].size() < 3 || outputDims[0].size() < 3) {
-      blog(LOG_ERROR, "Input or output tensor dims are < 3. input = %d, output = %d",
-           (int)inputDims.size(), (int)outputDims.size());
-      return false;
-    }
+		// fix any -1 values in outputDims to 1
+		for (auto &i : outputDims[0]) {
+			if (i == -1) {
+				i = 1;
+			}
+		}
 
-    return true;
-  }
+		// Get input shape
+		const Ort::TypeInfo inputTypeInfo =
+			session->GetInputTypeInfo(0);
+		const auto inputTensorInfo =
+			inputTypeInfo.GetTensorTypeAndShapeInfo();
+		inputDims[0] = inputTensorInfo.GetShape();
 
-  virtual void allocateTensorBuffers(const std::vector<std::vector<int64_t>> &inputDims,
-                                     const std::vector<std::vector<int64_t>> &outputDims,
-                                     std::vector<std::vector<float>> &outputTensorValues,
-                                     std::vector<std::vector<float>> &inputTensorValues,
-                                     std::vector<Ort::Value> &inputTensor,
-                                     std::vector<Ort::Value> &outputTensor)
-  {
-    // Assuming model only has one input and one output images
+		// fix any -1 values in inputDims to 1
+		for (auto &i : inputDims[0]) {
+			if (i == -1) {
+				i = 1;
+			}
+		}
 
-    outputTensorValues.clear();
-    outputTensor.clear();
+		if (inputDims[0].size() < 3 || outputDims[0].size() < 3) {
+			blog(LOG_ERROR,
+			     "Input or output tensor dims are < 3. input = %d, output = %d",
+			     (int)inputDims.size(), (int)outputDims.size());
+			return false;
+		}
 
-    inputTensorValues.clear();
-    inputTensor.clear();
+		return true;
+	}
 
-    Ort::MemoryInfo memoryInfo = Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtDeviceAllocator,
-                                                            OrtMemType::OrtMemTypeDefault);
+	virtual void allocateTensorBuffers(
+		const std::vector<std::vector<int64_t>> &inputDims,
+		const std::vector<std::vector<int64_t>> &outputDims,
+		std::vector<std::vector<float>> &outputTensorValues,
+		std::vector<std::vector<float>> &inputTensorValues,
+		std::vector<Ort::Value> &inputTensor,
+		std::vector<Ort::Value> &outputTensor)
+	{
+		// Assuming model only has one input and one output images
 
-    // Allocate buffers and build input and output tensors
+		outputTensorValues.clear();
+		outputTensor.clear();
 
-    for (size_t i = 0; i < inputDims.size(); i++) {
-      inputTensorValues.push_back(std::vector<float>(vectorProduct(inputDims[i]), 0.0f));
-      blog(LOG_INFO, "Allocated %d sized float-array for input %d",
-           (int)inputTensorValues[i].size(), (int)i);
-      inputTensor.push_back(Ort::Value::CreateTensor<float>(
-        memoryInfo, inputTensorValues[i].data(), inputTensorValues[i].size(), inputDims[i].data(),
-        inputDims[i].size()));
-    }
+		inputTensorValues.clear();
+		inputTensor.clear();
 
-    for (size_t i = 0; i < outputDims.size(); i++) {
-      outputTensorValues.push_back(std::vector<float>(vectorProduct(outputDims[i]), 0.0f));
-      blog(LOG_INFO, "Allocated %d sized float-array for output %d",
-           (int)outputTensorValues[i].size(), (int)i);
-      outputTensor.push_back(Ort::Value::CreateTensor<float>(
-        memoryInfo, outputTensorValues[i].data(), outputTensorValues[i].size(),
-        outputDims[i].data(), outputDims[i].size()));
-    }
-  }
+		Ort::MemoryInfo memoryInfo = Ort::MemoryInfo::CreateCpu(
+			OrtAllocatorType::OrtDeviceAllocator,
+			OrtMemType::OrtMemTypeDefault);
 
-  virtual void getNetworkInputSize(const std::vector<std::vector<int64_t>> &inputDims,
-                                   uint32_t &inputWidth, uint32_t &inputHeight)
-  {
-    // BHWC
-    inputWidth = (int)inputDims[0][2];
-    inputHeight = (int)inputDims[0][1];
-  }
+		// Allocate buffers and build input and output tensors
 
-  virtual void prepareInputToNetwork(cv::Mat &resizedImage, cv::Mat &preprocessedImage)
-  {
-    preprocessedImage = resizedImage / 255.0;
-  }
+		for (size_t i = 0; i < inputDims.size(); i++) {
+			inputTensorValues.push_back(std::vector<float>(
+				vectorProduct(inputDims[i]), 0.0f));
+			blog(LOG_INFO,
+			     "Allocated %d sized float-array for input %d",
+			     (int)inputTensorValues[i].size(), (int)i);
+			inputTensor.push_back(Ort::Value::CreateTensor<float>(
+				memoryInfo, inputTensorValues[i].data(),
+				inputTensorValues[i].size(),
+				inputDims[i].data(), inputDims[i].size()));
+		}
 
-  /**
+		for (size_t i = 0; i < outputDims.size(); i++) {
+			outputTensorValues.push_back(std::vector<float>(
+				vectorProduct(outputDims[i]), 0.0f));
+			blog(LOG_INFO,
+			     "Allocated %d sized float-array for output %d",
+			     (int)outputTensorValues[i].size(), (int)i);
+			outputTensor.push_back(Ort::Value::CreateTensor<float>(
+				memoryInfo, outputTensorValues[i].data(),
+				outputTensorValues[i].size(),
+				outputDims[i].data(), outputDims[i].size()));
+		}
+	}
+
+	virtual void
+	getNetworkInputSize(const std::vector<std::vector<int64_t>> &inputDims,
+			    uint32_t &inputWidth, uint32_t &inputHeight)
+	{
+		// BHWC
+		inputWidth = (int)inputDims[0][2];
+		inputHeight = (int)inputDims[0][1];
+	}
+
+	virtual void prepareInputToNetwork(cv::Mat &resizedImage,
+					   cv::Mat &preprocessedImage)
+	{
+		preprocessedImage = resizedImage / 255.0;
+	}
+
+	/**
     * @brief Postprocess the output of the network
     *
     * @param output The output of the network. This function should ensure the output is with
     * values in the range 0-1 (float 32), and in the BHWC format
   */
-  virtual void postprocessOutput(cv::Mat &output) { UNUSED_PARAMETER(output); }
+	virtual void postprocessOutput(cv::Mat &output)
+	{
+		UNUSED_PARAMETER(output);
+	}
 
-  virtual void loadInputToTensor(const cv::Mat &preprocessedImage, uint32_t inputWidth,
-                                 uint32_t inputHeight,
-                                 std::vector<std::vector<float>> &inputTensorValues)
-  {
-    preprocessedImage.copyTo(
-      cv::Mat(inputHeight, inputWidth, CV_32FC3, &(inputTensorValues[0][0])));
-  }
+	virtual void
+	loadInputToTensor(const cv::Mat &preprocessedImage, uint32_t inputWidth,
+			  uint32_t inputHeight,
+			  std::vector<std::vector<float>> &inputTensorValues)
+	{
+		preprocessedImage.copyTo(cv::Mat(inputHeight, inputWidth,
+						 CV_32FC3,
+						 &(inputTensorValues[0][0])));
+	}
 
-  virtual cv::Mat getNetworkOutput(const std::vector<std::vector<int64_t>> &outputDims,
-                                   std::vector<std::vector<float>> &outputTensorValues)
-  {
-    // BHWC
-    uint32_t outputWidth = (int)outputDims[0].at(2);
-    uint32_t outputHeight = (int)outputDims[0].at(1);
-    int32_t outputChannels = CV_MAKE_TYPE(CV_32F, (int)outputDims[0].at(3));
+	virtual cv::Mat
+	getNetworkOutput(const std::vector<std::vector<int64_t>> &outputDims,
+			 std::vector<std::vector<float>> &outputTensorValues)
+	{
+		// BHWC
+		uint32_t outputWidth = (int)outputDims[0].at(2);
+		uint32_t outputHeight = (int)outputDims[0].at(1);
+		int32_t outputChannels =
+			CV_MAKE_TYPE(CV_32F, (int)outputDims[0].at(3));
 
-    return cv::Mat(outputHeight, outputWidth, outputChannels, outputTensorValues[0].data());
-  }
+		return cv::Mat(outputHeight, outputWidth, outputChannels,
+			       outputTensorValues[0].data());
+	}
 
-  virtual void assignOutputToInput(std::vector<std::vector<float>> &,
-                                   std::vector<std::vector<float>> &)
-  {
-  }
+	virtual void assignOutputToInput(std::vector<std::vector<float>> &,
+					 std::vector<std::vector<float>> &)
+	{
+	}
 
-  virtual void runNetworkInference(const std::unique_ptr<Ort::Session> &session,
-                                   const std::vector<Ort::AllocatedStringPtr> &inputNames,
-                                   const std::vector<Ort::AllocatedStringPtr> &outputNames,
-                                   const std::vector<Ort::Value> &inputTensor,
-                                   std::vector<Ort::Value> &outputTensor)
-  {
-    if (inputNames.size() == 0 || outputNames.size() == 0 || inputTensor.size() == 0 ||
-        outputTensor.size() == 0) {
-      blog(LOG_INFO, "Skip network inference. Inputs or outputs are null.");
-      return;
-    }
+	virtual void runNetworkInference(
+		const std::unique_ptr<Ort::Session> &session,
+		const std::vector<Ort::AllocatedStringPtr> &inputNames,
+		const std::vector<Ort::AllocatedStringPtr> &outputNames,
+		const std::vector<Ort::Value> &inputTensor,
+		std::vector<Ort::Value> &outputTensor)
+	{
+		if (inputNames.size() == 0 || outputNames.size() == 0 ||
+		    inputTensor.size() == 0 || outputTensor.size() == 0) {
+			blog(LOG_INFO,
+			     "Skip network inference. Inputs or outputs are null.");
+			return;
+		}
 
-    std::vector<const char *> rawInputNames;
-    for (auto &inputName : inputNames) {
-      rawInputNames.push_back(inputName.get());
-    }
+		std::vector<const char *> rawInputNames;
+		for (auto &inputName : inputNames) {
+			rawInputNames.push_back(inputName.get());
+		}
 
-    std::vector<const char *> rawOutputNames;
-    for (auto &outputName : outputNames) {
-      rawOutputNames.push_back(outputName.get());
-    }
+		std::vector<const char *> rawOutputNames;
+		for (auto &outputName : outputNames) {
+			rawOutputNames.push_back(outputName.get());
+		}
 
-    session->Run(Ort::RunOptions{nullptr}, rawInputNames.data(), inputTensor.data(),
-                 inputNames.size(), rawOutputNames.data(), outputTensor.data(), outputNames.size());
-  }
+		session->Run(Ort::RunOptions{nullptr}, rawInputNames.data(),
+			     inputTensor.data(), inputNames.size(),
+			     rawOutputNames.data(), outputTensor.data(),
+			     outputNames.size());
+	}
 };
 
 class ModelBCHW : public Model {
-  public:
-  ModelBCHW(/* args */) {}
-  ~ModelBCHW() {}
+public:
+	ModelBCHW(/* args */) {}
+	~ModelBCHW() {}
 
-  virtual void prepareInputToNetwork(cv::Mat &resizedImage, cv::Mat &preprocessedImage)
-  {
-    resizedImage = resizedImage / 255.0;
-    hwc_to_chw(resizedImage, preprocessedImage);
-  }
+	virtual void prepareInputToNetwork(cv::Mat &resizedImage,
+					   cv::Mat &preprocessedImage)
+	{
+		resizedImage = resizedImage / 255.0;
+		hwc_to_chw(resizedImage, preprocessedImage);
+	}
 
-  virtual void postprocessOutput(cv::Mat &output)
-  {
-    cv::Mat outputTransposed;
-    chw_to_hwc_32f(output, outputTransposed);
-    outputTransposed.copyTo(output);
-  }
+	virtual void postprocessOutput(cv::Mat &output)
+	{
+		cv::Mat outputTransposed;
+		chw_to_hwc_32f(output, outputTransposed);
+		outputTransposed.copyTo(output);
+	}
 
-  virtual void getNetworkInputSize(const std::vector<std::vector<int64_t>> &inputDims,
-                                   uint32_t &inputWidth, uint32_t &inputHeight)
-  {
-    // BCHW
-    inputWidth = (int)inputDims[0][3];
-    inputHeight = (int)inputDims[0][2];
-  }
+	virtual void
+	getNetworkInputSize(const std::vector<std::vector<int64_t>> &inputDims,
+			    uint32_t &inputWidth, uint32_t &inputHeight)
+	{
+		// BCHW
+		inputWidth = (int)inputDims[0][3];
+		inputHeight = (int)inputDims[0][2];
+	}
 
-  virtual cv::Mat getNetworkOutput(const std::vector<std::vector<int64_t>> &outputDims,
-                                   std::vector<std::vector<float>> &outputTensorValues)
-  {
-    // BCHW
-    uint32_t outputWidth = (int)outputDims[0].at(3);
-    uint32_t outputHeight = (int)outputDims[0].at(2);
-    int32_t outputChannels = CV_MAKE_TYPE(CV_32F, (int)outputDims[0].at(1));
+	virtual cv::Mat
+	getNetworkOutput(const std::vector<std::vector<int64_t>> &outputDims,
+			 std::vector<std::vector<float>> &outputTensorValues)
+	{
+		// BCHW
+		uint32_t outputWidth = (int)outputDims[0].at(3);
+		uint32_t outputHeight = (int)outputDims[0].at(2);
+		int32_t outputChannels =
+			CV_MAKE_TYPE(CV_32F, (int)outputDims[0].at(1));
 
-    return cv::Mat(outputHeight, outputWidth, outputChannels, outputTensorValues[0].data());
-  }
+		return cv::Mat(outputHeight, outputWidth, outputChannels,
+			       outputTensorValues[0].data());
+	}
 
-  virtual void loadInputToTensor(const cv::Mat &preprocessedImage, uint32_t, uint32_t,
-                                 std::vector<std::vector<float>> &inputTensorValues)
-  {
-    inputTensorValues[0].assign(preprocessedImage.begin<float>(), preprocessedImage.end<float>());
-  }
+	virtual void
+	loadInputToTensor(const cv::Mat &preprocessedImage, uint32_t, uint32_t,
+			  std::vector<std::vector<float>> &inputTensorValues)
+	{
+		inputTensorValues[0].assign(preprocessedImage.begin<float>(),
+					    preprocessedImage.end<float>());
+	}
 };
 
 #endif

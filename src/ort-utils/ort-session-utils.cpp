@@ -21,146 +21,183 @@
 
 void createOrtSession(filter_data *tf)
 {
-  if (tf->model.get() == nullptr) {
-    blog(LOG_ERROR, "Model object is not initialized");
-    return;
-  }
+	if (tf->model.get() == nullptr) {
+		blog(LOG_ERROR, "Model object is not initialized");
+		return;
+	}
 
-  Ort::SessionOptions sessionOptions;
+	Ort::SessionOptions sessionOptions;
 
-  sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
-  if (tf->useGPU != USEGPU_CPU) {
-    sessionOptions.DisableMemPattern();
-    sessionOptions.SetExecutionMode(ExecutionMode::ORT_SEQUENTIAL);
-  } else {
-    sessionOptions.SetInterOpNumThreads(tf->numThreads);
-    sessionOptions.SetIntraOpNumThreads(tf->numThreads);
-  }
+	sessionOptions.SetGraphOptimizationLevel(
+		GraphOptimizationLevel::ORT_ENABLE_ALL);
+	if (tf->useGPU != USEGPU_CPU) {
+		sessionOptions.DisableMemPattern();
+		sessionOptions.SetExecutionMode(ExecutionMode::ORT_SEQUENTIAL);
+	} else {
+		sessionOptions.SetInterOpNumThreads(tf->numThreads);
+		sessionOptions.SetIntraOpNumThreads(tf->numThreads);
+	}
 
-  char *modelFilepath_rawPtr = obs_module_file(tf->modelSelection.c_str());
+	char *modelFilepath_rawPtr =
+		obs_module_file(tf->modelSelection.c_str());
 
-  if (modelFilepath_rawPtr == nullptr) {
-    blog(LOG_ERROR, "Unable to get model filename %s from plugin.", tf->modelSelection.c_str());
-    return;
-  }
+	if (modelFilepath_rawPtr == nullptr) {
+		blog(LOG_ERROR, "Unable to get model filename %s from plugin.",
+		     tf->modelSelection.c_str());
+		return;
+	}
 
-  std::string modelFilepath_s(modelFilepath_rawPtr);
-  bfree(modelFilepath_rawPtr);
+	std::string modelFilepath_s(modelFilepath_rawPtr);
+	bfree(modelFilepath_rawPtr);
 
 #if _WIN32
-  std::wstring modelFilepath_ws(modelFilepath_s.size(), L' ');
-  std::copy(modelFilepath_s.begin(), modelFilepath_s.end(), modelFilepath_ws.begin());
-  tf->modelFilepath = modelFilepath_ws.c_str();
+	std::wstring modelFilepath_ws(modelFilepath_s.size(), L' ');
+	std::copy(modelFilepath_s.begin(), modelFilepath_s.end(),
+		  modelFilepath_ws.begin());
+	tf->modelFilepath = modelFilepath_ws.c_str();
 #else
-  tf->modelFilepath = modelFilepath_s.c_str();
+	tf->modelFilepath = modelFilepath_s.c_str();
 #endif
 
-  try {
+	try {
 #if defined(__linux__) && defined(__x86_64__)
-    if (tf->useGPU == USEGPU_TENSORRT) {
-      Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_Tensorrt(sessionOptions, 0));
-    }
+		if (tf->useGPU == USEGPU_TENSORRT) {
+			Ort::ThrowOnError(
+				OrtSessionOptionsAppendExecutionProvider_Tensorrt(
+					sessionOptions, 0));
+		}
 #endif
 #ifdef _WIN32
-    if (tf->useGPU == USEGPU_DML) {
-      auto &api = Ort::GetApi();
-      OrtDmlApi *dmlApi = nullptr;
-      Ort::ThrowOnError(
-        api.GetExecutionProviderApi("DML", ORT_API_VERSION, (const void **)&dmlApi));
-      Ort::ThrowOnError(dmlApi->SessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
-    }
+		if (tf->useGPU == USEGPU_DML) {
+			auto &api = Ort::GetApi();
+			OrtDmlApi *dmlApi = nullptr;
+			Ort::ThrowOnError(api.GetExecutionProviderApi(
+				"DML", ORT_API_VERSION,
+				(const void **)&dmlApi));
+			Ort::ThrowOnError(
+				dmlApi->SessionOptionsAppendExecutionProvider_DML(
+					sessionOptions, 0));
+		}
 #endif
 #if defined(__APPLE__)
-    if (tf->useGPU == USEGPU_COREML) {
-      uint32_t coreml_flags = 0;
-      coreml_flags |= COREML_FLAG_ENABLE_ON_SUBGRAPH;
-      Ort::ThrowOnError(
-        OrtSessionOptionsAppendExecutionProvider_CoreML(sessionOptions, coreml_flags));
-    }
+		if (tf->useGPU == USEGPU_COREML) {
+			uint32_t coreml_flags = 0;
+			coreml_flags |= COREML_FLAG_ENABLE_ON_SUBGRAPH;
+			Ort::ThrowOnError(
+				OrtSessionOptionsAppendExecutionProvider_CoreML(
+					sessionOptions, coreml_flags));
+		}
 #endif
-    tf->session.reset(new Ort::Session(*tf->env, tf->modelFilepath, sessionOptions));
-  } catch (const std::exception &e) {
-    blog(LOG_ERROR, "%s", e.what());
-    return;
-  }
+		tf->session.reset(new Ort::Session(*tf->env, tf->modelFilepath,
+						   sessionOptions));
+	} catch (const std::exception &e) {
+		blog(LOG_ERROR, "%s", e.what());
+		return;
+	}
 
-  Ort::AllocatorWithDefaultOptions allocator;
+	Ort::AllocatorWithDefaultOptions allocator;
 
-  tf->model->populateInputOutputNames(tf->session, tf->inputNames, tf->outputNames);
+	tf->model->populateInputOutputNames(tf->session, tf->inputNames,
+					    tf->outputNames);
 
-  if (!tf->model->populateInputOutputShapes(tf->session, tf->inputDims, tf->outputDims)) {
-    blog(LOG_ERROR, "Unable to get model input and output shapes");
-    return;
-  }
+	if (!tf->model->populateInputOutputShapes(tf->session, tf->inputDims,
+						  tf->outputDims)) {
+		blog(LOG_ERROR, "Unable to get model input and output shapes");
+		return;
+	}
 
-  for (size_t i = 0; i < tf->inputNames.size(); i++) {
-    blog(LOG_INFO, "Model %s input %d: name %s shape (%d dim) %d x %d x %d x %d",
-         tf->modelSelection.c_str(), (int)i, tf->inputNames[i].get(), (int)tf->inputDims[i].size(),
-         (int)tf->inputDims[i][0],
-         ((int)tf->inputDims[i].size() > 1) ? (int)tf->inputDims[i][1] : 0,
-         ((int)tf->inputDims[i].size() > 2) ? (int)tf->inputDims[i][2] : 0,
-         ((int)tf->inputDims[i].size() > 3) ? (int)tf->inputDims[i][3] : 0);
-  }
-  for (size_t i = 0; i < tf->outputNames.size(); i++) {
-    blog(LOG_INFO, "Model %s output %d: name %s shape (%d dim) %d x %d x %d x %d",
-         tf->modelSelection.c_str(), (int)i, tf->outputNames[i].get(),
-         (int)tf->outputDims[i].size(), (int)tf->outputDims[i][0],
-         ((int)tf->outputDims[i].size() > 1) ? (int)tf->outputDims[i][1] : 0,
-         ((int)tf->outputDims[i].size() > 2) ? (int)tf->outputDims[i][2] : 0,
-         ((int)tf->outputDims[i].size() > 3) ? (int)tf->outputDims[i][3] : 0);
-  }
+	for (size_t i = 0; i < tf->inputNames.size(); i++) {
+		blog(LOG_INFO,
+		     "Model %s input %d: name %s shape (%d dim) %d x %d x %d x %d",
+		     tf->modelSelection.c_str(), (int)i,
+		     tf->inputNames[i].get(), (int)tf->inputDims[i].size(),
+		     (int)tf->inputDims[i][0],
+		     ((int)tf->inputDims[i].size() > 1)
+			     ? (int)tf->inputDims[i][1]
+			     : 0,
+		     ((int)tf->inputDims[i].size() > 2)
+			     ? (int)tf->inputDims[i][2]
+			     : 0,
+		     ((int)tf->inputDims[i].size() > 3)
+			     ? (int)tf->inputDims[i][3]
+			     : 0);
+	}
+	for (size_t i = 0; i < tf->outputNames.size(); i++) {
+		blog(LOG_INFO,
+		     "Model %s output %d: name %s shape (%d dim) %d x %d x %d x %d",
+		     tf->modelSelection.c_str(), (int)i,
+		     tf->outputNames[i].get(), (int)tf->outputDims[i].size(),
+		     (int)tf->outputDims[i][0],
+		     ((int)tf->outputDims[i].size() > 1)
+			     ? (int)tf->outputDims[i][1]
+			     : 0,
+		     ((int)tf->outputDims[i].size() > 2)
+			     ? (int)tf->outputDims[i][2]
+			     : 0,
+		     ((int)tf->outputDims[i].size() > 3)
+			     ? (int)tf->outputDims[i][3]
+			     : 0);
+	}
 
-  // Allocate buffers
-  tf->model->allocateTensorBuffers(tf->inputDims, tf->outputDims, tf->outputTensorValues,
-                                   tf->inputTensorValues, tf->inputTensor, tf->outputTensor);
+	// Allocate buffers
+	tf->model->allocateTensorBuffers(tf->inputDims, tf->outputDims,
+					 tf->outputTensorValues,
+					 tf->inputTensorValues, tf->inputTensor,
+					 tf->outputTensor);
 }
 
-bool runFilterModelInference(filter_data *tf, const cv::Mat &imageBGRA, cv::Mat &output)
+bool runFilterModelInference(filter_data *tf, const cv::Mat &imageBGRA,
+			     cv::Mat &output)
 {
-  if (tf->session.get() == nullptr) {
-    // Onnx runtime session is not initialized. Problem in initialization
-    return false;
-  }
-  if (tf->model.get() == nullptr) {
-    // Model object is not initialized
-    return false;
-  }
+	if (tf->session.get() == nullptr) {
+		// Onnx runtime session is not initialized. Problem in initialization
+		return false;
+	}
+	if (tf->model.get() == nullptr) {
+		// Model object is not initialized
+		return false;
+	}
 
-  // To RGB
-  cv::Mat imageRGB;
-  cv::cvtColor(imageBGRA, imageRGB, cv::COLOR_BGRA2RGB);
+	// To RGB
+	cv::Mat imageRGB;
+	cv::cvtColor(imageBGRA, imageRGB, cv::COLOR_BGRA2RGB);
 
-  // Resize to network input size
-  uint32_t inputWidth, inputHeight;
-  tf->model->getNetworkInputSize(tf->inputDims, inputWidth, inputHeight);
+	// Resize to network input size
+	uint32_t inputWidth, inputHeight;
+	tf->model->getNetworkInputSize(tf->inputDims, inputWidth, inputHeight);
 
-  cv::Mat resizedImageRGB;
-  cv::resize(imageRGB, resizedImageRGB, cv::Size(inputWidth, inputHeight));
+	cv::Mat resizedImageRGB;
+	cv::resize(imageRGB, resizedImageRGB,
+		   cv::Size(inputWidth, inputHeight));
 
-  // Prepare input to nework
-  cv::Mat resizedImage, preprocessedImage;
-  resizedImageRGB.convertTo(resizedImage, CV_32F);
+	// Prepare input to nework
+	cv::Mat resizedImage, preprocessedImage;
+	resizedImageRGB.convertTo(resizedImage, CV_32F);
 
-  tf->model->prepareInputToNetwork(resizedImage, preprocessedImage);
+	tf->model->prepareInputToNetwork(resizedImage, preprocessedImage);
 
-  tf->model->loadInputToTensor(preprocessedImage, inputWidth, inputHeight, tf->inputTensorValues);
+	tf->model->loadInputToTensor(preprocessedImage, inputWidth, inputHeight,
+				     tf->inputTensorValues);
 
-  // Run network inference
-  tf->model->runNetworkInference(tf->session, tf->inputNames, tf->outputNames, tf->inputTensor,
-                                 tf->outputTensor);
+	// Run network inference
+	tf->model->runNetworkInference(tf->session, tf->inputNames,
+				       tf->outputNames, tf->inputTensor,
+				       tf->outputTensor);
 
-  // Get output
-  // Map network output to cv::Mat
-  cv::Mat outputImage = tf->model->getNetworkOutput(tf->outputDims, tf->outputTensorValues);
+	// Get output
+	// Map network output to cv::Mat
+	cv::Mat outputImage = tf->model->getNetworkOutput(
+		tf->outputDims, tf->outputTensorValues);
 
-  // Assign output to input in some models that have temporal information
-  tf->model->assignOutputToInput(tf->outputTensorValues, tf->inputTensorValues);
+	// Assign output to input in some models that have temporal information
+	tf->model->assignOutputToInput(tf->outputTensorValues,
+				       tf->inputTensorValues);
 
-  // Post-process output. The image will now be in [0,1] float, BHWC format
-  tf->model->postprocessOutput(outputImage);
+	// Post-process output. The image will now be in [0,1] float, BHWC format
+	tf->model->postprocessOutput(outputImage);
 
-  // Convert [0,1] float to CV_8U [0,255]
-  outputImage.convertTo(output, CV_8U, 255.0);
+	// Convert [0,1] float to CV_8U [0,255]
+	outputImage.convertTo(output, CV_8U, 255.0);
 
-  return true;
+	return true;
 }

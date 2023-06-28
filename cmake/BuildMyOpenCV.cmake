@@ -159,16 +159,13 @@ set_target_properties(
 add_library(OpenCV::Zlib STATIC IMPORTED)
 set_target_properties(
   OpenCV::Zlib
-  PROPERTIES
-    IMPORTED_LOCATION
-    ${INSTALL_DIR}/${OpenCV_LIB_PATH_3RD}/${CMAKE_STATIC_LIBRARY_PREFIX}zlib${CMAKE_STATIC_LIBRARY_SUFFIX}
-)
+  PROPERTIES IMPORTED_LOCATION
+             ${INSTALL_DIR}/${OpenCV_LIB_PATH_3RD}/${CMAKE_STATIC_LIBRARY_PREFIX}zlib${CMAKE_STATIC_LIBRARY_SUFFIX})
 
 add_library(OpenCV INTERFACE)
 add_dependencies(OpenCV OpenCV_Build)
 target_link_libraries(OpenCV INTERFACE OpenCV::Imgproc OpenCV::Core OpenCV::Zlib)
-set_target_properties(OpenCV::Core OpenCV::Imgproc PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                                              ${OpenCV_INCLUDE_PATH})
+set_target_properties(OpenCV::Core OpenCV::Imgproc PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${OpenCV_INCLUDE_PATH})
 if(APPLE)
   target_link_libraries(OpenCV INTERFACE "-framework Accelerate")
 endif(APPLE)
