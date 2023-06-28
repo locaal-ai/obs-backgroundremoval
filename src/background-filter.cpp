@@ -369,7 +369,7 @@ void background_filter_video_tick(void *data, float seconds)
 						filteredContours;
 					const double contourSizeThreshold =
 						(double)(backgroundMask.total()) *
-							  tf->contourFilter;
+						tf->contourFilter;
 					for (auto &contour : contours) {
 						if (cv::contourArea(contour) >
 						    (double)contourSizeThreshold) {
