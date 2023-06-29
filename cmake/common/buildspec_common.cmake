@@ -79,8 +79,8 @@ function(_setup_obs_studio)
       "${CMAKE_COMMAND}" -S "${dependencies_dir}/${_obs_destination}" -B
       "${dependencies_dir}/${_obs_destination}/build_${arch}" -G ${_cmake_generator} "${_cmake_arch}"
       -DOBS_CMAKE_VERSION:STRING=${_cmake_version} -DENABLE_PLUGINS:BOOL=OFF -DENABLE_UI:BOOL=OFF
-      -DOBS_VERSION_OVERRIDE:STRING=${_obs_version} "-DCMAKE_PREFIX_PATH='${CMAKE_PREFIX_PATH}'" ${_is_fresh}
-      ${_cmake_extra}
+      -DENABLE_SCRIPTING:BOOL=OFF -DOBS_VERSION_OVERRIDE:STRING=${_obs_version}
+      "-DCMAKE_PREFIX_PATH='${CMAKE_PREFIX_PATH}'" ${_is_fresh} ${_cmake_extra}
     RESULT_VARIABLE _process_result COMMAND_ERROR_IS_FATAL ANY
     OUTPUT_QUIET)
   message(STATUS "Configure ${label} (${arch}) - done")
@@ -94,7 +94,7 @@ function(_setup_obs_studio)
   message(STATUS "Build ${label} (${arch}) - done")
 
   message(STATUS "Install ${label} (${arch})")
-  if(OS_WINDOWS)
+  if(OS_WINDOWS OR OS_MACOS)
     set(_cmake_extra "--component obs_libraries")
   else()
     set(_cmake_extra "")
