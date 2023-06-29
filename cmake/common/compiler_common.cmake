@@ -61,7 +61,8 @@ set(_obs_clang_c_options
     -Wunused-parameter
     -Wunused-value
     -Wunused-variable
-    -Wvla)
+    -Wvla
+    -Wno-unused-command-line-argument)
 
 # clang options for C++
 set(_obs_clang_cxx_options
