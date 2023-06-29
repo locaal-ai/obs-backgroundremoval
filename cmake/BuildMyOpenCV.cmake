@@ -11,19 +11,12 @@ set(OPENCV_MD5
 string(REPLACE ";" "$<SEMICOLON>" CMAKE_OSX_ARCHITECTURES_ "${CMAKE_OSX_ARCHITECTURES}")
 
 if(MSVC)
-  find_program(OpenCV_CCACHE_EXE ccache)
   if(${CMAKE_GENERATOR_PLATFORM} STREQUAL x64
      AND ${MSVC_VERSION} GREATER_EQUAL 1910
      AND ${MSVC_VERSION} LESS_EQUAL 1939)
     set(OpenCV_LIB_PATH x64/vc17/staticlib)
     set(OpenCV_LIB_PATH_3RD x64/vc17/staticlib)
     set(OpenCV_LIB_SUFFIX 470)
-    if(OpenCV_CCACHE_EXE)
-      set(OpenCV_INSTALL_CCACHE ${CMAKE_COMMAND} -E copy ${OpenCV_CCACHE_EXE} <BINARY_DIR>/cl.exe)
-      set(OpenCV_PLATFORM_CMAKE_ARGS
-          -DCMAKE_VS_GLOBALS=CLToolExe=cl.exe$<SEMICOLON>CLToolPath=<BINARY_DIR>$<SEMICOLON>TrackFileAccess=false$<SEMICOLON>UseMultiToolTask=true$<SEMICOLON>DebugInformationFormat=OldStyle
-      )
-    endif()
   else()
     message(FATAL_ERROR "Unsupported MSVC!")
   endif()
@@ -32,7 +25,11 @@ else()
   set(OpenCV_LIB_PATH_3RD lib/opencv4/3rdparty)
   set(OpenCV_LIB_SUFFIX "")
   set(OpenCV_INSTALL_CCACHE ":")
-  set(OpenCV_PLATFORM_CMAKE_ARGS -DOPENCV_LIB_INSTALL_PATH=lib)
+  set(OpenCV_PLATFORM_CMAKE_ARGS -DOPENCV_LIB_INSTALL_PATH=lib -DOPENCV_PYTHON_SKIP_DETECTION=ON)
+endif()
+
+if(OS_MACOS)
+  set(OpenCV_PLATFORM_CMAKE_ARGS ${OpenCV_PLATFORM_CMAKE_ARGS} -DCMAKE_OSX_ARCHITECTURES=x86_64$<SEMICOLON>arm64)
 endif()
 
 if(${CMAKE_BUILD_TYPE} STREQUAL Release OR ${CMAKE_BUILD_TYPE} STREQUAL RelWithDebInfo)
@@ -155,16 +152,13 @@ set_target_properties(
 add_library(OpenCV::Zlib STATIC IMPORTED)
 set_target_properties(
   OpenCV::Zlib
-  PROPERTIES
-    IMPORTED_LOCATION
-    ${INSTALL_DIR}/${OpenCV_LIB_PATH_3RD}/${CMAKE_STATIC_LIBRARY_PREFIX}zlib${CMAKE_STATIC_LIBRARY_SUFFIX}
-)
+  PROPERTIES IMPORTED_LOCATION
+             ${INSTALL_DIR}/${OpenCV_LIB_PATH_3RD}/${CMAKE_STATIC_LIBRARY_PREFIX}zlib${CMAKE_STATIC_LIBRARY_SUFFIX})
 
 add_library(OpenCV INTERFACE)
 add_dependencies(OpenCV OpenCV_Build)
 target_link_libraries(OpenCV INTERFACE OpenCV::Imgproc OpenCV::Core OpenCV::Zlib)
-set_target_properties(OpenCV::Core OpenCV::Imgproc PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                                              ${OpenCV_INCLUDE_PATH})
+set_target_properties(OpenCV::Core OpenCV::Imgproc PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${OpenCV_INCLUDE_PATH})
 if(APPLE)
   target_link_libraries(OpenCV INTERFACE "-framework Accelerate")
 endif(APPLE)

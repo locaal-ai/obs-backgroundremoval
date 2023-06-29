@@ -1,7 +1,6 @@
-# Try to find onnxruntime library Once done this will define Onnxruntime_FOUND - if system found
-# onnruntime library Onnxruntime_INCLUDE_DIRS - The onnruntime include directories
-# Onnxruntime_LIBRARIES - The libraries needed to use onnxruntime Onnxruntime_LIBRARY_DIR - The
-# directory of onnxruntime libraries
+# Try to find onnxruntime library Once done this will define Onnxruntime_FOUND - if system found onnruntime library
+# Onnxruntime_INCLUDE_DIRS - The onnruntime include directories Onnxruntime_LIBRARIES - The libraries needed to use
+# onnxruntime Onnxruntime_LIBRARY_DIR - The directory of onnxruntime libraries
 
 if(APPLE)
   set(Onnxruntime_DIR_BUILD ${CMAKE_SOURCE_DIR}/build/onnxruntime)
@@ -39,10 +38,8 @@ else()
 endif()
 
 include(FindPackageHandleStandardArgs)
-# handle the QUIETLY and REQUIRED arguments and set LOGGING_FOUND to TRUE if all listed variables
-# are TRUE
-find_package_handle_standard_args(Onnxruntime DEFAULT_MSG Onnxruntime_INCLUDE_DIR
-                                  Onnxruntime_LIBRARIES)
+# handle the QUIETLY and REQUIRED arguments and set LOGGING_FOUND to TRUE if all listed variables are TRUE
+find_package_handle_standard_args(Onnxruntime DEFAULT_MSG Onnxruntime_INCLUDE_DIR Onnxruntime_LIBRARIES)
 
 if(Onnxruntime_FOUND)
   set(Onnxruntime_INCLUDE_DIRS
@@ -60,5 +57,5 @@ if(Onnxruntime_FOUND)
 endif()
 
 # Tell cmake GUIs to ignore the "local" variables.
-mark_as_advanced(Onnxruntime_INCLUDE_DIR Onnxruntime_LIBRARY Onnxruntime_INCLUDE_DIRS
-                 Onnxruntime_LIBRARY_DIR Onnxruntime_LIBRARIES)
+mark_as_advanced(Onnxruntime_INCLUDE_DIR Onnxruntime_LIBRARY Onnxruntime_INCLUDE_DIRS Onnxruntime_LIBRARY_DIR
+                 Onnxruntime_LIBRARIES)
