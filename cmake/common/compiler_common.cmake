@@ -47,7 +47,6 @@ set(_obs_clang_c_options
     -Wno-strict-prototypes
     -Wno-trigraphs
     -Wno-unknown-pragmas
-    -Wno-unused-command-line-argument
     -Wno-unused-function
     -Wno-unused-label
     -Wnon-literal-null-conversion
