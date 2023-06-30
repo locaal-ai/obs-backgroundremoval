@@ -12,17 +12,11 @@ include(defaults)
 include(helpers)
 
 add_library(${CMAKE_PROJECT_NAME} MODULE)
-target_compile_options(${CMAKE_PROJECT_NAME} PUBLIC $<$<C_COMPILER_ID:GNU>:-mmmx -msse -msse2 -mno-mmx -mno-sse
-                                                    -mno-sse2>)
 
 find_package(libobs REQUIRED)
-get_target_property(libobs_interface_compile_options libobs INTERFACE_COMPILE_OPTIONS)
-list(REMOVE_ITEM libobs_interface_compile_options "-mmmx")
-list(REMOVE_ITEM libobs_interface_compile_options "-msse")
-list(REMOVE_ITEM libobs_interface_compile_options "-msse2")
-message("libobs_interface_compile_options: ${libobs_interface_compile_options}")
-set_target_properties(libobs PROPERTIES INTERFACE_COMPILE_OPTIONS "${libobs_interface_compile_options}")
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE libobs)
+target_compile_options(${CMAKE_PROJECT_NAME} PUBLIC $<$<C_COMPILER_ID:GNU>:-mmmx -msse -msse2 -mno-mmx -mno-sse
+                                                    -mno-sse2>)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::libobs)
 
 if(ENABLE_FRONTEND_API)
   find_package(obs-frontend-api REQUIRED)
