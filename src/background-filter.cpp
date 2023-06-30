@@ -8,14 +8,14 @@
 
 #include <opencv2/imgproc.hpp>
 
+#include <QtNetwork>
+
 #include <numeric>
 #include <memory>
 #include <exception>
 #include <fstream>
 #include <new>
 #include <mutex>
-
-#include <QtNetwork>
 
 #include <plugin-support.h>
 #include "models/ModelSINET.h"
