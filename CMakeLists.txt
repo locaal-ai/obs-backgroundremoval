@@ -12,6 +12,7 @@ include(defaults)
 include(helpers)
 
 add_library(${CMAKE_PROJECT_NAME} MODULE)
+target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE $<$<C_COMPILER_ID:GNU>:-mno-mmx -mno-sse -mno-sse2>)
 
 find_package(libobs REQUIRED)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::libobs)
@@ -79,6 +80,5 @@ target_sources(
           src/enhance-filter-info.c)
 target_compile_options(${CMAKE_PROJECT_NAME}
                        PRIVATE $<$<C_COMPILER_ID:Clang,AppleClang>:-Wno-error=unused-command-line-argument>)
-target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE $<$<C_COMPILER_ID:GNU>:-mno-mmx -mno-sse -mno-sse2>)
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})
