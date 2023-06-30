@@ -12,7 +12,7 @@ include(defaults)
 include(helpers)
 
 add_library(${CMAKE_PROJECT_NAME} MODULE)
-target_compile_options(${CMAKE_PROJECT_NAME} PUBLIC $<$<C_COMPILER_ID:GNU>:-mno-mmx -mno-sse -mno-sse2>)
+target_compile_options(${CMAKE_PROJECT_NAME} PUBLIC $<$<C_COMPILER_ID:GNU>:-mmmx -msse -msse2 -mno-mmx -mno-sse -mno-sse2>)
 
 find_package(libobs REQUIRED)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::libobs)
