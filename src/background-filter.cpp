@@ -8,8 +8,6 @@
 
 #include <opencv2/imgproc.hpp>
 
-#include <QtNetwork>
-
 #include <numeric>
 #include <memory>
 #include <exception>
@@ -43,8 +41,6 @@ struct background_removal_filter : public filter_data {
 
 	gs_effect_t *effect;
 	gs_effect_t *kawaseBlurEffect;
-
-	QNetworkAccessManager qnam;
 };
 
 const char *background_filter_getname(void *unused)
