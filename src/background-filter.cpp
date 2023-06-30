@@ -1,3 +1,5 @@
+#include <QtNetwork>
+
 #include "background-filter.h"
 
 #include <onnxruntime_cxx_api.h>
