@@ -21,6 +21,7 @@
 #include "models/ModelSelfie.h"
 #include "models/ModelRVM.h"
 #include "models/ModelPPHumanSeg.h"
+#include "models/ModelTCMonoDepth.h"
 #include "FilterData.h"
 #include "ort-utils/ort-session-utils.h"
 #include "obs-utils/obs-utils.h"
@@ -128,6 +129,9 @@ obs_properties_t *background_filter_properties(void *data)
 	obs_property_list_add_string(p_model_select,
 				     obs_module_text("Robust Video Matting"),
 				     MODEL_RVM);
+	obs_property_list_add_string(p_model_select,
+				     obs_module_text("TCMonoDepth (Depth)"),
+				     MODEL_DEPTH_TCMONODEPTH);
 
 	obs_properties_add_int(props, "mask_every_x_frames",
 			       obs_module_text("CalculateMaskEveryXFrame"), 1,
@@ -210,6 +214,9 @@ void background_filter_update(void *data, obs_data_t *settings)
 		}
 		if (tf->modelSelection == MODEL_PPHUMANSEG) {
 			tf->model.reset(new ModelPPHumanSeg);
+		}
+		if (tf->modelSelection == MODEL_DEPTH_TCMONODEPTH) {
+			tf->model.reset(new ModelTCMonoDepth);
 		}
 
 		createOrtSession(tf);
