@@ -6,6 +6,7 @@ uniform int blurSize;        // Size of the image blur kernel. 0 = no blur
 uniform float xTexelSize;    // Size of texel in X coord
 uniform float yTexelSize;    // Size of texel in Y coord
 uniform texture2d blurredBackground; // input RGBA
+uniform float blurFocusPoint; // Focus point for the blur. 0 = back, 1 = front
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -37,7 +38,12 @@ float4 PSAlphaMaskRGBAWithBlur(VertDataOut v_in) : TARGET
 	inputRGBA.rgb = max(float3(0.0, 0.0, 0.0), inputRGBA.rgb / inputRGBA.a);
 
 	float4 outputRGBA;
-	float a = (1.0 - alphamask.Sample(textureSampler, v_in.uv).r) * inputRGBA.a;
+  
+  // The blur focus factor is 0 when the blur focus point is at the back, and 1 when it's at the front.
+  // Assuming the alphamask is a depth map, the blur focus factor is the distance between the alphamask value and the blur focus point.
+  float blurFocusFactor = abs(alphamask.Sample(textureSampler, v_in.uv).r - blurFocusPoint);
+
+	float a = (1.0 - blurFocusFactor) * inputRGBA.a;
 	outputRGBA.rgb = inputRGBA.rgb * a + blurredBackground.Sample(textureSampler, v_in.uv).rgb * (1.0 - a);
 	outputRGBA.a = 1;
 	return outputRGBA;

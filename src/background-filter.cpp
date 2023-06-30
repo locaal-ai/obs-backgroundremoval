@@ -39,7 +39,7 @@ struct background_removal_filter : public filter_data {
 	int maskEveryXFrames = 1;
 	int maskEveryXFramesCount = 0;
 	int64_t blurBackground = 0;
-  float blurFocusPoint = 0.1f;
+	float blurFocusPoint = 0.1f;
 
 	gs_effect_t *effect;
 	gs_effect_t *kawaseBlurEffect;
@@ -73,7 +73,7 @@ obs_properties_t *background_filter_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
-  /* Threshold props */
+	/* Threshold props */
 	obs_property_t *p = obs_properties_add_bool(
 		props, "enable_threshold", obs_module_text("EnableThreshold"));
 	obs_property_set_modified_callback(p, enable_threshold_modified);
@@ -95,7 +95,7 @@ obs_properties_t *background_filter_properties(void *data)
 		props, "feather", obs_module_text("FeatherBlendSilhouette"),
 		0.0, 1.0, 0.05);
 
-  /* GPU, CPU and performance Props */
+	/* GPU, CPU and performance Props */
 	obs_property_t *p_use_gpu = obs_properties_add_list(
 		props, "useGPU", obs_module_text("InferenceDevice"),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
@@ -121,7 +121,7 @@ obs_properties_t *background_filter_properties(void *data)
 	obs_properties_add_int_slider(props, "numThreads",
 				      obs_module_text("NumThreads"), 0, 8, 1);
 
-  /* Model selection Props */
+	/* Model selection Props */
 	obs_property_t *p_model_select = obs_properties_add_list(
 		props, "model_select", obs_module_text("SegmentationModel"),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
@@ -143,15 +143,15 @@ obs_properties_t *background_filter_properties(void *data)
 				     obs_module_text("TCMonoDepth (Depth)"),
 				     MODEL_DEPTH_TCMONODEPTH);
 
-  /* Background Blur Props */
+	/* Background Blur Props */
 	obs_properties_add_int_slider(
 		props, "blur_background",
 		obs_module_text("BlurBackgroundFactor0NoBlurUseColor"), 0, 20,
 		1);
 
-  obs_properties_add_float_slider(
-    props, "blur_focus_point",
-    obs_module_text("BlurFocusPoint"), 0.0, 1.0, 0.05);
+	obs_properties_add_float_slider(props, "blur_focus_point",
+					obs_module_text("BlurFocusPoint"), 0.0,
+					1.0, 0.05);
 
 	UNUSED_PARAMETER(data);
 	return props;
@@ -176,7 +176,7 @@ void background_filter_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "mask_every_x_frames", 1);
 	obs_data_set_default_int(settings, "blur_background", 0);
 	obs_data_set_default_int(settings, "numThreads", 1);
-  obs_data_set_default_double(settings, "blur_focus_point", 0.1);
+	obs_data_set_default_double(settings, "blur_focus_point", 0.1);
 }
 
 void background_filter_update(void *data, obs_data_t *settings)
@@ -196,7 +196,8 @@ void background_filter_update(void *data, obs_data_t *settings)
 		(int)obs_data_get_int(settings, "mask_every_x_frames");
 	tf->maskEveryXFramesCount = (int)(0);
 	tf->blurBackground = obs_data_get_int(settings, "blur_background");
-  tf->blurFocusPoint = (float)obs_data_get_double(settings, "blur_focus_point");
+	tf->blurFocusPoint =
+		(float)obs_data_get_double(settings, "blur_focus_point");
 
 	const std::string newUseGpu = obs_data_get_string(settings, "useGPU");
 	const std::string newModel =
@@ -548,6 +549,8 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 		gs_effect_get_param_by_name(tf->effect, "yTexelSize");
 	gs_eparam_t *blurredBackground =
 		gs_effect_get_param_by_name(tf->effect, "blurredBackground");
+	gs_eparam_t *blurFocusPointParam =
+		gs_effect_get_param_by_name(tf->effect, "blurFocusPoint");
 
 	gs_effect_set_texture(alphamask, alphaTexture);
 	gs_effect_set_int(blurSize, (int)tf->blurBackground);
@@ -555,6 +558,7 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 	gs_effect_set_float(yTexelSize, 1.0f / (float)height);
 	if (tf->blurBackground > 0) {
 		gs_effect_set_texture(blurredBackground, blurredTexture);
+		gs_effect_set_float(blurFocusPointParam, tf->blurFocusPoint);
 	}
 
 	gs_blend_state_push();
