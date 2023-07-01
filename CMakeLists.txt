@@ -85,6 +85,7 @@ set(BUILD_SHARED_LIBS OFF)
 set(HTTP_ONLY ON)
 add_subdirectory(vendor/curl EXCLUDE_FROM_ALL)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE libcurl)
+include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/vendor/curl/include)
 
 target_sources(
   ${CMAKE_PROJECT_NAME}
