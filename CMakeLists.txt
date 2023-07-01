@@ -68,6 +68,12 @@ else()
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OpenCV)
 endif()
 
+add_compile_options(-Wno-error=ambiguous-macro -Wno-error=deprecated-declarations)
+set(CURL_USE_OPENSSL OFF)
+set(CURL_USE_MBEDTLS ON)
+add_subdirectory(src/vendor/curl EXCLUDE_FROM_ALL)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE libcurl)
+
 target_sources(
   ${CMAKE_PROJECT_NAME}
   PRIVATE src/plugin-main.c
