@@ -73,6 +73,8 @@ target_sources(
   PRIVATE src/plugin-main.c
           src/ort-utils/ort-session-utils.cpp
           src/obs-utils/obs-utils.cpp
+          src/update-checker/update-checker.cpp
+          src/update-checker/UpdateDialog.cpp
           src/background-filter-info.c
           src/background-filter.cpp
           src/enhance-filter.cpp
