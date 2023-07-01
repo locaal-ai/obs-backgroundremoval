@@ -1,10 +1,9 @@
 #include <QTimer>
 
-#include <obs-frontend-api.h>
-
 #include "update-checker.h"
-
 #include "UpdateDialog.hpp"
+
+#include <obs-frontend-api.h>
 
 UpdateDialog *update_dialog;
 
