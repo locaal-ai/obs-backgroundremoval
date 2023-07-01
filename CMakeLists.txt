@@ -68,7 +68,7 @@ else()
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OpenCV)
 endif()
 
-set(MbedTLS_DIR ${CMAKE_PREFIX_PATH}) 
+set(MbedTLS_DIR ${CMAKE_PREFIX_PATH})
 if(OS_MACOS)
   add_compile_options(-Wno-error=ambiguous-macro -Wno-error=deprecated-declarations)
   set(CURL_USE_OPENSSL OFF)
