@@ -10,8 +10,8 @@
 static const std::string GITHUB_LATEST_RELEASE_URL =
 	"https://api.github.com/repos/royshil/obs-backgroundremoval/releases/latest";
 
-extern const char *PLUGIN_NAME;
-extern const char *PLUGIN_VERSION;
+extern "C" const char *PLUGIN_NAME;
+extern "C" const char *PLUGIN_VERSION;
 
 static const std::string USER_AGENT =
 	std::string(PLUGIN_NAME) + "/" + std::string(PLUGIN_VERSION);
