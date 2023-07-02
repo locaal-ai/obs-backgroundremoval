@@ -7,9 +7,14 @@
 
 #include "github-utils.h"
 
-static const char GITHUB_LATEST_RELEASE_URL[] =
+static const std::string GITHUB_LATEST_RELEASE_URL =
 	"https://api.github.com/repos/royshil/obs-backgroundremoval/releases/latest";
-static const char USER_AGENT[] = "obs-backgroundremoval/1.0.3";
+
+extern const char *PLUGIN_NAME;
+extern const char *PLUGIN_VERSION;
+
+static const std::string USER_AGENT =
+	std::string(PLUGIN_NAME) + "/" + std::string(PLUGIN_VERSION);
 
 std::size_t writeFunctionStdString(void *ptr, std::size_t size, size_t nmemb,
 				   std::string *data)
@@ -24,8 +29,9 @@ void github_utils_get_release(void)
 	if (curl) {
 		std::string str;
 		CURLcode code;
-		curl_easy_setopt(curl, CURLOPT_URL, GITHUB_LATEST_RELEASE_URL);
-		curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
+		curl_easy_setopt(curl, CURLOPT_URL,
+				 GITHUB_LATEST_RELEASE_URL.c_str());
+		curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT.c_str());
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
 				 writeFunctionStdString);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &str);
