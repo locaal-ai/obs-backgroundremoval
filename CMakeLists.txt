@@ -68,31 +68,8 @@ else()
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OpenCV)
 endif()
 
-set(MbedTLS_DIR ${CMAKE_PREFIX_PATH})
-if(OS_MACOS)
-  set(CURL_USE_OPENSSL OFF)
-  set(CURL_USE_SECTRANSP ON)
-elseif(OS_WINDOWS)
-  set(CURL_USE_OPENSSL OFF)
-  set(CURL_USE_SCHANNEL ON)
-elseif(OS_LINUX)
-  add_compile_options(-fPIC)
-  set(CURL_USE_OPENSSL ON)
-  set(CURL_USE_NSS OFF)
-endif()
-set(BUILD_CURL_EXE OFF)
-set(BUILD_SHARED_LIBS OFF)
-set(HTTP_ONLY ON)
-set(HTTP_ONLY OFF)
-set(CURL_USE_LIBSSH2 OFF)
-add_subdirectory(vendor/curl EXCLUDE_FROM_ALL)
-if(OS_MACOS)
-  target_compile_options(
-    libcurl PRIVATE -Wno-error=ambiguous-macro -Wno-error=deprecated-declarations -Wno-error=unreachable-code
-                    -Wno-error=unused-parameter -Wno-error=unused-variable)
-endif()
+include(cmake/BuildMyCurl.cmake)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE libcurl)
-include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/vendor/curl/include)
 
 target_sources(
   ${CMAKE_PROJECT_NAME}
