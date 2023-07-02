@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <string>
 
-#include <plugin-support.h>
 #include <obs.h>
 
 #include "github-utils.h"
@@ -32,7 +31,7 @@ void github_utils_get_release(void)
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &str);
 		code = curl_easy_perform(curl);
 		curl_easy_cleanup(curl);
-		obs_log(LOG_INFO, "%s\n", str.c_str());
-		obs_log(LOG_INFO, "%s\n", curl_easy_strerror(code));
+		blog(LOG_INFO, "%s\n", str.c_str());
+		blog(LOG_INFO, "%s\n", curl_easy_strerror(code));
 	}
 }
