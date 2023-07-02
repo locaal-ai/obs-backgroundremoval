@@ -71,6 +71,7 @@ bool obs_module_load(void)
 		PLUGIN_VERSION);
 	CURL *curl = curl_easy_init();
 	if (curl) {
+		CURLcode code;
 		struct string s;
 		init_string(&s);
 		curl_easy_setopt(
@@ -80,8 +81,9 @@ bool obs_module_load(void)
 				 "obs-backgroundremoval");
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
-		curl_easy_perform(curl);
+		code = curl_easy_perform(curl);
 		blog(LOG_INFO, "%s\n", s.ptr);
+		blog(LOG_INFO, "%s\n", curl_easy_strerror(code));
 		free(s.ptr);
 		curl_easy_cleanup(curl);
 	}
