@@ -22,6 +22,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #define PLUGIN_NAME "obs-backgroundremoval"
 #define PLUGIN_VERSION "1.0.3"
 
-#define blog(level, msg, ...) blog(level, "[" PLUGIN_NAME "] " msg, ##__VA_ARGS__)
+#define blog(level, msg, ...) \
+	blog(level, "[" PLUGIN_NAME "] " msg, ##__VA_ARGS__)
 
 #endif // PLUGINNAME_H
