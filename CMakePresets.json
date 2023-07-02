@@ -24,7 +24,7 @@
         "CODESIGN_IDENTITY": "$penv{CODESIGN_IDENT}",
         "CODESIGN_TEAM": "$penv{CODESIGN_TEAM}",
         "ENABLE_FRONTEND_API": false,
-        "ENABLE_QT": false
+        "ENABLE_QT": true
       }
     },
     {
@@ -54,7 +54,7 @@
         "QT_VERSION": "6",
         "CMAKE_SYSTEM_VERSION": "10.0.18363.657",
         "ENABLE_FRONTEND_API": false,
-        "ENABLE_QT": false
+        "ENABLE_QT": true
       }
     },
     {
@@ -82,7 +82,7 @@
         "QT_VERSION": "6",
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "ENABLE_FRONTEND_API": false,
-        "ENABLE_QT": false
+        "ENABLE_QT": true
       }
     },
     {
