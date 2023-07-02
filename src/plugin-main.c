@@ -39,7 +39,6 @@ bool obs_module_load(void)
 	obs_register_source(&enhance_filter_info);
 	obs_log(LOG_INFO, "plugin loaded successfully (version %s)",
 		PLUGIN_VERSION);
-	check_update();
 	return true;
 }
 
