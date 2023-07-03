@@ -68,11 +68,17 @@ else()
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OpenCV)
 endif()
 
+include(cmake/BuildMyCurl.cmake)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE libcurl)
+
 target_sources(
   ${CMAKE_PROJECT_NAME}
   PRIVATE src/plugin-main.c
           src/ort-utils/ort-session-utils.cpp
           src/obs-utils/obs-utils.cpp
+          src/update-checker/github-utils.cpp
+          src/update-checker/update-checker.cpp
+          src/update-checker/UpdateDialog.cpp
           src/background-filter-info.c
           src/background-filter.cpp
           src/enhance-filter.cpp
