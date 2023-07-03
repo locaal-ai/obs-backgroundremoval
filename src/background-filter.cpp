@@ -493,7 +493,7 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf,
 		gs_effect_set_float(xOffset, ((float)i + 0.5f) / (float)width);
 		gs_effect_set_float(yOffset, ((float)i + 0.5f) / (float)height);
     gs_effect_set_int(blurIter, i);
-    gs_effect_set_int(blurTotal, tf->blurBackground);
+    gs_effect_set_int(blurTotal, (int)tf->blurBackground);
     gs_effect_set_float(blurFocusPointParam, tf->blurFocusPoint);
 
 		struct vec4 background;
