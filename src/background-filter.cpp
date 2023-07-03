@@ -456,7 +456,8 @@ void background_filter_video_tick(void *data, float seconds)
 }
 
 static gs_texture_t *blur_background(struct background_removal_filter *tf,
-				     uint32_t width, uint32_t height, gs_texture_t *alphaTexture)
+				     uint32_t width, uint32_t height,
+				     gs_texture_t *alphaTexture)
 {
 	if (tf->blurBackground == 0 || !tf->kawaseBlurEffect) {
 		return nullptr;
@@ -477,8 +478,8 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf,
 		gs_effect_get_param_by_name(tf->kawaseBlurEffect, "blurIter");
 	gs_eparam_t *blurTotal =
 		gs_effect_get_param_by_name(tf->kawaseBlurEffect, "blurTotal");
-	gs_eparam_t *blurFocusPointParam =
-		gs_effect_get_param_by_name(tf->kawaseBlurEffect, "blurFocusPoint");
+	gs_eparam_t *blurFocusPointParam = gs_effect_get_param_by_name(
+		tf->kawaseBlurEffect, "blurFocusPoint");
 
 	for (int i = 0; i < (int)tf->blurBackground; i++) {
 		gs_texrender_reset(tf->texrender);
@@ -489,12 +490,12 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf,
 		}
 
 		gs_effect_set_texture(image, blurredTexture);
-    gs_effect_set_texture(focalmask, alphaTexture);
+		gs_effect_set_texture(focalmask, alphaTexture);
 		gs_effect_set_float(xOffset, ((float)i + 0.5f) / (float)width);
 		gs_effect_set_float(yOffset, ((float)i + 0.5f) / (float)height);
-    gs_effect_set_int(blurIter, i);
-    gs_effect_set_int(blurTotal, (int)tf->blurBackground);
-    gs_effect_set_float(blurFocusPointParam, tf->blurFocusPoint);
+		gs_effect_set_int(blurIter, i);
+		gs_effect_set_int(blurTotal, (int)tf->blurBackground);
+		gs_effect_set_float(blurFocusPointParam, tf->blurFocusPoint);
 
 		struct vec4 background;
 		vec4_zero(&background);
@@ -546,8 +547,9 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 		}
 	}
 
-  // Output the masked image
-	gs_texture_t *blurredTexture = blur_background(tf, width, height, alphaTexture);
+	// Output the masked image
+	gs_texture_t *blurredTexture =
+		blur_background(tf, width, height, alphaTexture);
 
 	if (!obs_source_process_filter_begin(tf->source, GS_RGBA,
 					     OBS_ALLOW_DIRECT_RENDERING)) {
