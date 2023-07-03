@@ -456,7 +456,7 @@ void background_filter_video_tick(void *data, float seconds)
 }
 
 static gs_texture_t *blur_background(struct background_removal_filter *tf,
-				     uint32_t width, uint32_t height)
+				     uint32_t width, uint32_t height, gs_texture_t *alphaTexture)
 {
 	if (tf->blurBackground == 0 || !tf->kawaseBlurEffect) {
 		return nullptr;
@@ -467,10 +467,18 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf,
 			gs_texrender_get_texture(tf->texrender));
 	gs_eparam_t *image =
 		gs_effect_get_param_by_name(tf->kawaseBlurEffect, "image");
+	gs_eparam_t *focalmask =
+		gs_effect_get_param_by_name(tf->kawaseBlurEffect, "focalmask");
 	gs_eparam_t *xOffset =
 		gs_effect_get_param_by_name(tf->kawaseBlurEffect, "xOffset");
 	gs_eparam_t *yOffset =
 		gs_effect_get_param_by_name(tf->kawaseBlurEffect, "yOffset");
+	gs_eparam_t *blurIter =
+		gs_effect_get_param_by_name(tf->kawaseBlurEffect, "blurIter");
+	gs_eparam_t *blurTotal =
+		gs_effect_get_param_by_name(tf->kawaseBlurEffect, "blurTotal");
+	gs_eparam_t *blurFocusPointParam =
+		gs_effect_get_param_by_name(tf->kawaseBlurEffect, "blurFocusPoint");
 
 	for (int i = 0; i < (int)tf->blurBackground; i++) {
 		gs_texrender_reset(tf->texrender);
@@ -481,8 +489,12 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf,
 		}
 
 		gs_effect_set_texture(image, blurredTexture);
+    gs_effect_set_texture(focalmask, alphaTexture);
 		gs_effect_set_float(xOffset, ((float)i + 0.5f) / (float)width);
 		gs_effect_set_float(yOffset, ((float)i + 0.5f) / (float)height);
+    gs_effect_set_int(blurIter, i);
+    gs_effect_set_int(blurTotal, tf->blurBackground);
+    gs_effect_set_float(blurFocusPointParam, tf->blurFocusPoint);
 
 		struct vec4 background;
 		vec4_zero(&background);
@@ -515,18 +527,8 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 		return;
 	}
 
-	// Output the masked image
-
-	gs_texture_t *blurredTexture = blur_background(tf, width, height);
-
 	if (!tf->effect) {
 		// Effect failed to load, skip rendering
-		obs_source_skip_video_filter(tf->source);
-		return;
-	}
-
-	if (!obs_source_process_filter_begin(tf->source, GS_RGBA,
-					     OBS_ALLOW_DIRECT_RENDERING)) {
 		obs_source_skip_video_filter(tf->source);
 		return;
 	}
@@ -543,6 +545,16 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 			return;
 		}
 	}
+
+  // Output the masked image
+	gs_texture_t *blurredTexture = blur_background(tf, width, height, alphaTexture);
+
+	if (!obs_source_process_filter_begin(tf->source, GS_RGBA,
+					     OBS_ALLOW_DIRECT_RENDERING)) {
+		obs_source_skip_video_filter(tf->source);
+		return;
+	}
+
 	gs_eparam_t *alphamask =
 		gs_effect_get_param_by_name(tf->effect, "alphamask");
 	gs_eparam_t *blurSize =
