@@ -144,7 +144,7 @@ obs_properties_t *background_filter_properties(void *data)
 				     obs_module_text("Robust Video Matting"),
 				     MODEL_RVM);
 	obs_property_list_add_string(p_model_select,
-				     obs_module_text("TCMonoDepth (Depth)"),
+				     obs_module_text("TCMonoDepth"),
 				     MODEL_DEPTH_TCMONODEPTH);
 
 	/* Background Blur Props */
