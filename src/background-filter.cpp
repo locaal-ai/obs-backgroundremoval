@@ -21,6 +21,7 @@
 #include "models/ModelSelfie.h"
 #include "models/ModelRVM.h"
 #include "models/ModelPPHumanSeg.h"
+#include "models/ModelTCMonoDepth.h"
 #include "FilterData.h"
 #include "ort-utils/ort-session-utils.h"
 #include "obs-utils/obs-utils.h"
@@ -38,6 +39,7 @@ struct background_removal_filter : public filter_data {
 	int maskEveryXFrames = 1;
 	int maskEveryXFramesCount = 0;
 	int64_t blurBackground = 0;
+	float blurFocusPoint = 0.1f;
 
 	gs_effect_t *effect;
 	gs_effect_t *kawaseBlurEffect;
@@ -71,6 +73,7 @@ obs_properties_t *background_filter_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
+	/* Threshold props */
 	obs_property_t *p = obs_properties_add_bool(
 		props, "enable_threshold", obs_module_text("EnableThreshold"));
 	obs_property_set_modified_callback(p, enable_threshold_modified);
@@ -92,6 +95,7 @@ obs_properties_t *background_filter_properties(void *data)
 		props, "feather", obs_module_text("FeatherBlendSilhouette"),
 		0.0, 1.0, 0.05);
 
+	/* GPU, CPU and performance Props */
 	obs_property_t *p_use_gpu = obs_properties_add_list(
 		props, "useGPU", obs_module_text("InferenceDevice"),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
@@ -111,6 +115,13 @@ obs_properties_t *background_filter_properties(void *data)
 				     USEGPU_COREML);
 #endif
 
+	obs_properties_add_int(props, "mask_every_x_frames",
+			       obs_module_text("CalculateMaskEveryXFrame"), 1,
+			       300, 1);
+	obs_properties_add_int_slider(props, "numThreads",
+				      obs_module_text("NumThreads"), 0, 8, 1);
+
+	/* Model selection Props */
 	obs_property_t *p_model_select = obs_properties_add_list(
 		props, "model_select", obs_module_text("SegmentationModel"),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
@@ -128,17 +139,19 @@ obs_properties_t *background_filter_properties(void *data)
 	obs_property_list_add_string(p_model_select,
 				     obs_module_text("Robust Video Matting"),
 				     MODEL_RVM);
+	obs_property_list_add_string(p_model_select,
+				     obs_module_text("TCMonoDepth"),
+				     MODEL_DEPTH_TCMONODEPTH);
 
-	obs_properties_add_int(props, "mask_every_x_frames",
-			       obs_module_text("CalculateMaskEveryXFrame"), 1,
-			       300, 1);
-
+	/* Background Blur Props */
 	obs_properties_add_int_slider(
 		props, "blur_background",
 		obs_module_text("BlurBackgroundFactor0NoBlurUseColor"), 0, 20,
 		1);
-	obs_properties_add_int_slider(props, "numThreads",
-				      obs_module_text("NumThreads"), 0, 8, 1);
+
+	obs_properties_add_float_slider(props, "blur_focus_point",
+					obs_module_text("BlurFocusPoint"), 0.0,
+					1.0, 0.05);
 
 	UNUSED_PARAMETER(data);
 	return props;
@@ -163,6 +176,7 @@ void background_filter_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "mask_every_x_frames", 1);
 	obs_data_set_default_int(settings, "blur_background", 0);
 	obs_data_set_default_int(settings, "numThreads", 1);
+	obs_data_set_default_double(settings, "blur_focus_point", 0.1);
 }
 
 void background_filter_update(void *data, obs_data_t *settings)
@@ -182,6 +196,8 @@ void background_filter_update(void *data, obs_data_t *settings)
 		(int)obs_data_get_int(settings, "mask_every_x_frames");
 	tf->maskEveryXFramesCount = (int)(0);
 	tf->blurBackground = obs_data_get_int(settings, "blur_background");
+	tf->blurFocusPoint =
+		(float)obs_data_get_double(settings, "blur_focus_point");
 
 	const std::string newUseGpu = obs_data_get_string(settings, "useGPU");
 	const std::string newModel =
@@ -210,6 +226,9 @@ void background_filter_update(void *data, obs_data_t *settings)
 		}
 		if (tf->modelSelection == MODEL_PPHUMANSEG) {
 			tf->model.reset(new ModelPPHumanSeg);
+		}
+		if (tf->modelSelection == MODEL_DEPTH_TCMONODEPTH) {
+			tf->model.reset(new ModelTCMonoDepth);
 		}
 
 		createOrtSession(tf);
@@ -433,7 +452,8 @@ void background_filter_video_tick(void *data, float seconds)
 }
 
 static gs_texture_t *blur_background(struct background_removal_filter *tf,
-				     uint32_t width, uint32_t height)
+				     uint32_t width, uint32_t height,
+				     gs_texture_t *alphaTexture)
 {
 	if (tf->blurBackground == 0 || !tf->kawaseBlurEffect) {
 		return nullptr;
@@ -444,10 +464,18 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf,
 			gs_texrender_get_texture(tf->texrender));
 	gs_eparam_t *image =
 		gs_effect_get_param_by_name(tf->kawaseBlurEffect, "image");
+	gs_eparam_t *focalmask =
+		gs_effect_get_param_by_name(tf->kawaseBlurEffect, "focalmask");
 	gs_eparam_t *xOffset =
 		gs_effect_get_param_by_name(tf->kawaseBlurEffect, "xOffset");
 	gs_eparam_t *yOffset =
 		gs_effect_get_param_by_name(tf->kawaseBlurEffect, "yOffset");
+	gs_eparam_t *blurIter =
+		gs_effect_get_param_by_name(tf->kawaseBlurEffect, "blurIter");
+	gs_eparam_t *blurTotal =
+		gs_effect_get_param_by_name(tf->kawaseBlurEffect, "blurTotal");
+	gs_eparam_t *blurFocusPointParam = gs_effect_get_param_by_name(
+		tf->kawaseBlurEffect, "blurFocusPoint");
 
 	for (int i = 0; i < (int)tf->blurBackground; i++) {
 		gs_texrender_reset(tf->texrender);
@@ -458,8 +486,12 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf,
 		}
 
 		gs_effect_set_texture(image, blurredTexture);
+		gs_effect_set_texture(focalmask, alphaTexture);
 		gs_effect_set_float(xOffset, ((float)i + 0.5f) / (float)width);
 		gs_effect_set_float(yOffset, ((float)i + 0.5f) / (float)height);
+		gs_effect_set_int(blurIter, i);
+		gs_effect_set_int(blurTotal, (int)tf->blurBackground);
+		gs_effect_set_float(blurFocusPointParam, tf->blurFocusPoint);
 
 		struct vec4 background;
 		vec4_zero(&background);
@@ -492,18 +524,8 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 		return;
 	}
 
-	// Output the masked image
-
-	gs_texture_t *blurredTexture = blur_background(tf, width, height);
-
 	if (!tf->effect) {
 		// Effect failed to load, skip rendering
-		obs_source_skip_video_filter(tf->source);
-		return;
-	}
-
-	if (!obs_source_process_filter_begin(tf->source, GS_RGBA,
-					     OBS_ALLOW_DIRECT_RENDERING)) {
 		obs_source_skip_video_filter(tf->source);
 		return;
 	}
@@ -520,21 +542,26 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 			return;
 		}
 	}
+
+	// Output the masked image
+	gs_texture_t *blurredTexture =
+		blur_background(tf, width, height, alphaTexture);
+
+	if (!obs_source_process_filter_begin(tf->source, GS_RGBA,
+					     OBS_ALLOW_DIRECT_RENDERING)) {
+		obs_source_skip_video_filter(tf->source);
+		gs_texture_destroy(alphaTexture);
+		gs_texture_destroy(blurredTexture);
+		return;
+	}
+
 	gs_eparam_t *alphamask =
 		gs_effect_get_param_by_name(tf->effect, "alphamask");
-	gs_eparam_t *blurSize =
-		gs_effect_get_param_by_name(tf->effect, "blurSize");
-	gs_eparam_t *xTexelSize =
-		gs_effect_get_param_by_name(tf->effect, "xTexelSize");
-	gs_eparam_t *yTexelSize =
-		gs_effect_get_param_by_name(tf->effect, "yTexelSize");
 	gs_eparam_t *blurredBackground =
 		gs_effect_get_param_by_name(tf->effect, "blurredBackground");
 
 	gs_effect_set_texture(alphamask, alphaTexture);
-	gs_effect_set_int(blurSize, (int)tf->blurBackground);
-	gs_effect_set_float(xTexelSize, 1.0f / (float)width);
-	gs_effect_set_float(yTexelSize, 1.0f / (float)height);
+
 	if (tf->blurBackground > 0) {
 		gs_effect_set_texture(blurredBackground, blurredTexture);
 	}

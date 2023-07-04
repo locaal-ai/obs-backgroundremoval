@@ -16,7 +16,7 @@ A plugin for [OBS Studio](https://obsproject.com/) that allows you to replace th
   - [MacOSX](#mac-osx)
   - [Linux (Ubuntu, Arch, openSUSE)](#linux)
   - [Windows](#windows)
- 
+
 🚧 Check out our experimental [CleanStream](https://github.com/royshil/obs-cleanstream) OBS plugin for real-time filler word (uh,um) and profanity removal from live audio stream 🚧
 
 ## Download
@@ -78,6 +78,7 @@ The pretrained model weights used for portrait foreground segmentation are taken
 - https://github.com/PaddlePaddle/PaddleSeg/tree/release/2.7/contrib/PP-HumanSeg
 - https://github.com/PINTO0309/PINTO_model_zoo/tree/main/082_MediaPipe_Meet_Segmentation
 - https://github.com/PeterL1n/RobustVideoMatting
+- https://github.com/PINTO0309/PINTO_model_zoo/tree/main/384_TCMonoDepth and https://github.com/yu-li/TCMonoDepth
 
 Image enhancement (low light) models are taken from:
 - https://github.com/PINTO0309/PINTO_model_zoo/tree/main/213_TBEFN
@@ -85,7 +86,7 @@ Image enhancement (low light) models are taken from:
 - https://github.com/PINTO0309/PINTO_model_zoo/tree/main/370_Semantic-Guided-Low-Light-Image-Enhancement
 - https://github.com/PINTO0309/PINTO_model_zoo/tree/main/243_Zero-DCE-improved
 
-Some more information about how I built it: https://www.morethantechnical.com/2021/04/15/obs-plugin-for-portrait-background-removal-with-onnx-sinet-model/
+Some more information about how I built it: https://www.morethantechnical.com/2021/04/15/obs-plugin-for-portrait-background-removal-with-onnx-sinet-model/ and https://www.morethantechnical.com/2023/05/20/building-an-obs-background-removal-plugin-a-walkthrough/
 
 ## Building
 
