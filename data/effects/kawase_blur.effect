@@ -41,25 +41,25 @@ VertDataOut VSDefault(VertDataOut v_in)
  */
 float4 PSKawaseFocalBlur(VertDataOut v_in) : TARGET
 {
-  float blurIterF = (float)blurIter / (float)blurTotal;
+	float blurIterF = float(blurIter) / float(blurTotal);
 
-  // Blur the focal map to get a smoother value else aliasing occurs
+	// Blur the focal map to get a smoother value else aliasing occurs
 	float blurValue = focalmask.Sample(textureSampler, v_in.uv).r;
-	blurValue += focalmask.Sample(textureSampler, v_in.uv + float2( 0.01,  0.01));
-	blurValue += focalmask.Sample(textureSampler, v_in.uv + float2(-0.01,  0.01));
-	blurValue += focalmask.Sample(textureSampler, v_in.uv + float2( 0.01, -0.01));
-	blurValue += focalmask.Sample(textureSampler, v_in.uv + float2(-0.01, -0.01));
+	blurValue += focalmask.Sample(textureSampler, v_in.uv + float2( 0.01,  0.01)).r;
+	blurValue += focalmask.Sample(textureSampler, v_in.uv + float2(-0.01,  0.01)).r;
+	blurValue += focalmask.Sample(textureSampler, v_in.uv + float2( 0.01, -0.01)).r;
+	blurValue += focalmask.Sample(textureSampler, v_in.uv + float2(-0.01, -0.01)).r;
 	blurValue *= 0.25;
 
-  // Calculate the distance from the focus point for this pixel
-  float blurFocusDistance = clamp(abs(blurValue - blurFocusPoint), 0.0, 1.0);
+	// Calculate the distance from the focus point for this pixel
+	float blurFocusDistance = clamp(abs(blurValue - blurFocusPoint), 0.0, 1.0);
 
-  if (blurIterF > blurFocusDistance) {
-    // If we're past the focus point, just return the image pixel, don't blur further
-    return image.Sample(textureSampler, v_in.uv);
-  }
+	if (blurIterF > blurFocusDistance) {
+		// If we're past the focus point, just return the image pixel, don't blur further
+		return image.Sample(textureSampler, v_in.uv);
+	}
 
-  // Calculate the blur value from neighboring pixels
+	// Calculate the blur value from neighboring pixels
 	float4 sum = float4(0.0, 0.0, 0.0, 0.0);
 	sum += image.Sample(textureSampler, v_in.uv + float2( xOffset,  yOffset));
 	sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset,  yOffset));

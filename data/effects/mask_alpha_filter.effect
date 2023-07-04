@@ -2,9 +2,6 @@ uniform float4x4 ViewProj;
 
 uniform texture2d image;     // input RGBA
 uniform texture2d alphamask; // alpha mask
-uniform int blurSize;        // Size of the image blur kernel. 0 = no blur
-uniform float xTexelSize;    // Size of texel in X coord
-uniform float yTexelSize;    // Size of texel in Y coord
 uniform texture2d blurredBackground; // input RGBA
 
 sampler_state textureSampler {
@@ -33,7 +30,7 @@ VertDataOut VSDefault(VertDataIn v_in)
 
 float4 PSAlphaMaskRGBAWithBlur(VertDataOut v_in) : TARGET
 {
-  // Return the blurred image, the focal mask is already applied to the blurred image
+	// Return the blurred image, the focal mask is already applied to the blurred image
 	return float4(blurredBackground.Sample(textureSampler, v_in.uv).rgb, 1.0);
 }
 

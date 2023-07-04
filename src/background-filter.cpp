@@ -554,29 +554,20 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 	if (!obs_source_process_filter_begin(tf->source, GS_RGBA,
 					     OBS_ALLOW_DIRECT_RENDERING)) {
 		obs_source_skip_video_filter(tf->source);
+		gs_texture_destroy(alphaTexture);
+		gs_texture_destroy(blurredTexture);
 		return;
 	}
 
 	gs_eparam_t *alphamask =
 		gs_effect_get_param_by_name(tf->effect, "alphamask");
-	gs_eparam_t *blurSize =
-		gs_effect_get_param_by_name(tf->effect, "blurSize");
-	gs_eparam_t *xTexelSize =
-		gs_effect_get_param_by_name(tf->effect, "xTexelSize");
-	gs_eparam_t *yTexelSize =
-		gs_effect_get_param_by_name(tf->effect, "yTexelSize");
 	gs_eparam_t *blurredBackground =
 		gs_effect_get_param_by_name(tf->effect, "blurredBackground");
-	gs_eparam_t *blurFocusPointParam =
-		gs_effect_get_param_by_name(tf->effect, "blurFocusPoint");
 
 	gs_effect_set_texture(alphamask, alphaTexture);
-	gs_effect_set_int(blurSize, (int)tf->blurBackground);
-	gs_effect_set_float(xTexelSize, 1.0f / (float)width);
-	gs_effect_set_float(yTexelSize, 1.0f / (float)height);
+
 	if (tf->blurBackground > 0) {
 		gs_effect_set_texture(blurredBackground, blurredTexture);
-		gs_effect_set_float(blurFocusPointParam, tf->blurFocusPoint);
 	}
 
 	gs_blend_state_push();
