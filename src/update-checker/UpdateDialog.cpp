@@ -55,15 +55,15 @@ void UpdateDialog::disableUpdateChecks(int state)
 	}
 
 	// Parse the config file
-	obs_data_t *data = obs_data_create_from_json_file(config_file);
-	if (!data) {
+	obs_data_t *json_data = obs_data_create_from_json_file(config_file);
+	if (!json_data) {
 		blog(LOG_INFO, "Failed to parse config file");
 		return;
 	}
 
 	// Update the config
-	obs_data_set_bool(data, "check_for_updates", state == Qt::Unchecked);
-	obs_data_save_json(data, config_file);
+	obs_data_set_bool(json_data, "check_for_updates", state == Qt::Unchecked);
+	obs_data_save_json(json_data, config_file);
 
-	obs_data_release(data);
+	obs_data_release(json_data);
 }
