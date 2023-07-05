@@ -7,9 +7,15 @@
 
 UpdateDialog *update_dialog;
 
-void check_update(void)
+extern "C" const char *PLUGIN_VERSION;
+
+void check_update(const char* latestRelease)
 {
+	if (strcmp(latestRelease, PLUGIN_VERSION) == 0) {
+		// No update available, latest version is the same as the current version
+		return;
+	}
 	update_dialog =
-		new UpdateDialog((QWidget *)obs_frontend_get_main_window());
+		new UpdateDialog(latestRelease, (QWidget *)obs_frontend_get_main_window());
 	QTimer::singleShot(2000, update_dialog, &UpdateDialog::exec);
 }

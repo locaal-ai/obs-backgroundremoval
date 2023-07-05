@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-void check_update(void);
+void check_update(const char* latestRelease);
 
 #ifdef __cplusplus
 }
