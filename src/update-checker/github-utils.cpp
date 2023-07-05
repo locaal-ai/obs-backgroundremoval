@@ -23,7 +23,7 @@ std::size_t writeFunctionStdString(void *ptr, std::size_t size, size_t nmemb,
 	return size * nmemb;
 }
 
-const char* github_utils_get_release(void)
+const char *github_utils_get_release(void)
 {
 	CURL *curl = curl_easy_init();
 	if (!curl) {
@@ -31,11 +31,9 @@ const char* github_utils_get_release(void)
 		return NULL;
 	}
 	CURLcode code;
-	curl_easy_setopt(curl, CURLOPT_URL,
-				GITHUB_LATEST_RELEASE_URL.c_str());
+	curl_easy_setopt(curl, CURLOPT_URL, GITHUB_LATEST_RELEASE_URL.c_str());
 	curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT.c_str());
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
-				writeFunctionStdString);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeFunctionStdString);
 	std::string responseBody;
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseBody);
 	code = curl_easy_perform(curl);
@@ -46,19 +44,19 @@ const char* github_utils_get_release(void)
 	}
 
 	// Parse the JSON response
-	obs_data_t* data = obs_data_create_from_json(responseBody.c_str());
+	obs_data_t *data = obs_data_create_from_json(responseBody.c_str());
 	if (!data) {
 		blog(LOG_INFO, "Failed to parse latest release info");
 		return NULL;
 	}
 
 	// The version is in the "tag_name" property
-	char* version = strdup(obs_data_get_string(data, "tag_name"));
+	char *version = strdup(obs_data_get_string(data, "tag_name"));
 	obs_data_release(data);
 
 	// remove the "v" prefix, if it exists
 	if (version[0] == 'v') {
-		char* newVersion = strdup(version + 1);
+		char *newVersion = strdup(version + 1);
 		free(version);
 		version = newVersion;
 	}

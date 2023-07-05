@@ -10,22 +10,23 @@ UpdateDialog *update_dialog;
 
 extern "C" const char *PLUGIN_VERSION;
 
-void check_update(const char* latestRelease)
+void check_update(const char *latestRelease)
 {
 	// Check configuration to see if update checks are disabled
-	char* config_file = obs_module_file("config.json");
+	char *config_file = obs_module_file("config.json");
 	if (!config_file) {
 		blog(LOG_INFO, "Unable to find config file");
 		return;
 	}
 
-	obs_data_t* data = obs_data_create_from_json_file(config_file);
+	obs_data_t *data = obs_data_create_from_json_file(config_file);
 	if (!data) {
 		blog(LOG_INFO, "Failed to parse config file");
 		return;
 	}
 
-	bool shouldCheckForUpdates = obs_data_get_bool(data, "check_for_updates");
+	bool shouldCheckForUpdates =
+		obs_data_get_bool(data, "check_for_updates");
 	obs_data_release(data);
 	if (!shouldCheckForUpdates) {
 		// Update checks are disabled
@@ -37,7 +38,7 @@ void check_update(const char* latestRelease)
 		return;
 	}
 
-	update_dialog =
-		new UpdateDialog(latestRelease, (QWidget *)obs_frontend_get_main_window());
+	update_dialog = new UpdateDialog(
+		latestRelease, (QWidget *)obs_frontend_get_main_window());
 	QTimer::singleShot(2000, update_dialog, &UpdateDialog::exec);
 }

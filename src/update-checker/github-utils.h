@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-const char* github_utils_get_release(void);
+const char *github_utils_get_release(void);
 
 #ifdef __cplusplus
 }
