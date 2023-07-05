@@ -62,7 +62,8 @@ void UpdateDialog::disableUpdateChecks(int state)
 	}
 
 	// Update the config
-	obs_data_set_bool(json_data, "check_for_updates", state == Qt::Unchecked);
+	obs_data_set_bool(json_data, "check_for_updates",
+			  state == Qt::Unchecked);
 	obs_data_save_json(json_data, config_file);
 
 	obs_data_release(json_data);
