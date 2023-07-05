@@ -40,7 +40,7 @@ bool obs_module_load(void)
 	obs_register_source(&enhance_filter_info);
 	obs_log(LOG_INFO, "plugin loaded successfully (version %s)",
 		PLUGIN_VERSION);
-	const char* latestRelease = github_utils_get_release();
+	const char *latestRelease = github_utils_get_release();
 	if (latestRelease != NULL) {
 		obs_log(LOG_INFO, "latest release is %s", latestRelease);
 		check_update(latestRelease);
