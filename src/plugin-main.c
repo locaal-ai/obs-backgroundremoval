@@ -18,10 +18,11 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 #include <obs-module.h>
 
-#include <plugin-support.h>
+#include "plugin-support.h"
 
 #include "update-checker/github-utils.h"
 #include "update-checker/update-checker.h"
+#include "segment-tracing/segment-tracing.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
@@ -41,10 +42,12 @@ bool obs_module_load(void)
 	obs_log(LOG_INFO, "plugin loaded successfully (version %s)",
 		PLUGIN_VERSION);
 	github_utils_get_release();
+	segment_tracing_init();
 	return true;
 }
 
 void obs_module_unload()
 {
 	obs_log(LOG_INFO, "plugin unloaded");
+	segment_tracing_deinit();
 }

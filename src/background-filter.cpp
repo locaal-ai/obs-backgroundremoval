@@ -15,7 +15,7 @@
 #include <new>
 #include <mutex>
 
-#include <plugin-support.h>
+#include "plugin-support.h"
 #include "models/ModelSINET.h"
 #include "models/ModelMediapipe.h"
 #include "models/ModelSelfie.h"
@@ -26,6 +26,7 @@
 #include "ort-utils/ort-session-utils.h"
 #include "obs-utils/obs-utils.h"
 #include "consts.h"
+#include "segment-tracing/segment-tracing.h"
 
 struct background_removal_filter : public filter_data {
 	bool enableThreshold = true;
@@ -255,6 +256,7 @@ void background_filter_activate(void *data)
 	struct background_removal_filter *tf =
 		reinterpret_cast<background_removal_filter *>(data);
 	tf->isDisabled = false;
+	send_segment_trace(SEGMENT_TYPE_FILTER_ACTIVATED, -1);
 }
 
 void background_filter_deactivate(void *data)
@@ -262,6 +264,7 @@ void background_filter_deactivate(void *data)
 	struct background_removal_filter *tf =
 		reinterpret_cast<background_removal_filter *>(data);
 	tf->isDisabled = true;
+	send_segment_trace(SEGMENT_TYPE_FILTER_DEACTIVATED, -1);
 }
 
 /**                   FILTER CORE                     */
@@ -271,6 +274,8 @@ void *background_filter_create(obs_data_t *settings, obs_source_t *source)
 	void *data = bmalloc(sizeof(struct background_removal_filter));
 	struct background_removal_filter *tf = new (data)
 		background_removal_filter();
+
+	send_segment_trace(SEGMENT_TYPE_FILTER_CREATE, -1);
 
 	tf->source = source;
 	tf->texrender = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
@@ -290,6 +295,8 @@ void background_filter_destroy(void *data)
 	struct background_removal_filter *tf =
 		reinterpret_cast<background_removal_filter *>(data);
 
+	send_segment_trace(SEGMENT_TYPE_FILTER_DESTROY, -1);
+
 	if (tf) {
 		obs_enter_graphics();
 		gs_texrender_destroy(tf->texrender);
@@ -299,6 +306,7 @@ void background_filter_destroy(void *data)
 		gs_effect_destroy(tf->effect);
 		gs_effect_destroy(tf->kawaseBlurEffect);
 		obs_leave_graphics();
+
 		tf->~background_removal_filter();
 		bfree(tf);
 	}
@@ -443,9 +451,11 @@ void background_filter_video_tick(void *data, float seconds)
 		}
 	} catch (const Ort::Exception &e) {
 		blog(LOG_ERROR, "ONNXRuntime Exception: %s", e.what());
+		send_segment_trace(SEGMENT_TYPE_FILTER_ERROR, -1);
 		// TODO: Fall back to CPU if it makes sense
 	} catch (const std::exception &e) {
 		blog(LOG_ERROR, "%s", e.what());
+		send_segment_trace(SEGMENT_TYPE_FILTER_ERROR, -1);
 	}
 
 	UNUSED_PARAMETER(seconds);
@@ -539,6 +549,7 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 		if (!alphaTexture) {
 			blog(LOG_ERROR, "Failed to create alpha texture");
 			obs_source_skip_video_filter(tf->source);
+			send_segment_trace(SEGMENT_TYPE_FILTER_ERROR, -1);
 			return;
 		}
 	}

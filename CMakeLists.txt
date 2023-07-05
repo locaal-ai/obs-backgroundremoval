@@ -71,6 +71,9 @@ endif()
 include(cmake/BuildMyCurl.cmake)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE libcurl)
 
+include(cmake/BuildAWSSDK.cmake)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE libawscpp)
+
 target_sources(
   ${CMAKE_PROJECT_NAME}
   PRIVATE src/plugin-main.c
@@ -82,8 +85,9 @@ target_sources(
           src/background-filter-info.c
           src/background-filter.cpp
           src/enhance-filter.cpp
-          src/enhance-filter-info.c)
+          src/enhance-filter-info.c
+          src/segment-tracing/segment-tracing.cpp)
 target_compile_options(${CMAKE_PROJECT_NAME}
-                       PRIVATE $<$<C_COMPILER_ID:Clang,AppleClang>:-Wno-error=unused-command-line-argument>)
+                       PRIVATE $<$<C_COMPILER_ID:Clang,AppleClang>:-Wno-error=unused-command-line-argument -Wno-error=newline-eof>)
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})
