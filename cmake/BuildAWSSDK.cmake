@@ -15,6 +15,11 @@ else()
   set(AWS_SDK_LIB_SUFFIX "")
 endif()
 
+if(UNIX AND NOT APPLE)
+  set(CURL_LIBRARY ${CMAKE_BINARY_DIR}/vendor/curl/lib/${CMAKE_BUILD_TYPE}/libcurl.a)
+  set(CURL_INCLUDE_DIR ${CMAKE_BINARY_DIR}/vendor/curl/include)
+endif()
+
 ExternalProject_Add(
   libawscpp-download
   GIT_REPOSITORY https://github.com/aws/aws-sdk-cpp.git
