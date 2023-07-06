@@ -79,7 +79,7 @@ if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/segment-tracing-credentials.h)
   file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/segment-tracing-credentials.h)
 endif()
 configure_file(src/segment-tracing/segment-tracing-credentials.h.in
-  ${CMAKE_CURRENT_BINARY_DIR}/segment-tracing-credentials.h)
+               ${CMAKE_CURRENT_BINARY_DIR}/segment-tracing-credentials.h)
 
 target_sources(
   ${CMAKE_PROJECT_NAME}
@@ -97,7 +97,8 @@ target_sources(
           src/segment-tracing/segment-tracing.cpp
           src/segment-tracing/SegmentTracingDialog.cpp
           ${CMAKE_CURRENT_BINARY_DIR}/segment-tracing-credentials.h)
-target_compile_options(${CMAKE_PROJECT_NAME}
-                       PRIVATE $<$<C_COMPILER_ID:Clang,AppleClang>:-Wno-error=unused-command-line-argument -Wno-error=newline-eof>)
+target_compile_options(
+  ${CMAKE_PROJECT_NAME} PRIVATE $<$<C_COMPILER_ID:Clang,AppleClang>:-Wno-error=unused-command-line-argument
+                                -Wno-error=newline-eof>)
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})
