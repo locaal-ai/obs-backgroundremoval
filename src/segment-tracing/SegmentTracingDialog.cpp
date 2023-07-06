@@ -18,8 +18,7 @@ static QString dialogContent =
 	"<p>If you are willing to help us, please check the box below to opt-in. If you'd rather not "
 	"participate, you can simply close this dialog.</p>"
 	"<p><b>Privacy notice:</b> We will only collect anonymous, aggregate usage statistics and will "
-	"never collect any personal information. You can opt-out at any time by unchecking the box "
-	"below in this screen, accessible from the plugin settings.</p>"
+	"never collect any personal information.</p>"
 	"<p>Example of the anonymous information we collect:</p>"
 	"<ul>"
 	"<li>Number of times the plugin was loaded, used, activated, updated</li>"
@@ -57,14 +56,7 @@ SegmentTracingDialog::SegmentTracingDialog(QWidget *parent)
 	// Add a checkbox
 	segmentTracingEnableCheckbox =
 		new QCheckBox("Collect usage statistics");
-	bool shouldEnable;
-	if (getFlagFromConfig("segment_tracing", &shouldEnable) ==
-	    OBS_BGREMOVAL_CONFIG_SUCCESS) {
-		if (shouldEnable) {
-			segmentTracingEnableCheckbox->setCheckState(
-				Qt::Checked);
-		}
-	}
+	segmentTracingEnableCheckbox->setCheckState(Qt::Checked);
 	layout->addWidget(segmentTracingEnableCheckbox);
 	connect(segmentTracingEnableCheckbox, &QCheckBox::stateChanged, this,
 		[](int state) {
