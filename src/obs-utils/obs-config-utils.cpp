@@ -2,7 +2,8 @@
 
 #include <obs-module.h>
 
-int getFlagFromConfig(const char *name, bool* returnValue) {
+int getFlagFromConfig(const char *name, bool *returnValue)
+{
 	// Check configuration to see if update checks are disabled
 	char *config_file = obs_module_file("config.json");
 	if (!config_file) {
@@ -22,8 +23,9 @@ int getFlagFromConfig(const char *name, bool* returnValue) {
 	return OBS_BGREMOVAL_CONFIG_SUCCESS;
 }
 
-int setFlagFromConfig(const char *name, const bool value) {
-		// Get the config file
+int setFlagFromConfig(const char *name, const bool value)
+{
+	// Get the config file
 	char *config_file = obs_module_file("config.json");
 	if (!config_file) {
 		blog(LOG_INFO, "Unable to find config file");

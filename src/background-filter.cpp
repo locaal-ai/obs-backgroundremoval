@@ -596,7 +596,8 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 	gs_texture_destroy(blurredTexture);
 }
 
-void background_filter_remove(void *data, obs_source_t *source) {
+void background_filter_remove(void *data, obs_source_t *source)
+{
 	UNUSED_PARAMETER(source);
 	UNUSED_PARAMETER(data);
 
