@@ -1,3 +1,5 @@
 {
-  "check_for_updates": true
+  "check_for_updates": true,
+  "segment_tracing": false,
+  "show_segment_tracing_dialog": true
 }

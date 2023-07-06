@@ -23,6 +23,9 @@
         "CMAKE_OSX_DEPLOYMENT_TARGET": "11.0",
         "CODESIGN_IDENTITY": "$penv{CODESIGN_IDENT}",
         "CODESIGN_TEAM": "$penv{CODESIGN_TEAM}",
+        "AWS_API_ACCESS_KEY_ID": "$penv{AWS_API_ACCESS_KEY_ID}",
+        "AWS_API_SECRET_KEY": "$penv{AWS_API_SECRET_KEY}",
+        "AWS_REGION": "$penv{AWS_REGION}",
         "ENABLE_FRONTEND_API": true,
         "ENABLE_QT": true
       }
