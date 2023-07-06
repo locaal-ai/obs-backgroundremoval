@@ -74,11 +74,19 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE libcurl)
 include(cmake/BuildAWSSDK.cmake)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE libawscpp)
 
+# if ${CMAKE_CURRENT_BINARY_DIR}/segment-tracing-credentials.h exists then remove it
+if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/segment-tracing-credentials.h)
+  file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/segment-tracing-credentials.h)
+endif()
+configure_file(src/segment-tracing/segment-tracing-credentials.h.in
+  ${CMAKE_CURRENT_BINARY_DIR}/segment-tracing-credentials.h)
+
 target_sources(
   ${CMAKE_PROJECT_NAME}
   PRIVATE src/plugin-main.c
           src/ort-utils/ort-session-utils.cpp
           src/obs-utils/obs-utils.cpp
+          src/obs-utils/obs-config-utils.cpp
           src/update-checker/github-utils.cpp
           src/update-checker/update-checker.cpp
           src/update-checker/UpdateDialog.cpp
@@ -86,7 +94,9 @@ target_sources(
           src/background-filter.cpp
           src/enhance-filter.cpp
           src/enhance-filter-info.c
-          src/segment-tracing/segment-tracing.cpp)
+          src/segment-tracing/segment-tracing.cpp
+          src/segment-tracing/SegmentTracingDialog.cpp
+          ${CMAKE_CURRENT_BINARY_DIR}/segment-tracing-credentials.h)
 target_compile_options(${CMAKE_PROJECT_NAME}
                        PRIVATE $<$<C_COMPILER_ID:Clang,AppleClang>:-Wno-error=unused-command-line-argument -Wno-error=newline-eof>)
 

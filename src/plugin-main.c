@@ -23,6 +23,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include "update-checker/github-utils.h"
 #include "update-checker/update-checker.h"
 #include "segment-tracing/segment-tracing.h"
+#include "obs-utils/obs-config-utils.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
@@ -41,17 +42,21 @@ bool obs_module_load(void)
 	obs_register_source(&enhance_filter_info);
 	obs_log(LOG_INFO, "plugin loaded successfully (version %s)",
 		PLUGIN_VERSION);
+
 	const char *latestRelease = github_utils_get_release();
 	if (latestRelease != NULL) {
 		obs_log(LOG_INFO, "latest release is %s", latestRelease);
 		check_update(latestRelease);
 	}
+
 	segment_tracing_init();
+	send_segment_trace(SEGMENT_TYPE_PLUGIN_LOAD, -1);
 	return true;
 }
 
 void obs_module_unload()
 {
 	obs_log(LOG_INFO, "plugin unloaded");
+	send_segment_trace(SEGMENT_TYPE_PLUGIN_UNLOAD, -1);
 	segment_tracing_deinit();
 }

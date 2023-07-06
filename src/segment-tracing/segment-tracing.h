@@ -14,11 +14,15 @@ enum {
   SEGMENT_TYPE_FILTER_DEACTIVATED,
   SEGMENT_TYPE_FILTER_USAGE_STATS,
   SEGMENT_TYPE_FILTER_ERROR,
+  SEGMENT_TYPE_PLUGIN_INIT_TRACE,
+  SEGMENT_TYPE_FILTER_REMOVE,
 };
 
-void send_segment_trace(int segment_type, int info);
+int send_segment_trace(int segment_type, int info);
 void segment_tracing_init(void);
+void segment_tracing_init_tracing(void);
 void segment_tracing_deinit(void);
+void segment_tracing_show_dialog(void);
 
 #ifdef __cplusplus
 }

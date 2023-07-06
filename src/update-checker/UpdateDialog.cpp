@@ -1,4 +1,5 @@
 #include "UpdateDialog.hpp"
+#include "obs-utils/obs-config-utils.h"
 
 #include <obs.h>
 #include <obs-module.h>
@@ -45,26 +46,6 @@ UpdateDialog::UpdateDialog(const char *latestVersion, QWidget *parent)
 
 void UpdateDialog::disableUpdateChecks(int state)
 {
-	UNUSED_PARAMETER(state);
-
-	// Get the config file
-	char *config_file = obs_module_file("config.json");
-	if (!config_file) {
-		blog(LOG_INFO, "Unable to find config file");
-		return;
-	}
-
-	// Parse the config file
-	obs_data_t *json_data = obs_data_create_from_json_file(config_file);
-	if (!json_data) {
-		blog(LOG_INFO, "Failed to parse config file");
-		return;
-	}
-
-	// Update the config
-	obs_data_set_bool(json_data, "check_for_updates",
-			  state == Qt::Unchecked);
-	obs_data_save_json(json_data, config_file);
-
-	obs_data_release(json_data);
+	const bool flag = state == Qt::Unchecked;
+	setFlagFromConfig("check_for_updates", flag);
 }

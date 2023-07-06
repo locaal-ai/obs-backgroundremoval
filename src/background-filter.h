@@ -14,6 +14,7 @@ void background_filter_activate(void *data);
 void background_filter_deactivate(void *data);
 void background_filter_video_tick(void *data, float seconds);
 void background_filter_video_render(void *data, gs_effect_t *_effect);
+void background_filter_remove(void *data, obs_source_t *source);
 
 #ifdef __cplusplus
 }
