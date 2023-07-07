@@ -40,11 +40,18 @@ bool obs_module_load(void)
 	obs_register_source(&enhance_filter_info);
 	obs_log(LOG_INFO, "plugin loaded successfully (version %s)",
 		PLUGIN_VERSION);
-	const char *latestRelease = github_utils_get_release();
-	if (latestRelease != NULL) {
-		obs_log(LOG_INFO, "latest release is %s", latestRelease);
+
+	const struct github_utils_release_information latestRelease =
+		github_utils_get_release_information();
+	if (latestRelease.responseCode == OBS_BGREMOVAL_GITHUB_UTILS_SUCCESS) {
+		obs_log(LOG_INFO, "Latest release is %s",
+			latestRelease.version);
 		check_update(latestRelease);
+	} else {
+		obs_log(LOG_INFO, "failed to get latest release information");
 	}
+	github_utils_release_information_free(latestRelease);
+
 	return true;
 }
 

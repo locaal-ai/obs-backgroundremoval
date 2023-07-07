@@ -76,6 +76,7 @@ target_sources(
   PRIVATE src/plugin-main.c
           src/ort-utils/ort-session-utils.cpp
           src/obs-utils/obs-utils.cpp
+          src/obs-utils/obs-config-utils.cpp
           src/update-checker/github-utils.cpp
           src/update-checker/update-checker.cpp
           src/update-checker/UpdateDialog.cpp
