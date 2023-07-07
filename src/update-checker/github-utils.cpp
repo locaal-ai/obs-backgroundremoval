@@ -23,12 +23,13 @@ std::size_t writeFunctionStdString(void *ptr, std::size_t size, size_t nmemb,
 	return size * nmemb;
 }
 
-const char *github_utils_get_release(void)
+struct github_utils_release_information
+github_utils_get_release_information(void)
 {
 	CURL *curl = curl_easy_init();
 	if (!curl) {
 		blog(LOG_INFO, "Failed to initialize curl");
-		return NULL;
+		return {OBS_BGREMOVAL_GITHUB_UTILS_ERROR, NULL, NULL};
 	}
 	CURLcode code;
 	curl_easy_setopt(curl, CURLOPT_URL, GITHUB_LATEST_RELEASE_URL.c_str());
@@ -40,26 +41,38 @@ const char *github_utils_get_release(void)
 	curl_easy_cleanup(curl);
 	if (code != CURLE_OK) {
 		blog(LOG_INFO, "Failed to get latest release info");
-		return NULL;
+		return {OBS_BGREMOVAL_GITHUB_UTILS_ERROR, NULL, NULL};
 	}
 
 	// Parse the JSON response
 	obs_data_t *data = obs_data_create_from_json(responseBody.c_str());
 	if (!data) {
 		blog(LOG_INFO, "Failed to parse latest release info");
-		return NULL;
+		return {OBS_BGREMOVAL_GITHUB_UTILS_ERROR, NULL, NULL};
 	}
 
 	// The version is in the "tag_name" property
 	char *version = strdup(obs_data_get_string(data, "tag_name"));
+	char *body = strdup(obs_data_get_string(data, "body"));
 	obs_data_release(data);
 
-	// remove the "v" prefix, if it exists
+	// remove the "v" prefix in version, if it exists
 	if (version[0] == 'v') {
-		char *newVersion = strdup(version + 1);
+		char *newVersion = (char *)malloc(strlen(version) - 1);
+		strcpy(newVersion, version + 1);
 		free(version);
 		version = newVersion;
 	}
 
-	return version;
+	return {OBS_BGREMOVAL_GITHUB_UTILS_SUCCESS, body, version};
+}
+
+void github_utils_release_information_free(
+	struct github_utils_release_information info)
+{
+	if (info.responseBody != NULL)
+		free(info.responseBody);
+	if (info.version != NULL)
+		free(info.version);
+	info.responseCode = OBS_BGREMOVAL_GITHUB_UTILS_ERROR;
 }
