@@ -110,8 +110,8 @@
       "cacheVariables": {
         "QT_VERSION": "6",
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "ENABLE_FRONTEND_API": false,
-        "ENABLE_QT": false
+        "ENABLE_FRONTEND_API": true,
+        "ENABLE_QT": true
       }
     },
     {
