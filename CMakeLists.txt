@@ -68,7 +68,6 @@ else()
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OpenCV)
 endif()
 
-
 set(USE_SYSTEM_CURL
     OFF
     CACHE STRING "Use system cURL")
