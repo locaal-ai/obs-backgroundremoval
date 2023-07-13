@@ -44,10 +44,10 @@ This video on YouTube will take you through the major parts of the code and expl
   </a>
 </div>
 
-## Requirements
-- OBS version 28+ ([download](https://obsproject.com/download))
-
-We do not support older versions of OBS since the plugin is using newer APIs.
+## OBS Version Support and Compatibility
+- OBS version 29+ ([download](https://obsproject.com/download)) for the latest version of this plugin, e.g. 1.1.x and above.
+- OBS version 28+ for this plugin's version between 0.5.x and 1.0.x.
+- OBS version 27+ for this plugin's version 0.4.x and below.
 
 ## Introduction
 
@@ -91,28 +91,28 @@ Some more information about how I built it: https://www.morethantechnical.com/20
 
 ## Building
 
-The plugin was built and tested on Mac OSX, Windows and Ubuntu Linux. Help is appreciated in building on other OSs and packages.
+The plugin was built and tested on Mac OSX  (Intel & Apple silicon), Windows and several Linux disros (e.g. Ubuntu/Debian-ish, Fedora, and more). Help is appreciated in building on other OSs and packages.
 
-The building pipelines in CI take care of the heavy lifting. Use them in order to build the plugin locally. Note that due to the fact we're building and packaging OpenCV and ONNX Runtime the build times are quite long.
+The building pipelines in CI take care of the heavy lifting. Use them in order to build the plugin locally. We attempt to use external OpenCV, libcurl and ONNX Runtime to reduce build times.
 
 Start by cloning this repo to a directory of your choice.
 
 ### Mac OSX
 
-Using the CI pipeline scripts, locally you would just call the zsh script.
+Using the CI pipeline scripts, locally you would just call the zsh script. By default this builds a universal binary for both Intel and Apple Silicon. To build for a specific architecture please see `.github/scripts/.build.zsh` for the `-arch` options.
 
 ```sh
-$ ./.github/scripts/build-macos.zsh -c Release -t macos-x86_64
+$ ./.github/scripts/build-macos -c Release
 ```
 
 #### Install
-The above script should succeed and the plugin files will reside in the `./release` folder off of the root. Copy the files to the OBS directory e.g. `/Applications/OBS.app/Contents/`.
+The above script should succeed and the plugin files (e.g. `obs-backgroundremoval.plugin`) will reside in the `./release/Release` folder off of the root. Copy the `.plugin` file to the OBS directory e.g. `~/Library/Application Support/obs-studio/plugins`.
 
-To get `.pkg` installer file, run
+To get `.pkg` installer file, run for example
 ```sh
-$ ./.github/scripts/package-macos.zsh -c Release -t macos-x86_64
+$ ./.github/scripts/package-macos -c Release
 ```
-(Note that maybe the outputs in the e.g. `build_x86_64` will be in the `Release` folder and not the `install` folder like `pakage-macos.zsh` expects, so you will need to rename the folder from `build_x86_64/Release` to `build_x86_64/install`)
+(Note that maybe the outputs will be in the `Release` folder and not the `install` folder like `pakage-macos` expects, so you will need to rename the folder from `build_x86_64/Release` to `build_x86_64/install`)
 
 ### Linux
 
