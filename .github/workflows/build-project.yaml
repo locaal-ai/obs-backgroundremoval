@@ -196,6 +196,13 @@ jobs:
           target: x86_64
           config: ${{ needs.check-event.outputs.config }}
 
+      - name: Package Zip 📀
+        uses: ./.github/actions/package-plugin
+        with:
+          package: false
+          target: x86_64
+          config: ${{ needs.check-event.outputs.config }}
+
       - name: Upload Source Tarball 🗜️
         uses: actions/upload-artifact@v3
         with:
