@@ -8,7 +8,7 @@ sudo dnf groupinstall "Development Tools"
 Then, make sure you have the dependencies of this plugin installed:
 
 ```
-sudo dnf install cmake gcc-c++ ninja-build obs-studio-devel opencv-devel qt6-qtbase-devel
+sudo dnf install cmake gcc-c++ ninja-build obs-studio-devel opencv-devel qt6-qtbase-devel zsh
 ```
 
 Clone the repository and set up the submodules:
