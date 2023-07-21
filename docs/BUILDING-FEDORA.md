@@ -11,7 +11,6 @@ Then, make sure you have the dependencies of this plugin installed:
 sudo dnf install cmake gcc-c++ libxkbcommon-devel ninja-build obs-studio-devel opencv-devel qt6-qtbase-devel
 ```
 
-_As an unprivileged user:_  
 Clone the repository and set up the submodules:
 ```
 git clone https://github.com/royshil/obs-backgroundremoval.git
@@ -28,7 +27,6 @@ Then use the following command to compile:
 .github/scripts/build-linux --skip-deps
 ```
 
-_As a privileged user (root):_  
 Finally, install the necessary files into the system directories, by issuing this command:
 ```
 sudo cmake --install build_x86_64 --prefix /usr
