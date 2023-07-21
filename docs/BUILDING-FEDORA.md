@@ -18,11 +18,7 @@ cd obs-backgroundremoval
 git submodule update --init
 ```
 
-Before you compile, edit `cmake/linux/compilerconfig.cmake`, find this line: `set(_obs_gcc_c_options` and add the following line to the list of options:
-```
-    -fPIC
-```
-Then use the following command to compile: 
+Run the following command to compile the plugin:  
 ```
 .github/scripts/build-linux --skip-deps
 ```
