@@ -126,6 +126,9 @@ $ ./.github/scripts/build-linux.sh
 #### Arch Linux
 The community maintains AUR packages: https://aur.archlinux.org/packages/obs-backgroundremoval
 
+#### Fedora
+To compile on Fedora, you need to manage the dependencies manually. See [docs/BUILDING-FEDORA.md](docs/BUILDING-FEDORA.md) for more information.
+
 #### FlatHub
 The plugin is available on FlatHub: https://github.com/flathub/com.obsproject.Studio.Plugin.BackgroundRemoval
 
