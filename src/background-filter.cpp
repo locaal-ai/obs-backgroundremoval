@@ -153,12 +153,15 @@ obs_properties_t *background_filter_properties(void *data)
 
 	obs_property_t *p_enable_focal_blur = obs_properties_add_bool(
 		props, "enable_focal_blur", obs_module_text("EnableFocalBlur"));
-	obs_property_set_modified_callback(p_enable_focal_blur,
+	obs_property_set_modified_callback(
+		p_enable_focal_blur,
 		[](obs_properties_t *ppts, obs_property_t *p,
-								obs_data_t *settings) {
+		   obs_data_t *settings) {
 			UNUSED_PARAMETER(p);
-			const bool enabled = obs_data_get_bool(settings, "enable_focal_blur");
-			obs_property_t *prop = obs_properties_get(ppts, "blur_focus_point");
+			const bool enabled = obs_data_get_bool(
+				settings, "enable_focal_blur");
+			obs_property_t *prop =
+				obs_properties_get(ppts, "blur_focus_point");
 			obs_property_set_visible(prop, enabled);
 			prop = obs_properties_get(ppts, "blur_focus_depth");
 			obs_property_set_visible(prop, enabled);
@@ -529,7 +532,8 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf,
 		gs_blend_state_push();
 		gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
 
-		const char* blur_type = (tf->enableFocalBlur) ? "DrawFocalBlur" : "Draw";
+		const char *blur_type = (tf->enableFocalBlur) ? "DrawFocalBlur"
+							      : "Draw";
 
 		while (gs_effect_loop(tf->kawaseBlurEffect, blur_type)) {
 			gs_draw_sprite(blurredTexture, 0, width, height);
