@@ -30,6 +30,18 @@ VertDataOut VSDefault(VertDataIn v_in)
 
 float4 PSAlphaMaskRGBAWithBlur(VertDataOut v_in) : TARGET
 {
+	float4 inputRGBA = image.Sample(textureSampler, v_in.uv);
+	inputRGBA.rgb = max(float3(0.0, 0.0, 0.0), inputRGBA.rgb / inputRGBA.a);
+
+	float4 outputRGBA;
+	float a = (1.0 - alphamask.Sample(textureSampler, v_in.uv).r) * inputRGBA.a;
+	outputRGBA.rgb = inputRGBA.rgb * a + blurredBackground.Sample(textureSampler, v_in.uv).rgb * (1.0 - a);
+	outputRGBA.a = 1;
+	return outputRGBA;
+}
+
+float4 PSAlphaMaskRGBAWithFocalBlur(VertDataOut v_in) : TARGET
+{
 	// Return the blurred image, the focal mask is already applied to the blurred image
 	return float4(blurredBackground.Sample(textureSampler, v_in.uv).rgb, 1.0);
 }
@@ -52,6 +64,15 @@ technique DrawWithBlur
 	{
 		vertex_shader = VSDefault(v_in);
 		pixel_shader  = PSAlphaMaskRGBAWithBlur(v_in);
+	}
+}
+
+technique DrawWithFocalBlur
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSAlphaMaskRGBAWithFocalBlur(v_in);
 	}
 }
 
