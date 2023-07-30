@@ -39,7 +39,9 @@ struct background_removal_filter : public filter_data {
 	int maskEveryXFrames = 1;
 	int maskEveryXFramesCount = 0;
 	int64_t blurBackground = 0;
+	bool enableFocalBlur = true;
 	float blurFocusPoint = 0.1f;
+	float blurFocusDepth = 0.1f;
 
 	gs_effect_t *effect;
 	gs_effect_t *kawaseBlurEffect;
@@ -149,9 +151,26 @@ obs_properties_t *background_filter_properties(void *data)
 		obs_module_text("BlurBackgroundFactor0NoBlurUseColor"), 0, 20,
 		1);
 
+	obs_property_t *p_enable_focal_blur = obs_properties_add_bool(
+		props, "enable_focal_blur", obs_module_text("EnableFocalBlur"));
+	obs_property_set_modified_callback(p_enable_focal_blur,
+		[](obs_properties_t *ppts, obs_property_t *p,
+								obs_data_t *settings) {
+			UNUSED_PARAMETER(p);
+			const bool enabled = obs_data_get_bool(settings, "enable_focal_blur");
+			obs_property_t *prop = obs_properties_get(ppts, "blur_focus_point");
+			obs_property_set_visible(prop, enabled);
+			prop = obs_properties_get(ppts, "blur_focus_depth");
+			obs_property_set_visible(prop, enabled);
+			return true;
+		});
+
 	obs_properties_add_float_slider(props, "blur_focus_point",
 					obs_module_text("BlurFocusPoint"), 0.0,
 					1.0, 0.05);
+	obs_properties_add_float_slider(props, "blur_focus_depth",
+					obs_module_text("BlurFocusDepth"), 0.0,
+					0.3, 0.02);
 
 	UNUSED_PARAMETER(data);
 	return props;
@@ -176,7 +195,9 @@ void background_filter_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "mask_every_x_frames", 1);
 	obs_data_set_default_int(settings, "blur_background", 0);
 	obs_data_set_default_int(settings, "numThreads", 1);
+	obs_data_set_default_bool(settings, "enable_focal_blur", true);
 	obs_data_set_default_double(settings, "blur_focus_point", 0.1);
+	obs_data_set_default_double(settings, "blur_focus_depth", 0.0);
 }
 
 void background_filter_update(void *data, obs_data_t *settings)
@@ -196,8 +217,12 @@ void background_filter_update(void *data, obs_data_t *settings)
 		(int)obs_data_get_int(settings, "mask_every_x_frames");
 	tf->maskEveryXFramesCount = (int)(0);
 	tf->blurBackground = obs_data_get_int(settings, "blur_background");
+	tf->enableFocalBlur =
+		(float)obs_data_get_bool(settings, "enable_focal_blur");
 	tf->blurFocusPoint =
 		(float)obs_data_get_double(settings, "blur_focus_point");
+	tf->blurFocusDepth =
+		(float)obs_data_get_double(settings, "blur_focus_depth");
 
 	const std::string newUseGpu = obs_data_get_string(settings, "useGPU");
 	const std::string newModel =
@@ -476,6 +501,8 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf,
 		gs_effect_get_param_by_name(tf->kawaseBlurEffect, "blurTotal");
 	gs_eparam_t *blurFocusPointParam = gs_effect_get_param_by_name(
 		tf->kawaseBlurEffect, "blurFocusPoint");
+	gs_eparam_t *blurFocusDepthParam = gs_effect_get_param_by_name(
+		tf->kawaseBlurEffect, "blurFocusDepth");
 
 	for (int i = 0; i < (int)tf->blurBackground; i++) {
 		gs_texrender_reset(tf->texrender);
@@ -492,6 +519,7 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf,
 		gs_effect_set_int(blurIter, i);
 		gs_effect_set_int(blurTotal, (int)tf->blurBackground);
 		gs_effect_set_float(blurFocusPointParam, tf->blurFocusPoint);
+		gs_effect_set_float(blurFocusDepthParam, tf->blurFocusDepth);
 
 		struct vec4 background;
 		vec4_zero(&background);
@@ -500,7 +528,10 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf,
 			 static_cast<float>(height), -100.0f, 100.0f);
 		gs_blend_state_push();
 		gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
-		while (gs_effect_loop(tf->kawaseBlurEffect, "Draw")) {
+
+		const char* blur_type = (tf->enableFocalBlur) ? "DrawFocalBlur" : "Draw";
+
+		while (gs_effect_loop(tf->kawaseBlurEffect, blur_type)) {
 			gs_draw_sprite(blurredTexture, 0, width, height);
 		}
 		gs_blend_state_pop();
@@ -571,7 +602,10 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 
 	const char *techName;
 	if (tf->blurBackground > 0) {
-		techName = "DrawWithBlur";
+		if (tf->enableFocalBlur)
+			techName = "DrawWithFocalBlur";
+		else
+			techName = "DrawWithBlur";
 	} else {
 		techName = "DrawWithoutBlur";
 	}

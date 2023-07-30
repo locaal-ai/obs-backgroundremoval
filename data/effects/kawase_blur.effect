@@ -8,6 +8,7 @@ uniform float yOffset;
 uniform int   blurIter; // Current blur iteration
 uniform int   blurTotal; // Total number of blur iterations
 uniform float blurFocusPoint; // Focus point for the blur. 0 = back, 1 = front
+uniform float blurFocusDepth; // Depth of the focal blur. 0 = narrow, 1 = deep
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -53,8 +54,9 @@ float4 PSKawaseFocalBlur(VertDataOut v_in) : TARGET
 
 	// Calculate the distance from the focus point for this pixel
 	float blurFocusDistance = clamp(abs(blurValue - blurFocusPoint), 0.0, 1.0);
+	float blurFocusFactor = clamp(blurFocusDistance - blurFocusDepth, 0.0, 1.0);
 
-	if (blurIterF > blurFocusDistance) {
+	if (blurIterF > blurFocusFactor) {
 		// If we're past the focus point, just return the image pixel, don't blur further
 		return image.Sample(textureSampler, v_in.uv);
 	}
@@ -69,11 +71,32 @@ float4 PSKawaseFocalBlur(VertDataOut v_in) : TARGET
 	return sum;
 }
 
-technique Draw
+float4 PSKawaseBlur(VertDataOut v_in) : TARGET
+{
+	// Calculate the blur value from neighboring pixels
+	float4 sum = float4(0.0, 0.0, 0.0, 0.0);
+	sum += image.Sample(textureSampler, v_in.uv + float2( xOffset,  yOffset));
+	sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset,  yOffset));
+	sum += image.Sample(textureSampler, v_in.uv + float2( xOffset, -yOffset));
+	sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset, -yOffset));
+	sum *= 0.25;
+	return sum;
+}
+
+technique DrawFocalBlur
 {
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
 		pixel_shader  = PSKawaseFocalBlur(v_in);
+	}
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSKawaseBlur(v_in);
 	}
 }

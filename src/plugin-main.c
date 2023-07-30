@@ -38,7 +38,7 @@ bool obs_module_load(void)
 {
 	obs_register_source(&background_removal_filter_info);
 	obs_register_source(&enhance_filter_info);
-	obs_log(LOG_INFO, "plugin loaded successfully (version %s)",
+	obs_log(LOG_INFO, "Plugin loaded successfully (version %s)",
 		PLUGIN_VERSION);
 
 	const struct github_utils_release_information latestRelease =
