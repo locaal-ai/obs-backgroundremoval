@@ -66,7 +66,7 @@ OBS Plugins forum: https://obsproject.com/forum/resources/background-removal-por
 
 Tutorial video on YouTube: https://youtu.be/veqNEsMqEE0
 
-[![](demo.gif)](https://youtu.be/veqNEsMqEE0)
+https://github.com/royshil/obs-backgroundremoval/assets/1067855/5ba5aae2-7ea2-4c90-ad45-fba5ccde1a4e
 
 GPU support:
 * Currently on Windows we support DirectML, which should reduce CPU usage by 95% and effectively use the systems accelerators (GPUs if available).
