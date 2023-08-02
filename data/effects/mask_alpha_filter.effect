@@ -40,9 +40,9 @@ float4 PSAlphaMaskRGBAWithBlur(VertDataOut v_in) : TARGET
 	return outputRGBA;
 }
 
-float4 PSAlphaMaskRGBAWithFocalBlur(VertDataOut v_in) : TARGET
+float4 PSTakeBlur(VertDataOut v_in) : TARGET
 {
-	// Return the blurred image, the focal mask is already applied to the blurred image
+	// Return the blurred image, assume any masking is already applied to the blurred image
 	return float4(blurredBackground.Sample(textureSampler, v_in.uv).rgb, 1.0);
 }
 
@@ -63,7 +63,7 @@ technique DrawWithBlur
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSAlphaMaskRGBAWithBlur(v_in);
+		pixel_shader  = PSTakeBlur(v_in);
 	}
 }
 
@@ -72,7 +72,7 @@ technique DrawWithFocalBlur
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSAlphaMaskRGBAWithFocalBlur(v_in);
+		pixel_shader  = PSTakeBlur(v_in);
 	}
 }
 
