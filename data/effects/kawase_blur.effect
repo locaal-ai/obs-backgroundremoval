@@ -102,23 +102,22 @@ float4 PSKawaseBlurMaskAware(VertDataOut v_in) : TARGET
 	// Calculate the blur value from neighboring pixels
 	float4 sum = float4(0.0, 0.0, 0.0, 0.0);
 	float pixelCounter = 0;
-	float alphaValue = 0;
 
-	alphaValue = focalmask.Sample(textureSampler, v_in.uv + float2( xOffset,  yOffset)).r;
-	sum += image.Sample(textureSampler, v_in.uv + float2( xOffset,  yOffset)) * alphaValue;
-	pixelCounter += alphaValue;
+	float alphaValue1 = focalmask.Sample(textureSampler, v_in.uv + float2( xOffset,  yOffset)).r;
+	sum += image.Sample(textureSampler, v_in.uv + float2( xOffset,  yOffset)) * alphaValue1;
+	pixelCounter += alphaValue1;
 
-	alphaValue = focalmask.Sample(textureSampler, v_in.uv + float2(-xOffset,  yOffset)).r;
-	sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset,  yOffset)) * alphaValue;
-	pixelCounter += alphaValue;
+	float alphaValue2 = focalmask.Sample(textureSampler, v_in.uv + float2(-xOffset,  yOffset)).r;
+	sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset,  yOffset)) * alphaValue2;
+	pixelCounter += alphaValue2;
 
-	alphaValue = focalmask.Sample(textureSampler, v_in.uv + float2( xOffset, -yOffset)).r;
-	sum += image.Sample(textureSampler, v_in.uv + float2( xOffset, -yOffset)) * alphaValue;
-	pixelCounter += alphaValue;
+	float alphaValue3 = focalmask.Sample(textureSampler, v_in.uv + float2( xOffset, -yOffset)).r;
+	sum += image.Sample(textureSampler, v_in.uv + float2( xOffset, -yOffset)) * alphaValue3;
+	pixelCounter += alphaValue3;
 
-	alphaValue = focalmask.Sample(textureSampler, v_in.uv + float2(-xOffset, -yOffset)).r;
-	sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset, -yOffset)) * alphaValue;
-	pixelCounter += alphaValue;
+	float alphaValue4 = focalmask.Sample(textureSampler, v_in.uv + float2(-xOffset, -yOffset)).r;
+	sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset, -yOffset)) * alphaValue4;
+	pixelCounter += alphaValue4;
 
 	// Complement the blur pixels with a relative fraction of the center pixel
 	return (sum + image.Sample(textureSampler, v_in.uv) * (4.0 - pixelCounter)) * 0.25;
