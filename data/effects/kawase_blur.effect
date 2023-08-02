@@ -100,12 +100,10 @@ float4 PSKawaseBlurMaskAware(VertDataOut v_in) : TARGET
 	}
 
 	// Calculate the blur value from neighboring pixels
-	float4 sum = float4(0.0, 0.0, 0.0, 0.0);
-	float pixelCounter = 0;
 
 	float alphaValue1 = focalmask.Sample(textureSampler, v_in.uv + float2( xOffset,  yOffset)).r;
-	sum += image.Sample(textureSampler, v_in.uv + float2( xOffset,  yOffset)) * alphaValue1;
-	pixelCounter += alphaValue1;
+	float4 sum = image.Sample(textureSampler, v_in.uv + float2( xOffset,  yOffset)) * alphaValue1;
+	float pixelCounter = alphaValue1;
 
 	float alphaValue2 = focalmask.Sample(textureSampler, v_in.uv + float2(-xOffset,  yOffset)).r;
 	sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset,  yOffset)) * alphaValue2;
