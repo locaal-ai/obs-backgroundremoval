@@ -71,6 +71,10 @@ float4 PSKawaseFocalBlur(VertDataOut v_in) : TARGET
 	return sum;
 }
 
+/**
+ * Standard Kawase blur
+ * While it's not being used, we keep it here for reference.
+ */
 float4 PSKawaseBlur(VertDataOut v_in) : TARGET
 {
 	// Calculate the blur value from neighboring pixels
@@ -82,6 +86,41 @@ float4 PSKawaseBlur(VertDataOut v_in) : TARGET
 	sum *= 0.25;
 	return sum;
 }
+
+/**
+ * Mask aware Kawase blur
+ * Only uses pixels which are in the masked area for blur. This prevents the "Halo Effect" on
+ * the border pixels of the mask.
+ */
+float4 PSKawaseBlurMaskAware(VertDataOut v_in) : TARGET
+{
+	if (focalmask.Sample(textureSampler, v_in.uv).r == 0) {
+		// No mask - return the original image value without any blur
+		return image.Sample(textureSampler, v_in.uv);
+	}
+
+	// Calculate the blur value from neighboring pixels
+
+	float alphaValue1 = focalmask.Sample(textureSampler, v_in.uv + float2( xOffset,  yOffset)).r;
+	float4 sum = image.Sample(textureSampler, v_in.uv + float2( xOffset,  yOffset)) * alphaValue1;
+	float pixelCounter = alphaValue1;
+
+	float alphaValue2 = focalmask.Sample(textureSampler, v_in.uv + float2(-xOffset,  yOffset)).r;
+	sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset,  yOffset)) * alphaValue2;
+	pixelCounter += alphaValue2;
+
+	float alphaValue3 = focalmask.Sample(textureSampler, v_in.uv + float2( xOffset, -yOffset)).r;
+	sum += image.Sample(textureSampler, v_in.uv + float2( xOffset, -yOffset)) * alphaValue3;
+	pixelCounter += alphaValue3;
+
+	float alphaValue4 = focalmask.Sample(textureSampler, v_in.uv + float2(-xOffset, -yOffset)).r;
+	sum += image.Sample(textureSampler, v_in.uv + float2(-xOffset, -yOffset)) * alphaValue4;
+	pixelCounter += alphaValue4;
+
+	// Complement the blur pixels with a relative fraction of the center pixel
+	return (sum + image.Sample(textureSampler, v_in.uv) * (4.0 - pixelCounter)) * 0.25;
+}
+
 
 technique DrawFocalBlur
 {
@@ -97,6 +136,6 @@ technique Draw
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSKawaseBlur(v_in);
+		pixel_shader  = PSKawaseBlurMaskAware(v_in);
 	}
 }
