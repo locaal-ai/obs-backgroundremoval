@@ -3,7 +3,7 @@ include(FetchContent)
 set(OpenCV_VERSION "4.8.0-1")
 
 set(OpenCV_BASEURL
-    "https://github.com/umireon/obs-pokemon-sv-screen-builder-dep-opencv/releases/download/${OpenCV_VERSION}")
+    "https://github.com/umireon/obs-backgroundremoval-dep-opencv/releases/download/${OpenCV_VERSION}")
 
 if(${CMAKE_BUILD_TYPE} STREQUAL Release OR ${CMAKE_BUILD_TYPE} STREQUAL RelWithDebInfo)
   set(OpenCV_BUILD_TYPE Release)
