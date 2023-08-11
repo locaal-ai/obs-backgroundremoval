@@ -64,7 +64,7 @@ if(USE_SYSTEM_OPENCV)
     message(FATAL_ERROR "System OpenCV is only supported on Linux!")
   endif()
 else()
-  include(cmake/BuildMyOpenCV.cmake)
+  include(cmake/FetchOpenCV.cmake)
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OpenCV)
 endif()
 
