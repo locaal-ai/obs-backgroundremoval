@@ -18,10 +18,8 @@ void check_update(void)
 {
 	github_utils_get_release_information([](github_utils_release_information
 							info) {
-		if (info.responseCode ==
-		    OBS_BGREMOVAL_GITHUB_UTILS_SUCCESS) {
-			obs_log(LOG_INFO, "Latest release is %s",
-				info.version);
+		if (info.responseCode == OBS_BGREMOVAL_GITHUB_UTILS_SUCCESS) {
+			obs_log(LOG_INFO, "Latest release is %s", info.version);
 			bool shouldCheckForUpdates = false;
 			if (getFlagFromConfig("check_for_updates",
 					      &shouldCheckForUpdates) !=
@@ -35,8 +33,7 @@ void check_update(void)
 				return;
 			}
 
-			if (strcmp(info.version, PLUGIN_VERSION) ==
-			    0) {
+			if (strcmp(info.version, PLUGIN_VERSION) == 0) {
 				// No update available, latest version is the same as the current version
 				return;
 			}

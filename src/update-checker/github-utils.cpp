@@ -18,7 +18,8 @@ void github_utils_get_release_information(
 								      std::string
 									      responseBody,
 								      int code) {
-										if (code != 0) return;
+		if (code != 0)
+			return;
 		// Parse the JSON response
 		obs_data_t *data =
 			obs_data_create_from_json(responseBody.c_str());
