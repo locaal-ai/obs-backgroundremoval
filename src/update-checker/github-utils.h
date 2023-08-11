@@ -1,8 +1,6 @@
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <functional>
 
 enum {
 	OBS_BGREMOVAL_GITHUB_UTILS_SUCCESS = 0,
@@ -15,12 +13,8 @@ struct github_utils_release_information {
 	char *version;
 };
 
-struct github_utils_release_information
-github_utils_get_release_information(void);
+void github_utils_get_release_information(
+	std::function<void(github_utils_release_information)> callback);
 
 void github_utils_release_information_free(
 	struct github_utils_release_information info);
-
-#ifdef __cplusplus
-}
-#endif
