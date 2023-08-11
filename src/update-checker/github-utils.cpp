@@ -1,5 +1,3 @@
-#include <curl/curl.h>
-
 #include <cstddef>
 #include <string>
 
