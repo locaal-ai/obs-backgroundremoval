@@ -34,17 +34,6 @@ if(ENABLE_QT)
                AUTORCC ON)
 endif()
 
-if(APPLE)
-  add_subdirectory(src/update-checker/URLSessionClient)
-  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE URLSessionClient)
-elseif(MSVC)
-  add_subdirectory(src/update-checker/WinRTHttpClient)
-  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE WinRTHttpClient)
-elseif(UNIX)
-  add_subdirectory(src/update-checker/CurlClient)
-  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE CurlClient)
-endif()
-
 set(USE_SYSTEM_ONNXRUNTIME
     OFF
     CACHE STRING "Use system ONNX Runtime")
@@ -77,6 +66,17 @@ if(USE_SYSTEM_OPENCV)
 else()
   include(cmake/FetchOpenCV.cmake)
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OpenCV)
+endif()
+
+if(APPLE)
+  add_subdirectory(src/update-checker/URLSessionClient)
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE URLSessionClient)
+elseif(MSVC)
+  add_subdirectory(src/update-checker/WinRTHttpClient)
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE WinRTHttpClient)
+elseif(UNIX)
+  add_subdirectory(src/update-checker/CurlClient)
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE CurlClient)
 endif()
 
 target_sources(
