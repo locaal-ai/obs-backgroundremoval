@@ -34,6 +34,17 @@ if(ENABLE_QT)
                AUTORCC ON)
 endif()
 
+if(APPLE)
+  add_subdirectory(src/update-checker/URLSessionClient)
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE URLSessionClient)
+elseif(MSVC)
+  add_subdirectory(src/update-checker/WinRTHttpClient)
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE WinRTHttpClient)
+elseif(UNIX)
+  add_subdirectory(src/update-checker/CurlClient)
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE CurlClient)
+endif()
+
 set(USE_SYSTEM_ONNXRUNTIME
     OFF
     CACHE STRING "Use system ONNX Runtime")
@@ -83,16 +94,5 @@ target_sources(
           src/enhance-filter-info.c)
 target_compile_options(${CMAKE_PROJECT_NAME}
                        PRIVATE $<$<C_COMPILER_ID:Clang,AppleClang>:-Wno-error=unused-command-line-argument>)
-
-if(APPLE)
-  add_subdirectory(src/update-checker/URLSessionClient)
-  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE URLSessionClient)
-elseif(MSVC)
-  add_subdirectory(src/update-checker/WinRTHttpClient)
-  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE WinRTHttpClient)
-elseif(UNIX)
-  add_subdirectory(src/update-checker/CurlClient)
-  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE CurlClient)
-endif()
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})
