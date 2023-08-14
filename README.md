@@ -21,6 +21,7 @@ A plugin for [OBS Studio](https://obsproject.com/) that allows you to replace th
 Other plugins from us:
 - 🚧 Experimental 🚧: [CleanStream](https://github.com/royshil/obs-cleanstream) OBS plugin for real-time filler word (uh,um) and profanity removal from live audio stream
 - ✨ NEW: [URL/API Source](https://github.com/royshil/obs-urlsource) a plugin for live fetching of API data and displaying on screen as a video source
+- ✨ NEW: [LocalVocal](https://github.com/royshil/obs-localvocal) speech AI assistant plugin for real-time local transcription (captions), translation and other language functions
 
 ## Download
 Check out the [latest releases](https://github.com/royshil/obs-backgroundremoval/releases) for downloads and install instructions.
