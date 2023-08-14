@@ -68,17 +68,15 @@ else()
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OpenCV)
 endif()
 
-set(USE_SYSTEM_CURL
-    OFF
-    CACHE STRING "Use system cURL")
-
-if(USE_SYSTEM_CURL)
-  find_package(CURL REQUIRED)
-  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${CURL_LIBRARIES}")
-  target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM PUBLIC "${CURL_INCLUDE_DIRS}")
-else()
-  include(cmake/BuildMyCurl.cmake)
-  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE libcurl)
+if(APPLE)
+  add_subdirectory(src/update-checker/URLSessionClient)
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE URLSessionClient)
+elseif(MSVC)
+  add_subdirectory(src/update-checker/WinRTHttpClient)
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE WinRTHttpClient)
+elseif(UNIX)
+  add_subdirectory(src/update-checker/CurlClient)
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE CurlClient)
 endif()
 
 target_sources(

@@ -20,7 +20,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 #include "plugin-support.h"
 
-#include "update-checker/github-utils.h"
 #include "update-checker/update-checker.h"
 
 OBS_DECLARE_MODULE()
@@ -41,16 +40,7 @@ bool obs_module_load(void)
 	obs_log(LOG_INFO, "Plugin loaded successfully (version %s)",
 		PLUGIN_VERSION);
 
-	const struct github_utils_release_information latestRelease =
-		github_utils_get_release_information();
-	if (latestRelease.responseCode == OBS_BGREMOVAL_GITHUB_UTILS_SUCCESS) {
-		obs_log(LOG_INFO, "Latest release is %s",
-			latestRelease.version);
-		check_update(latestRelease);
-	} else {
-		obs_log(LOG_INFO, "failed to get latest release information");
-	}
-	github_utils_release_information_free(latestRelease);
+	check_update();
 
 	return true;
 }
