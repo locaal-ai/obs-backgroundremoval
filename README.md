@@ -149,6 +149,8 @@ Use the CI scripts again, for example:
 
 The build should exist in the `./release` folder off the root. You can manually install the files in the OBS directory.
 
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=royshil/obs-backgroundremoval&type=Date)](https://star-history.com/#royshil/obs-backgroundremoval&Date)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=royshil/obs-backgroundremoval&type=Date&theme=dark" />
+  <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=royshil/obs-backgroundremoval&type=Date" />
+  <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=royshil/obs-backgroundremoval&type=Date" />
+</picture>
