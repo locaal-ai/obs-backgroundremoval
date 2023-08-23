@@ -18,7 +18,7 @@ else()
   endif()
 endif()
 
-if(USE_PREDEFINED_HASH)
+if(USE_PREDEFINED_OPENCV)
   set(OpenCV_VERSION "4.8.0-1")
   set(OpenCV_BASEURL "https://github.com/umireon/obs-backgroundremoval-dep-opencv/releases/download/${OpenCV_VERSION}")
 
