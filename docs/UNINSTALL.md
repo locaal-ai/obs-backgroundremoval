@@ -22,4 +22,4 @@ Remove the following files under the OBS directory.
 
 - `data\obs-plugins\obs-backgroundremoval`
 - `obs-plugins\64bit\DirectML.dll`
-- `obs-plugins\64bit\DirectML.dll`
+- `obs-plugins\64bit\obs-backgroundremoval.dll`
