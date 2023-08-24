@@ -18,7 +18,7 @@ Uninstall obs-backgroundremoval on Apps and Programs.
 
 ### Windows (Portable)
 
-Remove the following files under the OBS directory.
+Remove the following files and directory under the OBS directory.
 
 - `data\obs-plugins\obs-backgroundremoval`
 - `obs-plugins\64bit\DirectML.dll`
