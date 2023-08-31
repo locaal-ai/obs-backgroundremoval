@@ -1,4 +1,4 @@
-add_library(WinRTHttpClient WinRTHttpClient.cpp)
+add_library(WinRTHttpClient STATIC WinRTHttpClient.cpp)
 set_target_properties(
   WinRTHttpClient
   PROPERTIES CXX_STANDARD 17
