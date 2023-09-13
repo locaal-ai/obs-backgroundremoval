@@ -45,7 +45,7 @@
         }
     },
     "name": "obs-backgroundremoval",
-    "version": "1.1.5",
+    "version": "1.1.6",
     "author": "Roy Shilkrot",
     "website": "https://github.com/royshil/obs-backgroundremoval",
     "email": "roy.shil@gmail.com",
