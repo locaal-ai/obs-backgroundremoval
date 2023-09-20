@@ -91,7 +91,9 @@ target_sources(
           src/background-filter-info.c
           src/background-filter.cpp
           src/enhance-filter.cpp
-          src/enhance-filter-info.c)
+          src/enhance-filter-info.c
+          src/magic-eraser-filter.cpp
+          src/magic-eraser-filter-info.c)
 target_compile_options(${CMAKE_PROJECT_NAME}
                        PRIVATE $<$<C_COMPILER_ID:Clang,AppleClang>:-Wno-error=unused-command-line-argument>)
 
