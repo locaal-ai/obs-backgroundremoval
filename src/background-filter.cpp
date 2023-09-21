@@ -71,50 +71,65 @@ static bool enable_threshold_modified(obs_properties_t *ppts, obs_property_t *p,
 	return true;
 }
 
-static bool enable_advanced_settings(obs_properties_t* ppts, obs_property_t* p, obs_data_t* settings) {
-  const bool enabled = obs_data_get_bool(settings, "advanced");
-  p = obs_properties_get(ppts, "enable_focal_blur");
-  obs_property_set_visible(p, enabled);
-  p = obs_properties_get(ppts, "blur_focus_point");
-  obs_property_set_visible(p, enabled);
-  p = obs_properties_get(ppts, "blur_focus_depth");
-  obs_property_set_visible(p, enabled);
-  p = obs_properties_get(ppts, "enable_threshold");
-  obs_property_set_visible(p, enabled);
-  if (!enabled) {
-    p = obs_properties_get(ppts, "threshold");
-    obs_property_set_visible(p, false);
-    p = obs_properties_get(ppts, "contour_filter");
-    obs_property_set_visible(p, false);
-    p = obs_properties_get(ppts, "smooth_contour");
-    obs_property_set_visible(p, false);
-    p = obs_properties_get(ppts, "feather");
-    obs_property_set_visible(p, false);
-  } else {
-    enable_threshold_modified(ppts, p, settings);
-  }
-  p = obs_properties_get(ppts, "useGPU");
-  obs_property_set_visible(p, enabled);
-  p = obs_properties_get(ppts, "mask_every_x_frames");
-  obs_property_set_visible(p, enabled);
-  p = obs_properties_get(ppts, "numThreads");
-  obs_property_set_visible(p, enabled);
-  p = obs_properties_get(ppts, "model_select");
-  obs_property_set_visible(p, enabled);
-  p = obs_properties_get(ppts, "model_select");
-  obs_property_set_visible(p, enabled);
-  return true;
+static bool enable_focal_blur(obs_properties_t *ppts, obs_property_t *p,
+			      obs_data_t *settings)
+{
+	UNUSED_PARAMETER(p);
+	const bool enabled = obs_data_get_bool(settings, "enable_focal_blur");
+	obs_property_t *prop = obs_properties_get(ppts, "blur_focus_point");
+	obs_property_set_visible(prop, enabled);
+	prop = obs_properties_get(ppts, "blur_focus_depth");
+	obs_property_set_visible(prop, enabled);
+	return true;
+}
+
+static bool enable_advanced_settings(obs_properties_t *ppts, obs_property_t *p,
+				     obs_data_t *settings)
+{
+	const bool enabled = obs_data_get_bool(settings, "advanced");
+	p = obs_properties_get(ppts, "enable_focal_blur");
+	obs_property_set_visible(p, enabled);
+	if (!enabled) {
+		p = obs_properties_get(ppts, "blur_focus_point");
+		obs_property_set_visible(p, false);
+		p = obs_properties_get(ppts, "blur_focus_depth");
+		obs_property_set_visible(p, false);
+		p = obs_properties_get(ppts, "enable_threshold");
+		obs_property_set_visible(p, false);
+		p = obs_properties_get(ppts, "threshold");
+		obs_property_set_visible(p, false);
+		p = obs_properties_get(ppts, "contour_filter");
+		obs_property_set_visible(p, false);
+		p = obs_properties_get(ppts, "smooth_contour");
+		obs_property_set_visible(p, false);
+		p = obs_properties_get(ppts, "feather");
+		obs_property_set_visible(p, false);
+	} else {
+		enable_threshold_modified(ppts, p, settings);
+		enable_focal_blur(ppts, p, settings);
+	}
+	p = obs_properties_get(ppts, "useGPU");
+	obs_property_set_visible(p, enabled);
+	p = obs_properties_get(ppts, "mask_every_x_frames");
+	obs_property_set_visible(p, enabled);
+	p = obs_properties_get(ppts, "numThreads");
+	obs_property_set_visible(p, enabled);
+	p = obs_properties_get(ppts, "model_select");
+	obs_property_set_visible(p, enabled);
+	p = obs_properties_get(ppts, "model_select");
+	obs_property_set_visible(p, enabled);
+	return true;
 }
 
 obs_properties_t *background_filter_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
-  obs_property_t* advanced = obs_properties_add_bool(props, "advanced",
-                          obs_module_text("Advanced"));
+	obs_property_t *advanced = obs_properties_add_bool(
+		props, "advanced", obs_module_text("Advanced"));
 
-  // If advanced is selected show the advanced settings, otherwise hide them
-  obs_property_set_modified_callback(advanced, enable_advanced_settings);
+	// If advanced is selected show the advanced settings, otherwise hide them
+	obs_property_set_modified_callback(advanced, enable_advanced_settings);
 
 	/* Threshold props */
 	obs_property_t *p_enable_threshold = obs_properties_add_bool(
@@ -195,20 +210,8 @@ obs_properties_t *background_filter_properties(void *data)
 
 	obs_property_t *p_enable_focal_blur = obs_properties_add_bool(
 		props, "enable_focal_blur", obs_module_text("EnableFocalBlur"));
-	obs_property_set_modified_callback(
-		p_enable_focal_blur,
-		[](obs_properties_t *ppts, obs_property_t *p,
-		   obs_data_t *settings) {
-			UNUSED_PARAMETER(p);
-			const bool enabled = obs_data_get_bool(
-				settings, "enable_focal_blur");
-			obs_property_t *prop =
-				obs_properties_get(ppts, "blur_focus_point");
-			obs_property_set_visible(prop, enabled);
-			prop = obs_properties_get(ppts, "blur_focus_depth");
-			obs_property_set_visible(prop, enabled);
-			return true;
-		});
+	obs_property_set_modified_callback(p_enable_focal_blur,
+					   enable_focal_blur);
 
 	obs_properties_add_float_slider(props, "blur_focus_point",
 					obs_module_text("BlurFocusPoint"), 0.0,
