@@ -49,7 +49,7 @@ elseif(OS_WINDOWS)
   if(USE_PREDEFINED_ONNXRUNTIME)
     FetchContent_Declare(
       Onnxruntime
-      URL "https://github.com/umireon/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}-1/onnxruntime-static-win.zip"
+      URL "https://github.com/umireon/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}-1/onnxruntime-windows-Release.zip"
       URL_HASH MD5=bcd67774a7dbdc3e6dedcbeb22b8d516)
   else()
     FetchContent_Declare(
