@@ -6,7 +6,7 @@ set(CUSTOM_OPENCV_URL
 
 set(CUSTOM_OPENCV_HASH
     ""
-    CACHE STRING "Hash of a downloaded OpenCV staitc library tarball")
+    CACHE STRING "Hash of a downloaded OpenCV static library tarball")
 
 if(CUSTOM_OPENCV_URL STREQUAL "")
   set(USE_PREDEFINED_OPENCV ON)
@@ -19,7 +19,7 @@ else()
 endif()
 
 if(USE_PREDEFINED_OPENCV)
-  set(OpenCV_VERSION "4.8.0-1")
+  set(OpenCV_VERSION "4.8.0-2")
   set(OpenCV_BASEURL "https://github.com/umireon/obs-backgroundremoval-dep-opencv/releases/download/${OpenCV_VERSION}")
 
   if(${CMAKE_BUILD_TYPE} STREQUAL Release OR ${CMAKE_BUILD_TYPE} STREQUAL RelWithDebInfo)
@@ -31,26 +31,26 @@ if(USE_PREDEFINED_OPENCV)
   if(APPLE)
     if(OpenCV_BUILD_TYPE STREQUAL Release)
       set(OpenCV_URL "${OpenCV_BASEURL}/opencv-macos-Release.tar.gz")
-      set(OpenCV_HASH MD5=0875366a03aa44def76ab5a12d3e7b8f)
+      set(OpenCV_HASH MD5=f4fb2dd77e7d2e266fb5b0985b4a338a)
     else()
       set(OpenCV_URL "${OpenCV_BASEURL}/opencv-macos-Debug.tar.gz")
-      set(OpenCV_HASH MD5=9ae59653c7f9a4c991fbf59018e45d2c)
+      set(OpenCV_HASH MD5=cbd7fa6f49903ba0aa46a18a270d3159)
     endif()
   elseif(MSVC)
     if(OpenCV_BUILD_TYPE STREQUAL Release)
       set(OpenCV_URL "${OpenCV_BASEURL}/opencv-windows-Release.zip")
-      set(OpenCV_HASH MD5=e653d590cfbcc3a9bf15ef20e64a6e32)
+      set(OpenCV_HASH MD5=9e8caf53878f2c816e97098f63792b2c)
     else()
       set(OpenCV_URL "${OpenCV_BASEURL}/opencv-windows-Debug.zip")
-      set(OpenCV_HASH MD5=abad340ccb73da2924544ec9066afcb3)
+      set(OpenCV_HASH MD5=b814a818c76c5e34bf353c012d7c03cc)
     endif()
   else()
     if(OpenCV_BUILD_TYPE STREQUAL Release)
       set(OpenCV_URL "${OpenCV_BASEURL}/opencv-linux-Release.tar.gz")
-      set(OpenCV_HASH MD5=7a668fbc3ac536812643c6b8c8f96be9)
+      set(OpenCV_HASH MD5=203f9c6214b00a3383f9764afcac9ee9)
     else()
       set(OpenCV_URL "${OpenCV_BASEURL}/opencv-linux-Debug.tar.gz")
-      set(OpenCV_HASH MD5=259699c71055ff748c200e62af059104)
+      set(OpenCV_HASH MD5=e845d07af6cb6e3b9409b935cb12d382)
     endif()
   endif()
 else()
@@ -70,11 +70,13 @@ if(MSVC)
     OpenCV
     INTERFACE ${opencv_SOURCE_DIR}/x64/vc17/staticlib/opencv_imgproc480.lib
               ${opencv_SOURCE_DIR}/x64/vc17/staticlib/opencv_core480.lib
+              ${opencv_SOURCE_DIR}/x64/vc17/staticlib/opencv_photo480.lib
               ${opencv_SOURCE_DIR}/x64/vc17/staticlib/zlib.lib)
   target_include_directories(OpenCV SYSTEM INTERFACE ${opencv_SOURCE_DIR}/include)
 else()
   target_link_libraries(
     OpenCV INTERFACE ${opencv_SOURCE_DIR}/lib/libopencv_imgproc.a ${opencv_SOURCE_DIR}/lib/libopencv_core.a
+      ${opencv_SOURCE_DIR}/lib/libopencv_photo.a
                      ${opencv_SOURCE_DIR}/lib/opencv4/3rdparty/libzlib.a)
   target_include_directories(OpenCV SYSTEM INTERFACE ${opencv_SOURCE_DIR}/include/opencv4)
 endif()

@@ -57,7 +57,7 @@ set(USE_SYSTEM_OPENCV
     CACHE STRING "Use system OpenCV")
 if(USE_SYSTEM_OPENCV)
   if(OS_LINUX)
-    find_package(OpenCV REQUIRED COMPONENTS core imgproc)
+    find_package(OpenCV REQUIRED COMPONENTS core imgproc photo)
     target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${OpenCV_LIBRARIES}")
     target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM PUBLIC "${OpenCV_INCLUDE_DIRS}")
   else()
@@ -92,8 +92,10 @@ target_sources(
           src/background-filter.cpp
           src/enhance-filter.cpp
           src/enhance-filter-info.c
+          src/mask-editor/MaskEditorDialog.cpp
+          src/magic-eraser-filter-info.c
           src/magic-eraser-filter.cpp
-          src/magic-eraser-filter-info.c)
+          )
 target_compile_options(${CMAKE_PROJECT_NAME}
                        PRIVATE $<$<C_COMPILER_ID:Clang,AppleClang>:-Wno-error=unused-command-line-argument>)
 
