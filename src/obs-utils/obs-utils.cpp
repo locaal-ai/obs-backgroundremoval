@@ -11,7 +11,8 @@
   * @return true  if successful
   * @return false if unsuccessful
 */
-bool getRGBAFromStageSurface(filter_data_base *tf, uint32_t &width, uint32_t &height)
+bool getRGBAFromStageSurface(filter_data_base *tf, uint32_t &width,
+			     uint32_t &height)
 {
 
 	if (!obs_source_enabled(tf->source)) {
@@ -26,6 +27,9 @@ bool getRGBAFromStageSurface(filter_data_base *tf, uint32_t &width, uint32_t &he
 	height = obs_source_get_base_height(target);
 	if (width == 0 || height == 0) {
 		return false;
+	}
+	if (!tf->texrender) {
+		tf->texrender = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
 	}
 	gs_texrender_reset(tf->texrender);
 	if (!gs_texrender_begin(tf->texrender, width, height)) {
