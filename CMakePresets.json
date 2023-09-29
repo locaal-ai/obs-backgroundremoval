@@ -83,8 +83,7 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_POSITION_INDEPENDENT_CODE": true,
         "ENABLE_FRONTEND_API": true,
-        "ENABLE_QT": true,
-        "USE_SYSTEM_CURL": true
+        "ENABLE_QT": true
       }
     },
     {
@@ -114,8 +113,7 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_POSITION_INDEPENDENT_CODE": true,
         "ENABLE_FRONTEND_API": true,
-        "ENABLE_QT": true,
-        "USE_SYSTEM_CURL": true
+        "ENABLE_QT": true
       }
     },
     {
