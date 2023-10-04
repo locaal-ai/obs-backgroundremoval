@@ -5,6 +5,7 @@
 
 #include "Client.hpp"
 #include "github-utils.h"
+#include "plugin-support.h"
 
 static const std::string GITHUB_LATEST_RELEASE_URL =
 	"https://api.github.com/repos/royshil/obs-backgroundremoval/releases/latest";
@@ -22,7 +23,8 @@ void github_utils_get_release_information(
 		obs_data_t *data =
 			obs_data_create_from_json(responseBody.c_str());
 		if (!data) {
-			blog(LOG_INFO, "Failed to parse latest release info");
+			obs_log(LOG_INFO,
+				"Failed to parse latest release info");
 			callback(
 				{OBS_BGREMOVAL_GITHUB_UTILS_ERROR, NULL, NULL});
 			return;
