@@ -11,7 +11,6 @@
 #define OBS_BGREMOVAL_ORT_SESSION_ERROR_STARTUP 5
 #define OBS_BGREMOVAL_ORT_SESSION_SUCCESS 0
 
-
 int createOrtSession(filter_data *tf);
 
 bool runFilterModelInference(filter_data *tf, const cv::Mat &imageBGRA,

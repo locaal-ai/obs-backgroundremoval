@@ -527,7 +527,7 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf,
 		gs_texrender_reset(tf->texrender);
 		if (!gs_texrender_begin(tf->texrender, width, height)) {
 			obs_log(LOG_INFO,
-			     "Could not open background blur texrender!");
+				"Could not open background blur texrender!");
 			return blurredTexture;
 		}
 

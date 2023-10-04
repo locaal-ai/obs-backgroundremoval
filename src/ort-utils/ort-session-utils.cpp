@@ -43,8 +43,9 @@ int createOrtSession(filter_data *tf)
 		obs_module_file(tf->modelSelection.c_str());
 
 	if (modelFilepath_rawPtr == nullptr) {
-		obs_log(LOG_ERROR, "Unable to get model filename %s from plugin.",
-		     tf->modelSelection.c_str());
+		obs_log(LOG_ERROR,
+			"Unable to get model filename %s from plugin.",
+			tf->modelSelection.c_str());
 		return OBS_BGREMOVAL_ORT_SESSION_ERROR_FILE_NOT_FOUND;
 	}
 
@@ -103,41 +104,42 @@ int createOrtSession(filter_data *tf)
 
 	if (!tf->model->populateInputOutputShapes(tf->session, tf->inputDims,
 						  tf->outputDims)) {
-		obs_log(LOG_ERROR, "Unable to get model input and output shapes");
+		obs_log(LOG_ERROR,
+			"Unable to get model input and output shapes");
 		return OBS_BGREMOVAL_ORT_SESSION_ERROR_INVALID_INPUT_OUTPUT;
 	}
 
 	for (size_t i = 0; i < tf->inputNames.size(); i++) {
 		obs_log(LOG_INFO,
-		     "Model %s input %d: name %s shape (%d dim) %d x %d x %d x %d",
-		     tf->modelSelection.c_str(), (int)i,
-		     tf->inputNames[i].get(), (int)tf->inputDims[i].size(),
-		     (int)tf->inputDims[i][0],
-		     ((int)tf->inputDims[i].size() > 1)
-			     ? (int)tf->inputDims[i][1]
-			     : 0,
-		     ((int)tf->inputDims[i].size() > 2)
-			     ? (int)tf->inputDims[i][2]
-			     : 0,
-		     ((int)tf->inputDims[i].size() > 3)
-			     ? (int)tf->inputDims[i][3]
-			     : 0);
+			"Model %s input %d: name %s shape (%d dim) %d x %d x %d x %d",
+			tf->modelSelection.c_str(), (int)i,
+			tf->inputNames[i].get(), (int)tf->inputDims[i].size(),
+			(int)tf->inputDims[i][0],
+			((int)tf->inputDims[i].size() > 1)
+				? (int)tf->inputDims[i][1]
+				: 0,
+			((int)tf->inputDims[i].size() > 2)
+				? (int)tf->inputDims[i][2]
+				: 0,
+			((int)tf->inputDims[i].size() > 3)
+				? (int)tf->inputDims[i][3]
+				: 0);
 	}
 	for (size_t i = 0; i < tf->outputNames.size(); i++) {
 		obs_log(LOG_INFO,
-		     "Model %s output %d: name %s shape (%d dim) %d x %d x %d x %d",
-		     tf->modelSelection.c_str(), (int)i,
-		     tf->outputNames[i].get(), (int)tf->outputDims[i].size(),
-		     (int)tf->outputDims[i][0],
-		     ((int)tf->outputDims[i].size() > 1)
-			     ? (int)tf->outputDims[i][1]
-			     : 0,
-		     ((int)tf->outputDims[i].size() > 2)
-			     ? (int)tf->outputDims[i][2]
-			     : 0,
-		     ((int)tf->outputDims[i].size() > 3)
-			     ? (int)tf->outputDims[i][3]
-			     : 0);
+			"Model %s output %d: name %s shape (%d dim) %d x %d x %d x %d",
+			tf->modelSelection.c_str(), (int)i,
+			tf->outputNames[i].get(), (int)tf->outputDims[i].size(),
+			(int)tf->outputDims[i][0],
+			((int)tf->outputDims[i].size() > 1)
+				? (int)tf->outputDims[i][1]
+				: 0,
+			((int)tf->outputDims[i].size() > 2)
+				? (int)tf->outputDims[i][2]
+				: 0,
+			((int)tf->outputDims[i].size() > 3)
+				? (int)tf->outputDims[i][3]
+				: 0);
 	}
 
 	// Allocate buffers

@@ -103,8 +103,8 @@ public:
 
 		if (modelFilepath_rawPtr == nullptr) {
 			obs_log(LOG_ERROR,
-			     "Unable to get model filename %s from plugin.",
-			     modelSelection.c_str());
+				"Unable to get model filename %s from plugin.",
+				modelSelection.c_str());
 			return "";
 		}
 
@@ -179,8 +179,8 @@ public:
 
 		if (inputDims[0].size() < 3 || outputDims[0].size() < 3) {
 			obs_log(LOG_ERROR,
-			     "Input or output tensor dims are < 3. input = %d, output = %d",
-			     (int)inputDims.size(), (int)outputDims.size());
+				"Input or output tensor dims are < 3. input = %d, output = %d",
+				(int)inputDims.size(), (int)outputDims.size());
 			return false;
 		}
 
@@ -213,8 +213,8 @@ public:
 			inputTensorValues.push_back(std::vector<float>(
 				vectorProduct(inputDims[i]), 0.0f));
 			obs_log(LOG_INFO,
-			     "Allocated %d sized float-array for input %d",
-			     (int)inputTensorValues[i].size(), (int)i);
+				"Allocated %d sized float-array for input %d",
+				(int)inputTensorValues[i].size(), (int)i);
 			inputTensor.push_back(Ort::Value::CreateTensor<float>(
 				memoryInfo, inputTensorValues[i].data(),
 				inputTensorValues[i].size(),
@@ -225,8 +225,8 @@ public:
 			outputTensorValues.push_back(std::vector<float>(
 				vectorProduct(outputDims[i]), 0.0f));
 			obs_log(LOG_INFO,
-			     "Allocated %d sized float-array for output %d",
-			     (int)outputTensorValues[i].size(), (int)i);
+				"Allocated %d sized float-array for output %d",
+				(int)outputTensorValues[i].size(), (int)i);
 			outputTensor.push_back(Ort::Value::CreateTensor<float>(
 				memoryInfo, outputTensorValues[i].data(),
 				outputTensorValues[i].size(),
@@ -299,7 +299,7 @@ public:
 		if (inputNames.size() == 0 || outputNames.size() == 0 ||
 		    inputTensor.size() == 0 || outputTensor.size() == 0) {
 			obs_log(LOG_INFO,
-			     "Skip network inference. Inputs or outputs are null.");
+				"Skip network inference. Inputs or outputs are null.");
 			return;
 		}
 

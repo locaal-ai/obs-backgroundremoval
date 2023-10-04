@@ -23,7 +23,8 @@ void github_utils_get_release_information(
 		obs_data_t *data =
 			obs_data_create_from_json(responseBody.c_str());
 		if (!data) {
-			obs_log(LOG_INFO, "Failed to parse latest release info");
+			obs_log(LOG_INFO,
+				"Failed to parse latest release info");
 			callback(
 				{OBS_BGREMOVAL_GITHUB_UTILS_ERROR, NULL, NULL});
 			return;
