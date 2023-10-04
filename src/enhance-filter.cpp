@@ -212,7 +212,7 @@ void enhance_filter_video_tick(void *data, float seconds)
 			return;
 		}
 	} catch (const std::exception &e) {
-		blog(LOG_ERROR, "Exception caught: %s", e.what());
+		obs_log(LOG_ERROR, "Exception caught: %s", e.what());
 		return;
 	}
 
@@ -257,7 +257,7 @@ void enhance_filter_video_render(void *data, gs_effect_t *_effect)
 			tf->outputBGRA.cols, tf->outputBGRA.rows, GS_BGRA, 1,
 			(const uint8_t **)&tf->outputBGRA.data, 0);
 		if (!outputTexture) {
-			blog(LOG_ERROR, "Failed to create output texture");
+			obs_log(LOG_ERROR, "Failed to create output texture");
 			obs_source_skip_video_filter(tf->source);
 			return;
 		}

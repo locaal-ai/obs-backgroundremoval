@@ -2,6 +2,7 @@
 #define MODEL_H
 
 #include <onnxruntime_cxx_api.h>
+#include "plugin-support.h"
 
 #ifdef _WIN32
 #include <wchar.h>
@@ -101,10 +102,10 @@ public:
 			obs_module_file(modelSelection.c_str());
 
 		if (modelFilepath_rawPtr == nullptr) {
-			blog(LOG_ERROR,
+			obs_log(LOG_ERROR,
 			     "Unable to get model filename %s from plugin.",
 			     modelSelection.c_str());
-			return nullptr;
+			return "";
 		}
 
 		std::string modelFilepath_s(modelFilepath_rawPtr);
@@ -177,7 +178,7 @@ public:
 		}
 
 		if (inputDims[0].size() < 3 || outputDims[0].size() < 3) {
-			blog(LOG_ERROR,
+			obs_log(LOG_ERROR,
 			     "Input or output tensor dims are < 3. input = %d, output = %d",
 			     (int)inputDims.size(), (int)outputDims.size());
 			return false;
@@ -211,7 +212,7 @@ public:
 		for (size_t i = 0; i < inputDims.size(); i++) {
 			inputTensorValues.push_back(std::vector<float>(
 				vectorProduct(inputDims[i]), 0.0f));
-			blog(LOG_INFO,
+			obs_log(LOG_INFO,
 			     "Allocated %d sized float-array for input %d",
 			     (int)inputTensorValues[i].size(), (int)i);
 			inputTensor.push_back(Ort::Value::CreateTensor<float>(
@@ -223,7 +224,7 @@ public:
 		for (size_t i = 0; i < outputDims.size(); i++) {
 			outputTensorValues.push_back(std::vector<float>(
 				vectorProduct(outputDims[i]), 0.0f));
-			blog(LOG_INFO,
+			obs_log(LOG_INFO,
 			     "Allocated %d sized float-array for output %d",
 			     (int)outputTensorValues[i].size(), (int)i);
 			outputTensor.push_back(Ort::Value::CreateTensor<float>(
@@ -297,7 +298,7 @@ public:
 	{
 		if (inputNames.size() == 0 || outputNames.size() == 0 ||
 		    inputTensor.size() == 0 || outputTensor.size() == 0) {
-			blog(LOG_INFO,
+			obs_log(LOG_INFO,
 			     "Skip network inference. Inputs or outputs are null.");
 			return;
 		}
