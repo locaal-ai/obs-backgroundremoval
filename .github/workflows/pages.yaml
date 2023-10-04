@@ -1,0 +1,47 @@
+name: "Deploy pages to GitHub Pages"
+
+on:
+  push:
+    branches:
+      - "docs"
+
+permissions:
+  contents: "read"
+  pages: "write"
+  id-token: "write"
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: "github-pages"
+      url: "${{ steps.deployment.outputs.page_url }}"
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        working-directory: "./pages"
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v4"
+      - name: "Setup Pages"
+        uses: "actions/congigure-pages@v3"
+        with:
+          static_site_generator: "sveltekit"
+      - uses: "actions/setup-node@v3"
+        with:
+          node-version: 20
+          cache: "npm"
+      - name: "Install dependencies"
+        run: "npm install"
+      - name: "Build pages"
+        run: "npm run build"
+      - name: "Upload artifact"
+        uses: "actions/upload-pages-artifact@v2"
+        with:
+          path: "build"
+      - name: "Deploy to GitHub Pages"
+        id: "deployment"
+        uses: "actions/deploy-pages@v2"
