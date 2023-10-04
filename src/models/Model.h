@@ -105,7 +105,11 @@ public:
 			obs_log(LOG_ERROR,
 				"Unable to get model filename %s from plugin.",
 				modelSelection.c_str());
-			return "";
+#if _WIN32
+			return std::wstring();
+#else
+			return std::string();
+#endif
 		}
 
 		std::string modelFilepath_s(modelFilepath_rawPtr);
