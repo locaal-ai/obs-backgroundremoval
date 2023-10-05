@@ -24,7 +24,7 @@ Other plugins from us:
 - ✨ NEW: [LocalVocal](https://github.com/royshil/obs-localvocal) speech AI assistant plugin for real-time local transcription (captions), translation and other language functions
 
 ## Download
-Check out the [latest releases](https://github.com/royshil/obs-backgroundremoval/releases) for downloads and install instructions.
+Check out the [official site](https://obs-ai.github.io/obs-backgroundremoval) for downloads and install instructions.
 
 ### Linux Installation
 On Ubuntu, there are two ways to install OBS and you have to use the corresponding method to install this plugin.
