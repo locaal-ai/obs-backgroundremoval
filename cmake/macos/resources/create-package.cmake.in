@@ -3,5 +3,5 @@ set(CMAKE_PROJECT_VERSION ${CMAKE_PROJECT_VERSION})
 set(MACOS_BUNDLEID ${MACOS_BUNDLEID})
 set(UUID_PACKAGE ${UUID_PACKAGE})
 set(UUID_INSTALLER ${UUID_INSTALLER})
-configure_file(cmake/macos/resources/installer-macos.pkgproj.in
-  "${CMAKE_CURRENT_BINARY_DIR}/installer-macos.generated.pkgproj")
+configure_file(cmake/macos/resources/Distribution.xml.in
+  "${CMAKE_CURRENT_BINARY_DIR}/Distribution.generated.xml")
