@@ -87,37 +87,27 @@ static bool enable_advanced_settings(obs_properties_t *ppts, obs_property_t *p,
 				     obs_data_t *settings)
 {
 	const bool enabled = obs_data_get_bool(settings, "advanced");
-	p = obs_properties_get(ppts, "enable_focal_blur");
-	obs_property_set_visible(p, enabled);
+	p = obs_properties_get(ppts, "blur_background");
+	obs_property_set_visible(p, true);
 	if (!enabled) {
-		p = obs_properties_get(ppts, "blur_focus_point");
-		obs_property_set_visible(p, false);
-		p = obs_properties_get(ppts, "blur_focus_depth");
-		obs_property_set_visible(p, false);
-		p = obs_properties_get(ppts, "enable_threshold");
-		obs_property_set_visible(p, false);
-		p = obs_properties_get(ppts, "threshold");
-		obs_property_set_visible(p, false);
-		p = obs_properties_get(ppts, "contour_filter");
-		obs_property_set_visible(p, false);
-		p = obs_properties_get(ppts, "smooth_contour");
-		obs_property_set_visible(p, false);
-		p = obs_properties_get(ppts, "feather");
-		obs_property_set_visible(p, false);
+		for (const char *prop_name : {
+			     "blur_focus_point",
+			     "blur_focus_depth", "enable_threshold",
+			     "threshold", "contour_filter", "smooth_contour",
+			     "feather"}) {
+			p = obs_properties_get(ppts, prop_name);
+			obs_property_set_visible(p, false);
+		}
 	} else {
 		enable_threshold_modified(ppts, p, settings);
 		enable_focal_blur(ppts, p, settings);
 	}
-	p = obs_properties_get(ppts, "useGPU");
-	obs_property_set_visible(p, enabled);
-	p = obs_properties_get(ppts, "mask_every_x_frames");
-	obs_property_set_visible(p, enabled);
-	p = obs_properties_get(ppts, "numThreads");
-	obs_property_set_visible(p, enabled);
-	p = obs_properties_get(ppts, "model_select");
-	obs_property_set_visible(p, enabled);
-	p = obs_properties_get(ppts, "model_select");
-	obs_property_set_visible(p, enabled);
+	for (const char *prop_name : {"model_select",
+				      "useGPU", "mask_every_x_frames",
+				      "numThreads", "enable_focal_blur"}) {
+		p = obs_properties_get(ppts, prop_name);
+		obs_property_set_visible(p, enabled);
+	}
 	return true;
 }
 
