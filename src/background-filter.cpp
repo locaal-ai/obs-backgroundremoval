@@ -285,6 +285,32 @@ void background_filter_update(void *data, obs_data_t *settings)
 	bfree(kawaseBlurEffectPath);
 
 	obs_leave_graphics();
+
+	// Log the currently selected options
+	obs_log(LOG_INFO, "Background Removal Filter Options:");
+	// name of the source that the filter is attached to
+	obs_log(LOG_INFO, "  Source: %s", obs_source_get_name(tf->source));
+	obs_log(LOG_INFO, "  Model: %s", tf->modelSelection.c_str());
+	obs_log(LOG_INFO, "  Inference Device: %s", tf->useGPU.c_str());
+	obs_log(LOG_INFO, "  Num Threads: %d", tf->numThreads);
+	obs_log(LOG_INFO, "  Enable Threshold: %s",
+		tf->enableThreshold ? "true" : "false");
+	obs_log(LOG_INFO, "  Threshold: %f", tf->threshold);
+	obs_log(LOG_INFO, "  Contour Filter: %f", tf->contourFilter);
+	obs_log(LOG_INFO, "  Smooth Contour: %f", tf->smoothContour);
+	obs_log(LOG_INFO, "  Feather: %f", tf->feather);
+	obs_log(LOG_INFO, "  Mask Every X Frames: %d", tf->maskEveryXFrames);
+	obs_log(LOG_INFO, "  Blur Background: %d", tf->blurBackground);
+	obs_log(LOG_INFO, "  Enable Focal Blur: %s",
+		tf->enableFocalBlur ? "true" : "false");
+	obs_log(LOG_INFO, "  Blur Focus Point: %f", tf->blurFocusPoint);
+	obs_log(LOG_INFO, "  Blur Focus Depth: %f", tf->blurFocusDepth);
+	obs_log(LOG_INFO, "  Disabled: %s", tf->isDisabled ? "true" : "false");
+#ifdef _WIN32
+	obs_log(LOG_INFO, "  Model file path: %S", tf->modelFilepath);
+#else
+	obs_log(LOG_INFO, "  Model file path: %s", tf->modelFilepath);
+#endif
 }
 
 void background_filter_activate(void *data)
