@@ -46,48 +46,74 @@ if(OS_MACOS)
       ${CMAKE_INSTALL_NAME_TOOL} -change "@rpath/libonnxruntime.${Onnxruntime_VERSION}.dylib"
       "@loader_path/../Frameworks/libonnxruntime.${Onnxruntime_VERSION}.dylib" $<TARGET_FILE:${CMAKE_PROJECT_NAME}>)
 elseif(OS_WINDOWS)
+  if(USE_TENSORRT_WINDOWS)
+    set(ORT_EXTRA_PROVIDERS "onnxruntime_providers_tensorrt")
+    add_compile_definitions(USE_TENSORRT)
+  else()
+    set(ORT_EXTRA_PROVIDERS "providers_dml")
+    add_compile_definitions(USE_DML)
+  endif()
+
   if(USE_PREDEFINED_ONNXRUNTIME)
     FetchContent_Declare(
       Onnxruntime
       URL "https://github.com/umireon/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}-1/onnxruntime-windows-Release.zip"
       URL_HASH MD5=bcd67774a7dbdc3e6dedcbeb22b8d516)
+    set(Onnxruntime_LIB_NAMES
+      session;providers_shared;${ORT_EXTRA_PROVIDERS};optimizer;providers;framework;graph;util;mlas;common;flatbuffers)
+    set(Onnxruntime_EXTERNAL_LIB_NAMES
+      onnx;onnx_proto;libprotobuf-lite;re2;absl_throw_delegate;absl_hash;absl_city;absl_low_level_hash;absl_raw_hash_set
+    )
+    set(ORT_LIB_PREFIX "onnxruntime_")
   else()
     FetchContent_Declare(
       Onnxruntime
       URL "${CUSTOM_ONNXRUNTIME_URL}"
       URL_HASH MD5=${CUSTOM_ONNXRUNTIME_MD5})
+    set(Onnxruntime_LIB_NAMES
+      onnxruntime;onnxruntime_providers_shared;${ORT_EXTRA_PROVIDERS})
+    set(ORT_LIB_PREFIX "")
   endif()
   FetchContent_MakeAvailable(Onnxruntime)
 
   add_library(Ort INTERFACE)
-  set(Onnxruntime_LIB_NAMES
-      session;providers_shared;providers_dml;optimizer;providers;framework;graph;util;mlas;common;flatbuffers)
   foreach(lib_name IN LISTS Onnxruntime_LIB_NAMES)
     add_library(Ort::${lib_name} STATIC IMPORTED)
     set_target_properties(Ort::${lib_name} PROPERTIES IMPORTED_LOCATION
-                                                      ${onnxruntime_SOURCE_DIR}/lib/onnxruntime_${lib_name}.lib)
+                                                      ${onnxruntime_SOURCE_DIR}/lib/${ORT_LIB_PREFIX}${lib_name}.lib)
     set_target_properties(Ort::${lib_name} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${onnxruntime_SOURCE_DIR}/include)
     target_link_libraries(Ort INTERFACE Ort::${lib_name})
   endforeach()
 
-  set(Onnxruntime_EXTERNAL_LIB_NAMES
-      onnx;onnx_proto;libprotobuf-lite;re2;absl_throw_delegate;absl_hash;absl_city;absl_low_level_hash;absl_raw_hash_set
-  )
   foreach(lib_name IN LISTS Onnxruntime_EXTERNAL_LIB_NAMES)
     add_library(Ort::${lib_name} STATIC IMPORTED)
     set_target_properties(Ort::${lib_name} PROPERTIES IMPORTED_LOCATION ${onnxruntime_SOURCE_DIR}/lib/${lib_name}.lib)
     target_link_libraries(Ort INTERFACE Ort::${lib_name})
   endforeach()
+  
+  if(NOT USE_TENSORRT_WINDOWS)
+    add_library(Ort::DirectML SHARED IMPORTED)
+    set_target_properties(Ort::DirectML PROPERTIES IMPORTED_LOCATION ${onnxruntime_SOURCE_DIR}/bin/DirectML.dll)
+    set_target_properties(Ort::DirectML PROPERTIES IMPORTED_IMPLIB ${onnxruntime_SOURCE_DIR}/bin/DirectML.lib)
 
-  add_library(Ort::DirectML SHARED IMPORTED)
-  set_target_properties(Ort::DirectML PROPERTIES IMPORTED_LOCATION ${onnxruntime_SOURCE_DIR}/bin/DirectML.dll)
-  set_target_properties(Ort::DirectML PROPERTIES IMPORTED_IMPLIB ${onnxruntime_SOURCE_DIR}/bin/DirectML.lib)
+    target_link_libraries(Ort INTERFACE Ort::DirectML d3d12.lib dxgi.lib dxguid.lib)
+    install(IMPORTED_RUNTIME_ARTIFACTS Ort::DirectML DESTINATION "obs-plugins/64bit")
+  else()
+    add_library(Ort::TensorRT SHARED IMPORTED)
+    set_target_properties(Ort::TensorRT PROPERTIES IMPORTED_LOCATION ${onnxruntime_SOURCE_DIR}/lib/onnxruntime_providers_tensorrt.dll)
+    set_target_properties(Ort::TensorRT PROPERTIES IMPORTED_IMPLIB ${onnxruntime_SOURCE_DIR}/lib/onnxruntime_providers_tensorrt.lib)
+    add_library(Ort::SharedProvider SHARED IMPORTED)
+    set_target_properties(Ort::SharedProvider PROPERTIES IMPORTED_LOCATION ${onnxruntime_SOURCE_DIR}/lib/onnxruntime_providers_shared.dll)
+    set_target_properties(Ort::SharedProvider PROPERTIES IMPORTED_IMPLIB ${onnxruntime_SOURCE_DIR}/lib/onnxruntime_providers_shared.lib)
+    add_library(Ort::SharedLib SHARED IMPORTED)
+    set_target_properties(Ort::SharedLib PROPERTIES IMPORTED_LOCATION ${onnxruntime_SOURCE_DIR}/lib/onnxruntime.dll)
+    set_target_properties(Ort::SharedLib PROPERTIES IMPORTED_IMPLIB ${onnxruntime_SOURCE_DIR}/lib/onnxruntime.lib)
 
-  target_link_libraries(Ort INTERFACE Ort::DirectML d3d12.lib dxgi.lib dxguid.lib)
+    install(IMPORTED_RUNTIME_ARTIFACTS Ort::TensorRT Ort::SharedLib Ort::SharedProvider DESTINATION "obs-plugins/64bit")
+  endif()
 
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Ort)
 
-  install(IMPORTED_RUNTIME_ARTIFACTS Ort::DirectML DESTINATION "obs-plugins/64bit")
 elseif(OS_LINUX)
   if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
     if(USE_PREDEFINED_ONNXRUNTIME)

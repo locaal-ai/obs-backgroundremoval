@@ -10,7 +10,12 @@
 #endif
 
 #ifdef _WIN32
+#ifdef USE_DML
 #include <dml_provider_factory.h>
+#endif
+#ifdef USE_TENSORRT
+#include <tensorrt_provider_factory.h>
+#endif
 #include <wchar.h>
 #endif // _WIN32
 
@@ -70,6 +75,7 @@ int createOrtSession(filter_data *tf)
 		}
 #endif
 #ifdef _WIN32
+#ifdef USE_DML
 		if (tf->useGPU == USEGPU_DML) {
 			auto &api = Ort::GetApi();
 			OrtDmlApi *dmlApi = nullptr;
@@ -80,6 +86,14 @@ int createOrtSession(filter_data *tf)
 				dmlApi->SessionOptionsAppendExecutionProvider_DML(
 					sessionOptions, 0));
 		}
+#endif
+#ifdef USE_TENSORRT
+		if (tf->useGPU == USEGPU_TENSORRT) {
+			Ort::ThrowOnError(
+				OrtSessionOptionsAppendExecutionProvider_Tensorrt(
+					sessionOptions, 0));
+		}
+#endif
 #endif
 #if defined(__APPLE__)
 		if (tf->useGPU == USEGPU_COREML) {

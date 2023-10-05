@@ -110,8 +110,14 @@ obs_properties_t *background_filter_properties(void *data)
 				     USEGPU_TENSORRT);
 #endif
 #if _WIN32
+#ifdef USE_TENSORRT
+	obs_property_list_add_string(p_use_gpu, obs_module_text("GPUTensorRT"),
+				     USEGPU_TENSORRT);
+#endif
+#ifdef USE_DML
 	obs_property_list_add_string(p_use_gpu, obs_module_text("GPUDirectML"),
 				     USEGPU_DML);
+#endif
 #endif
 #if defined(__APPLE__)
 	obs_property_list_add_string(p_use_gpu, obs_module_text("CoreML"),
