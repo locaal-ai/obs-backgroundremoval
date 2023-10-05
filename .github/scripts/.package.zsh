@@ -185,8 +185,6 @@ ${_usage_host:-}"
         return 2
       }
 
-      check_packages
-
       log_group "Packaging ${product_name}..."
       pushd ${project_root}
       pkgbuild \

@@ -38,11 +38,17 @@ void check_update(void)
 				return;
 			}
 
-			update_dialog = new UpdateDialog(
-				info,
-				(QWidget *)obs_frontend_get_main_window());
-			QTimer::singleShot(2000, update_dialog,
-					   &UpdateDialog::exec);
+			try {
+				update_dialog = new UpdateDialog(
+					info,
+					(QWidget *)
+						obs_frontend_get_main_window());
+				QTimer::singleShot(2000, update_dialog,
+						   &UpdateDialog::exec);
+			} catch (...) {
+				obs_log(LOG_ERROR,
+					"Failed to construct UpdateDialog");
+			}
 		} else {
 			obs_log(LOG_INFO,
 				"failed to get latest release information");
