@@ -90,11 +90,10 @@ static bool enable_advanced_settings(obs_properties_t *ppts, obs_property_t *p,
 	p = obs_properties_get(ppts, "blur_background");
 	obs_property_set_visible(p, true);
 	if (!enabled) {
-		for (const char *prop_name : {
-			     "blur_focus_point",
-			     "blur_focus_depth", "enable_threshold",
-			     "threshold", "contour_filter", "smooth_contour",
-			     "feather"}) {
+		for (const char *prop_name :
+		     {"blur_focus_point", "blur_focus_depth",
+		      "enable_threshold", "threshold", "contour_filter",
+		      "smooth_contour", "feather"}) {
 			p = obs_properties_get(ppts, prop_name);
 			obs_property_set_visible(p, false);
 		}
@@ -102,9 +101,9 @@ static bool enable_advanced_settings(obs_properties_t *ppts, obs_property_t *p,
 		enable_threshold_modified(ppts, p, settings);
 		enable_focal_blur(ppts, p, settings);
 	}
-	for (const char *prop_name : {"model_select",
-				      "useGPU", "mask_every_x_frames",
-				      "numThreads", "enable_focal_blur"}) {
+	for (const char *prop_name :
+	     {"model_select", "useGPU", "mask_every_x_frames", "numThreads",
+	      "enable_focal_blur"}) {
 		p = obs_properties_get(ppts, prop_name);
 		obs_property_set_visible(p, enabled);
 	}
