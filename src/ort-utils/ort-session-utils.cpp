@@ -1,4 +1,5 @@
 #include <onnxruntime_cxx_api.h>
+#include <onnxruntime_c_api.h>
 #include <cpu_provider_factory.h>
 
 #if defined(__APPLE__)
@@ -12,9 +13,6 @@
 #ifdef _WIN32
 #ifdef USE_DML
 #include <dml_provider_factory.h>
-#endif
-#ifdef USE_TENSORRT
-#include <tensorrt_provider_factory.h>
 #endif
 #include <wchar.h>
 #endif // _WIN32
@@ -87,11 +85,14 @@ int createOrtSession(filter_data *tf)
 					sessionOptions, 0));
 		}
 #endif
-#ifdef USE_TENSORRT
-		if (tf->useGPU == USEGPU_TENSORRT) {
-			Ort::ThrowOnError(
-				OrtSessionOptionsAppendExecutionProvider_Tensorrt(
-					sessionOptions, 0));
+#ifdef USE_CUDA
+		if (tf->useGPU == USEGPU_CUDA) {
+            obs_log(LOG_INFO, "Using CUDA");
+            auto &api = Ort::GetApi();
+            OrtCUDAProviderOptionsV2* cuda_options = nullptr;
+            api.CreateCUDAProviderOptions(&cuda_options);
+            api.SessionOptionsAppendExecutionProvider_CUDA_V2(sessionOptions, cuda_options);
+            api.ReleaseCUDAProviderOptions(cuda_options);
 		}
 #endif
 #endif

@@ -149,6 +149,24 @@ Use the CI scripts again, for example:
 
 The build should exist in the `./release` folder off the root. You can manually install the files in the OBS directory.
 
+#### CUDA on Windows
+
+To run with CUDA you'd need to download the dependencies from Nvidia and extract the DLLs to the plugins directory:
+
+* https://developer.download.nvidia.com/compute/cuda/redist/cuda_cudart/windows-x86_64/cuda_cudart-windows-x86_64-11.8.89-archive.zip
+* https://developer.download.nvidia.com/compute/cuda/redist/libcublas/windows-x86_64/libcublas-windows-x86_64-11.11.3.6-archive.zip
+* https://developer.download.nvidia.com/compute/cuda/redist/libcufft/windows-x86_64/libcufft-windows-x86_64-10.9.0.58-archive.zip
+* https://developer.nvidia.com/downloads/compute/cudnn/secure/8.9.5/local_installers/11.x/cudnn-windows-x86_64-8.9.5.29_cuda11-archive.zip
+
+The .zip files will have a `bin/` folder with the DLLs. The following DLLs are needed:
+* cublas64_11.dll
+* cublasLt64_11.dll
+* cudart64_110.dll
+* cufft64_10.dll
+* cudnn64_8.dll
+
+Copy the files to the plugins folder e.g. `C:\Program Files\obs-studio\obs-plugins\64bit`.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=royshil/obs-backgroundremoval&type=Date&theme=dark" />
   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=royshil/obs-backgroundremoval&type=Date" />
