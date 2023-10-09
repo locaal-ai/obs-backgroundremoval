@@ -25,8 +25,7 @@ void github_utils_get_release_information(
 		if (!data) {
 			obs_log(LOG_INFO,
 				"Failed to parse latest release info");
-			callback(
-				{OBS_BGREMOVAL_GITHUB_UTILS_ERROR, "", ""});
+			callback({OBS_BGREMOVAL_GITHUB_UTILS_ERROR, "", ""});
 			return;
 		}
 
@@ -37,7 +36,7 @@ void github_utils_get_release_information(
 
 		// remove the "v" prefix in version, if it exists
 		if (version[0] == 'v') {
-            version = version.substr(1);
+			version = version.substr(1);
 		}
 
 		callback({OBS_BGREMOVAL_GITHUB_UTILS_SUCCESS, body, version});

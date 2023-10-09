@@ -16,20 +16,19 @@ UpdateDialog *update_dialog = nullptr;
 
 void check_update(void)
 {
-    bool shouldCheckForUpdates = false;
-    if (getFlagFromConfig("check_for_updates",
-                    &shouldCheckForUpdates, true) !=
-        OBS_BGREMOVAL_CONFIG_SUCCESS) {
-        // Failed to get the config value, assume it's enabled
-        shouldCheckForUpdates = true;
-        // store the default value
-        setFlagFromConfig("check_for_updates", shouldCheckForUpdates);
-    }
+	bool shouldCheckForUpdates = false;
+	if (getFlagFromConfig("check_for_updates", &shouldCheckForUpdates,
+			      true) != OBS_BGREMOVAL_CONFIG_SUCCESS) {
+		// Failed to get the config value, assume it's enabled
+		shouldCheckForUpdates = true;
+		// store the default value
+		setFlagFromConfig("check_for_updates", shouldCheckForUpdates);
+	}
 
-    if (!shouldCheckForUpdates) {
-    	// Update checks are disabled
-    	return;
-    }
+	if (!shouldCheckForUpdates) {
+		// Update checks are disabled
+		return;
+	}
 
 	const auto callback = [](github_utils_release_information info) {
 		if (info.responseCode != OBS_BGREMOVAL_GITHUB_UTILS_SUCCESS) {

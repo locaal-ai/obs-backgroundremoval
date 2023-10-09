@@ -28,15 +28,18 @@ UpdateDialog::UpdateDialog(
 	struct github_utils_release_information latestVersion, QWidget *parent)
 	: QDialog(parent), layout(new QVBoxLayout)
 {
-    obs_log(LOG_INFO, "UpdateDialog constructor");
-    obs_log(LOG_INFO, "latestVersion.responseBody: %s", latestVersion.responseBody.c_str());
-    obs_log(LOG_INFO, "latestVersion.version: %s", latestVersion.version.c_str());
-    obs_log(LOG_INFO, "parent: %p", parent);
+	obs_log(LOG_INFO, "UpdateDialog constructor");
+	obs_log(LOG_INFO, "latestVersion.responseBody: %s",
+		latestVersion.responseBody.c_str());
+	obs_log(LOG_INFO, "latestVersion.version: %s",
+		latestVersion.version.c_str());
+	obs_log(LOG_INFO, "parent: %p", parent);
 
 	setWindowTitle("Background Removal - Update available! 🚀");
 	setLayout(layout);
 	QLabel *label = new QLabel(dialogContent.replace(
-		QString("{version}"), QString::fromStdString(latestVersion.version)));
+		QString("{version}"),
+		QString::fromStdString(latestVersion.version)));
 	label->setOpenExternalLinks(true);
 	label->setTextInteractionFlags(Qt::TextBrowserInteraction);
 	label->setTextFormat(Qt::RichText);
