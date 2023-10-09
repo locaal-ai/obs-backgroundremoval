@@ -2,49 +2,69 @@
 #include "plugin-support.h"
 
 #include <obs-module.h>
+#include <util/config-file.h>
+#include <filesystem>
 
-int getFlagFromConfig(const char *name, bool *returnValue)
+void create_config_folder()
 {
-	// Check configuration to see if update checks are disabled
-	char *config_file = obs_module_file("config.json");
-	if (!config_file) {
-		obs_log(LOG_INFO, "Unable to find config file");
-		return OBS_BGREMOVAL_CONFIG_FAIL;
-	}
+    char *config_folder_path = obs_module_config_path("");
+    if (config_folder_path == nullptr) {
+        obs_log(LOG_ERROR, "Failed to get config folder path");
+        return;
+    }
+    std::filesystem::path config_folder_std_path(config_folder_path);
+    bfree(config_folder_path);
 
-	obs_data_t *data = obs_data_create_from_json_file(config_file);
-	if (!data) {
-		obs_log(LOG_INFO, "Failed to parse config file");
-		return OBS_BGREMOVAL_CONFIG_FAIL;
+    // create the folder if it doesn't exist
+	if (!std::filesystem::exists(config_folder_std_path)) {
+		obs_log(LOG_INFO, "Config folder does not exist, creating: %S", config_folder_std_path.c_str());
+		// Create the config folder
+		std::filesystem::create_directories(config_folder_std_path);
 	}
+}
 
-	*returnValue = obs_data_get_bool(data, name);
-	obs_data_release(data);
+int getFlagFromConfig(const char *name, bool *returnValue, bool defaultValue)
+{
+    create_config_folder(); // ensure the config folder exists
+
+    // Get the config file
+	char *config_file_path = obs_module_config_path("config.ini");
+
+    config_t *config;
+    int ret = config_open(&config, config_file_path, CONFIG_OPEN_EXISTING);
+    if (ret != CONFIG_SUCCESS) {
+        obs_log(LOG_INFO, "Failed to open config file %s", config_file_path);
+        *returnValue = defaultValue;
+        return OBS_BGREMOVAL_CONFIG_FAIL;
+    }
+
+    *returnValue = config_get_bool(config, "config", name);
+    config_close(config);
+
+    bfree(config_file_path);
 
 	return OBS_BGREMOVAL_CONFIG_SUCCESS;
 }
 
 int setFlagFromConfig(const char *name, const bool value)
 {
+    create_config_folder(); // ensure the config folder exists
+
 	// Get the config file
-	char *config_file = obs_module_file("config.json");
-	if (!config_file) {
-		obs_log(LOG_INFO, "Unable to find config file");
-		return OBS_BGREMOVAL_CONFIG_FAIL;
-	}
+	char *config_file_path = obs_module_config_path("config.ini");
 
-	// Parse the config file
-	obs_data_t *json_data = obs_data_create_from_json_file(config_file);
-	if (!json_data) {
-		obs_log(LOG_INFO, "Failed to parse config file");
-		return OBS_BGREMOVAL_CONFIG_FAIL;
-	}
+    config_t *config;
+    int ret = config_open(&config, config_file_path, CONFIG_OPEN_ALWAYS);
+    if (ret != CONFIG_SUCCESS) {
+        obs_log(LOG_INFO, "Failed to open config file %s", config_file_path);
+        return OBS_BGREMOVAL_CONFIG_FAIL;
+    }
 
-	// Update the config
-	obs_data_set_bool(json_data, name, value);
-	obs_data_save_json(json_data, config_file);
+    config_set_bool(config, "config", name, value);
+    config_save(config);
+    config_close(config);
 
-	obs_data_release(json_data);
+    bfree(config_file_path);
 
 	return OBS_BGREMOVAL_CONFIG_SUCCESS;
 }
