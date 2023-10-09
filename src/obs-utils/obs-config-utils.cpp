@@ -17,8 +17,13 @@ void create_config_folder()
 
 	// create the folder if it doesn't exist
 	if (!std::filesystem::exists(config_folder_std_path)) {
+#ifdef _WIN32		
 		obs_log(LOG_INFO, "Config folder does not exist, creating: %S",
 			config_folder_std_path.c_str());
+#else
+		obs_log(LOG_INFO, "Config folder does not exist, creating: %s",
+			config_folder_std_path.c_str());
+#endif
 		// Create the config folder
 		std::filesystem::create_directories(config_folder_std_path);
 	}
