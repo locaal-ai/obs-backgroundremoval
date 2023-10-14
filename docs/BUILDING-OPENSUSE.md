@@ -19,7 +19,7 @@ sudo zypper in obs-studio
 ```
 sudo zypper install -t pattern devel_basis
 sudo zypper install zsh cmake Mesa-libGL-devel \
-  ffmpeg-6-libavcodes-devel ffmpeg-6-libavdevice-devel ffmpeg-6-libavformat-devel \
+  ffmpeg-6-libavcodec-devel ffmpeg-6-libavdevice-devel ffmpeg-6-libavformat-devel \
   libcurl-devel Mesa-libEGL-devel \
   libpulse-devel libxkbcommon-devel
 </dev/null >.github/scripts/utils.zsh/check_linux
