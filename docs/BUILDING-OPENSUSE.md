@@ -25,8 +25,8 @@ sudo zypper install zsh cmake Mesa-libGL-devel \
 sudo zypper in cmake gcc12-c++ ninja obs-studio-devel opencv-devel qt6-base-devel zsh curl-devel jq
 
 cmake . -B build_x86_64 \
-  -DCMAKE_C_COMPILER=gcc-13 \
-  -DCMAKE_CXX_COMPILER=g++-13 \
+  -DCMAKE_C_COMPILER=gcc-12 \
+  -DCMAKE_CXX_COMPILER=g++-12 \
   -DQT_VERSION=6 \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
