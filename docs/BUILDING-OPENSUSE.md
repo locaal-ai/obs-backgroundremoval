@@ -24,7 +24,14 @@ sudo zypper install zsh cmake Mesa-libGL-devel \
   libpulse-devel libxkbcommon-devel
 sudo zypper in cmake gcc-c++ ninja obs-studio-devel opencv-devel qt6-base-devel zsh curl-devel jq
 
-.github/scripts/build-linux --skip-deps
+cmake . -B build_x86_64 \
+  -DCMAKE_C_COMPILER=gcc-12 \
+  -DCMAKE_CXX_COMPILER=g++-12 \
+  -DQT_VERSION=6 \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+  -DENABLE_FRONTEND_API=ON \
+  -DENABLE_QT=ON
 sudo cmake --install build_x86_64 --prefix /usr
 ```
 
