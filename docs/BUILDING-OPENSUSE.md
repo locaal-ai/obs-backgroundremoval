@@ -32,6 +32,7 @@ cmake . -B build_x86_64 \
   -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
   -DENABLE_FRONTEND_API=ON \
   -DENABLE_QT=ON
+cmake --build build_x86_64
 sudo cmake --install build_x86_64 --prefix /usr
 ```
 
