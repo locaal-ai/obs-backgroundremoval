@@ -22,7 +22,7 @@ sudo zypper install zsh cmake Mesa-libGL-devel \
   ffmpeg-6-libavcodec-devel ffmpeg-6-libavdevice-devel ffmpeg-6-libavformat-devel \
   libcurl-devel Mesa-libEGL-devel \
   libpulse-devel libxkbcommon-devel
-sudo zypper in cmake gcc-c++ ninja obs-studio-devel opencv-devel qt6-base-devel zsh curl-devel jq
+sudo zypper in cmake gcc12-c++ ninja obs-studio-devel opencv-devel qt6-base-devel zsh curl-devel jq
 
 cmake . -B build_x86_64 \
   -DCMAKE_C_COMPILER=gcc-13 \
