@@ -92,6 +92,8 @@ target_sources(
           src/update-checker/UpdateDialog.cpp
           src/background-filter-info.c
           src/background-filter.cpp
+          src/background-mask-source-info.c
+          src/background-mask-source.cpp
           src/enhance-filter.cpp
           src/enhance-filter-info.c)
 target_compile_options(${CMAKE_PROJECT_NAME}
