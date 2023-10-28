@@ -13,7 +13,7 @@ sudo dnf install cmake gcc-c++ ninja-build obs-studio-devel opencv-devel qt6-qtb
 
 Clone the repository and set up the submodules:
 ```
-git clone https://github.com/royshil/obs-backgroundremoval.git
+git clone https://github.com/obs-ai/obs-backgroundremoval.git --depth=1
 cd obs-backgroundremoval
 git submodule update --init
 ```
