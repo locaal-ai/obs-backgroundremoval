@@ -19,11 +19,20 @@ sudo zypper in obs-studio
 ```
 sudo zypper install -t pattern devel_basis
 sudo zypper install zsh cmake Mesa-libGL-devel \
-  ffmpeg-6-libavcodes-devel ffmpeg-6-libavdevice-devel ffmpeg-6-libavformat-devel \
+  ffmpeg-6-libavcodec-devel ffmpeg-6-libavdevice-devel ffmpeg-6-libavformat-devel \
   libcurl-devel Mesa-libEGL-devel \
   libpulse-devel libxkbcommon-devel
-</dev/null >.github/scripts/utils.zsh/check_linux
-CI=1 .github/scripts/build-linux.zsh --skip-deps
+sudo zypper in cmake gcc12-c++ ninja obs-studio-devel opencv-devel qt6-base-devel zsh curl-devel jq
+
+cmake . -B build_x86_64 \
+  -DCMAKE_C_COMPILER=gcc-12 \
+  -DCMAKE_CXX_COMPILER=g++-12 \
+  -DQT_VERSION=6 \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+  -DENABLE_FRONTEND_API=ON \
+  -DENABLE_QT=ON
+cmake --build build_x86_64
 sudo cmake --install build_x86_64 --prefix /usr
 ```
 
