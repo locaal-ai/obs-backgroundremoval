@@ -29,7 +29,8 @@ void create_config_folder()
 	}
 }
 
-int getConfig(config_t** config) {
+int getConfig(config_t **config)
+{
 	create_config_folder(); // ensure the config folder exists
 
 	// Get the config file
