@@ -180,12 +180,10 @@ ${_usage_host:-}"
     if (( _loglevel > 1  || ${+CI} )) _tarflags="v${_tarflags}"
 
     if (( package )) {
-      if [[ ! -f ${project_root}/build_macos/installer-macos.generated.pkgproj ]] {
-        log_error 'Packages project file not found. Run the build script or the CMake build and install procedures first.'
+      if [[ ! -f ${project_root}/build_macos/Distribution.generated.xml ]] {
+        log_error 'Distribution file not found. Run the build script or the CMake build and install procedures first.'
         return 2
       }
-
-      check_packages
 
       log_group "Packaging ${product_name}..."
       pushd ${project_root}
@@ -195,7 +193,7 @@ ${_usage_host:-}"
         --scripts "${project_root}/cmake/macos/resources/scripts" \
         "${project_root}/release/${config}/${product_name}-flat.pkg"
       productbuild \
-        --distribution "${project_root}/cmake/macos/resources/Distribution.xml" \
+        --distribution "${project_root}/build_macos/Distribution.generated.xml" \
         --package-path "${project_root}/release/${config}" \
         "${project_root}/release/${config}/${product_name}.pkg"
       rm "${project_root}/release/${config}/${product_name}-flat.pkg"

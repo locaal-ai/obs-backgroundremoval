@@ -306,7 +306,15 @@ void background_filter_update(void *data, obs_data_t *settings)
 			tf->model.reset(new ModelTCMonoDepth);
 		}
 
-		createOrtSession(tf);
+		int ortSessionResult = createOrtSession(tf);
+		if (ortSessionResult != OBS_BGREMOVAL_ORT_SESSION_SUCCESS) {
+			obs_log(LOG_ERROR,
+				"Failed to create ONNXRuntime session. Error code: %d",
+				ortSessionResult);
+			// disable filter
+			tf->isDisabled = true;
+			return;
+		}
 	}
 
 	obs_enter_graphics();
@@ -323,6 +331,32 @@ void background_filter_update(void *data, obs_data_t *settings)
 	bfree(kawaseBlurEffectPath);
 
 	obs_leave_graphics();
+
+	// Log the currently selected options
+	obs_log(LOG_INFO, "Background Removal Filter Options:");
+	// name of the source that the filter is attached to
+	obs_log(LOG_INFO, "  Source: %s", obs_source_get_name(tf->source));
+	obs_log(LOG_INFO, "  Model: %s", tf->modelSelection.c_str());
+	obs_log(LOG_INFO, "  Inference Device: %s", tf->useGPU.c_str());
+	obs_log(LOG_INFO, "  Num Threads: %d", tf->numThreads);
+	obs_log(LOG_INFO, "  Enable Threshold: %s",
+		tf->enableThreshold ? "true" : "false");
+	obs_log(LOG_INFO, "  Threshold: %f", tf->threshold);
+	obs_log(LOG_INFO, "  Contour Filter: %f", tf->contourFilter);
+	obs_log(LOG_INFO, "  Smooth Contour: %f", tf->smoothContour);
+	obs_log(LOG_INFO, "  Feather: %f", tf->feather);
+	obs_log(LOG_INFO, "  Mask Every X Frames: %d", tf->maskEveryXFrames);
+	obs_log(LOG_INFO, "  Blur Background: %d", tf->blurBackground);
+	obs_log(LOG_INFO, "  Enable Focal Blur: %s",
+		tf->enableFocalBlur ? "true" : "false");
+	obs_log(LOG_INFO, "  Blur Focus Point: %f", tf->blurFocusPoint);
+	obs_log(LOG_INFO, "  Blur Focus Depth: %f", tf->blurFocusDepth);
+	obs_log(LOG_INFO, "  Disabled: %s", tf->isDisabled ? "true" : "false");
+#ifdef _WIN32
+	obs_log(LOG_INFO, "  Model file path: %S", tf->modelFilepath);
+#else
+	obs_log(LOG_INFO, "  Model file path: %s", tf->modelFilepath);
+#endif
 }
 
 void background_filter_activate(void *data)
@@ -449,6 +483,13 @@ void background_filter_video_tick(void *data, float seconds)
 			processImageForBackground(tf, imageBGRA,
 						  backgroundMask);
 
+			if (backgroundMask.empty()) {
+				// Something went wrong. Just use the previous mask.
+				obs_log(LOG_WARNING,
+					"Background mask is empty. This shouldn't happen. Using previous mask.");
+				return;
+			}
+
 			// Contour processing
 			// Only applicable if we are thresholding (and get a binary image)
 			if (tf->enableThreshold) {
@@ -517,10 +558,10 @@ void background_filter_video_tick(void *data, float seconds)
 			backgroundMask.copyTo(tf->backgroundMask);
 		}
 	} catch (const Ort::Exception &e) {
-		blog(LOG_ERROR, "ONNXRuntime Exception: %s", e.what());
+		obs_log(LOG_ERROR, "ONNXRuntime Exception: %s", e.what());
 		// TODO: Fall back to CPU if it makes sense
 	} catch (const std::exception &e) {
-		blog(LOG_ERROR, "%s", e.what());
+		obs_log(LOG_ERROR, "%s", e.what());
 	}
 
 	UNUSED_PARAMETER(seconds);
@@ -557,8 +598,8 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf,
 	for (int i = 0; i < (int)tf->blurBackground; i++) {
 		gs_texrender_reset(tf->texrender);
 		if (!gs_texrender_begin(tf->texrender, width, height)) {
-			blog(LOG_INFO,
-			     "Could not open background blur texrender!");
+			obs_log(LOG_INFO,
+				"Could not open background blur texrender!");
 			return blurredTexture;
 		}
 
@@ -600,6 +641,11 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 	struct background_removal_filter *tf =
 		reinterpret_cast<background_removal_filter *>(data);
 
+	if (tf->isDisabled) {
+		obs_source_skip_video_filter(tf->source);
+		return;
+	}
+
 	uint32_t width, height;
 	if (!getRGBAFromStageSurface(tf, width, height)) {
 		obs_source_skip_video_filter(tf->source);
@@ -619,7 +665,7 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 			tf->backgroundMask.cols, tf->backgroundMask.rows, GS_R8,
 			1, (const uint8_t **)&tf->backgroundMask.data, 0);
 		if (!alphaTexture) {
-			blog(LOG_ERROR, "Failed to create alpha texture");
+			obs_log(LOG_ERROR, "Failed to create alpha texture");
 			obs_source_skip_video_filter(tf->source);
 			return;
 		}

@@ -10,43 +10,56 @@
 
 #include <QTimer>
 
-UpdateDialog *update_dialog;
-
 extern "C" const char *PLUGIN_VERSION;
+
+UpdateDialog *update_dialog = nullptr;
 
 void check_update(void)
 {
-	github_utils_get_release_information([](github_utils_release_information
-							info) {
-		if (info.responseCode == OBS_BGREMOVAL_GITHUB_UTILS_SUCCESS) {
-			obs_log(LOG_INFO, "Latest release is %s", info.version);
-			bool shouldCheckForUpdates = false;
-			if (getFlagFromConfig("check_for_updates",
-					      &shouldCheckForUpdates) !=
-			    OBS_BGREMOVAL_CONFIG_SUCCESS) {
-				// Failed to get the config value, assume it's enabled
-				shouldCheckForUpdates = true;
-			}
+	bool shouldCheckForUpdates = false;
+	if (getFlagFromConfig("check_for_updates", &shouldCheckForUpdates,
+			      true) != OBS_BGREMOVAL_CONFIG_SUCCESS) {
+		// Failed to get the config value, assume it's enabled
+		shouldCheckForUpdates = true;
+		// store the default value
+		setFlagFromConfig("check_for_updates", shouldCheckForUpdates);
+	}
 
-			if (!shouldCheckForUpdates) {
-				// Update checks are disabled
-				return;
-			}
+	if (!shouldCheckForUpdates) {
+		// Update checks are disabled
+		return;
+	}
 
-			if (strcmp(info.version, PLUGIN_VERSION) == 0) {
-				// No update available, latest version is the same as the current version
-				return;
-			}
-
-			update_dialog = new UpdateDialog(
-				info,
-				(QWidget *)obs_frontend_get_main_window());
-			QTimer::singleShot(2000, update_dialog,
-					   &UpdateDialog::exec);
-		} else {
+	const auto callback = [](github_utils_release_information info) {
+		if (info.responseCode != OBS_BGREMOVAL_GITHUB_UTILS_SUCCESS) {
 			obs_log(LOG_INFO,
 				"failed to get latest release information");
+			return;
 		}
-		github_utils_release_information_free(info);
-	});
+		obs_log(LOG_INFO, "Latest release is %s", info.version.c_str());
+
+		if (info.version == PLUGIN_VERSION) {
+			// No update available, latest version is the same as the current version
+			return;
+		}
+
+		try {
+			QTimer::singleShot(2000, [=]() {
+				QWidget *main_window = (QWidget *)
+					obs_frontend_get_main_window();
+				if (main_window == nullptr) {
+					obs_log(LOG_ERROR,
+						"Update Checker failed to get main window");
+					return;
+				}
+				update_dialog =
+					new UpdateDialog(info, main_window);
+				update_dialog->exec();
+			});
+		} catch (...) {
+			obs_log(LOG_ERROR, "Failed to construct UpdateDialog");
+		}
+	};
+
+	github_utils_get_release_information(callback);
 }

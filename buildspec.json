@@ -32,12 +32,6 @@
         }
     },
     "tools": {
-        "packages": {
-            "version": "1.2.10",
-            "baseUrl": "http://s.sudre.free.fr/Software/files",
-            "label": "Packages.app",
-            "hash": "6afdd25386295974dad8f078b8f1e41cabebd08e72d970bf92f707c7e48b16c9"
-        }
     },
     "platformConfig": {
         "macos": {
@@ -45,7 +39,7 @@
         }
     },
     "name": "obs-backgroundremoval",
-    "version": "1.1.6",
+    "version": "1.1.7",
     "author": "Roy Shilkrot",
     "website": "https://github.com/royshil/obs-backgroundremoval",
     "email": "roy.shil@gmail.com",
