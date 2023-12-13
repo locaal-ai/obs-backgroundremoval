@@ -118,9 +118,8 @@ obs_properties_t *background_filter_properties(void *data)
 	obs_property_set_modified_callback(advanced, enable_advanced_settings);
 
 	/* Threshold props */
-	obs_property_t *p_enable_threshold =
-		obs_properties_add_bool(props, "enable_threshold",
-					obs_module_text("EnableThreshold"));
+	obs_property_t *p_enable_threshold = obs_properties_add_bool(
+		props, "enable_threshold", obs_module_text("EnableThreshold"));
 	obs_property_set_modified_callback(p_enable_threshold,
 					   enable_threshold_modified);
 
