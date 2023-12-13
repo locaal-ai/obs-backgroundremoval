@@ -22,7 +22,7 @@ void check_update(void)
 		// Failed to get the config value, assume it's enabled
 		shouldCheckForUpdates = true;
 		// store the default value
-		setFlagFromConfig("check_for_updates", shouldCheckForUpdates);
+		setFlagInConfig("check_for_updates", shouldCheckForUpdates);
 	}
 
 	if (!shouldCheckForUpdates) {

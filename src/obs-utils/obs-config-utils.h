@@ -25,6 +25,6 @@ int getFlagFromConfig(const char *name, bool *returnValue, bool defaultValue);
  * @return OBS_BGREMOVAL_CONFIG_SUCCESS if the config item was found,
  * OBS_BGREMOVAL_CONFIG_FAIL otherwise.
  */
-int setFlagFromConfig(const char *name, const bool value);
+int setFlagInConfig(const char *name, const bool value);
 
 #endif /* OBS_CONFIG_UTILS_H */

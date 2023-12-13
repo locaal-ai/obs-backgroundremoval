@@ -39,7 +39,7 @@ struct background_removal_filter : public filter_data {
 	int maskEveryXFrames = 1;
 	int maskEveryXFramesCount = 0;
 	int64_t blurBackground = 0;
-	bool enableFocalBlur = true;
+	bool enableFocalBlur = false;
 	float blurFocusPoint = 0.1f;
 	float blurFocusDepth = 0.1f;
 
@@ -199,7 +199,7 @@ void background_filter_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "mask_every_x_frames", 1);
 	obs_data_set_default_int(settings, "blur_background", 0);
 	obs_data_set_default_int(settings, "numThreads", 1);
-	obs_data_set_default_bool(settings, "enable_focal_blur", true);
+	obs_data_set_default_bool(settings, "enable_focal_blur", false);
 	obs_data_set_default_double(settings, "blur_focus_point", 0.1);
 	obs_data_set_default_double(settings, "blur_focus_depth", 0.0);
 }

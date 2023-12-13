@@ -54,7 +54,7 @@ UpdateDialog::UpdateDialog(
 	QCheckBox *disableCheckbox = new QCheckBox("Disable update checks");
 	layout->addWidget(disableCheckbox);
 	connect(disableCheckbox, &QCheckBox::stateChanged, this, [](int state) {
-		setFlagFromConfig("check_for_updates", state == Qt::Unchecked);
+		setFlagInConfig("check_for_updates", state == Qt::Unchecked);
 	});
 
 	// Add a button to close the dialog
