@@ -15,6 +15,8 @@
 #include <new>
 #include <mutex>
 
+#include <QString>
+
 #include <plugin-support.h>
 #include "consts.h"
 #include "obs-utils/obs-utils.h"
@@ -73,6 +75,15 @@ obs_properties_t *enhance_filter_properties(void *data)
 	obs_property_list_add_string(p_use_gpu, obs_module_text("CoreML"),
 				     USEGPU_COREML);
 #endif
+
+	// Add a informative text about the plugin
+	obs_properties_add_text(props, "info",
+				QString(PLUGIN_INFO_TEMPLATE)
+					.arg(PLUGIN_VERSION)
+					.toStdString()
+					.c_str(),
+				OBS_TEXT_INFO);
+
 	return props;
 }
 
