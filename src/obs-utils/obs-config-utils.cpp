@@ -29,18 +29,27 @@ void create_config_folder()
 	}
 }
 
-int getFlagFromConfig(const char *name, bool *returnValue, bool defaultValue)
-{
+int getConfig(config_t** config) {
 	create_config_folder(); // ensure the config folder exists
 
 	// Get the config file
 	char *config_file_path = obs_module_config_path("config.ini");
 
-	config_t *config;
-	int ret = config_open(&config, config_file_path, CONFIG_OPEN_EXISTING);
+	int ret = config_open(config, config_file_path, CONFIG_OPEN_EXISTING);
 	if (ret != CONFIG_SUCCESS) {
 		obs_log(LOG_INFO, "Failed to open config file %s",
 			config_file_path);
+		return OBS_BGREMOVAL_CONFIG_FAIL;
+	}
+
+	return OBS_BGREMOVAL_CONFIG_SUCCESS;
+}
+
+int getFlagFromConfig(const char *name, bool *returnValue, bool defaultValue)
+{
+	// Get the config file
+	config_t *config;
+	if (getConfig(&config) != OBS_BGREMOVAL_CONFIG_SUCCESS) {
 		*returnValue = defaultValue;
 		return OBS_BGREMOVAL_CONFIG_FAIL;
 	}
@@ -48,31 +57,20 @@ int getFlagFromConfig(const char *name, bool *returnValue, bool defaultValue)
 	*returnValue = config_get_bool(config, "config", name);
 	config_close(config);
 
-	bfree(config_file_path);
-
 	return OBS_BGREMOVAL_CONFIG_SUCCESS;
 }
 
-int setFlagFromConfig(const char *name, const bool value)
+int setFlagInConfig(const char *name, const bool value)
 {
-	create_config_folder(); // ensure the config folder exists
-
 	// Get the config file
-	char *config_file_path = obs_module_config_path("config.ini");
-
 	config_t *config;
-	int ret = config_open(&config, config_file_path, CONFIG_OPEN_ALWAYS);
-	if (ret != CONFIG_SUCCESS) {
-		obs_log(LOG_INFO, "Failed to open config file %s",
-			config_file_path);
+	if (getConfig(&config) != OBS_BGREMOVAL_CONFIG_SUCCESS) {
 		return OBS_BGREMOVAL_CONFIG_FAIL;
 	}
 
 	config_set_bool(config, "config", name, value);
 	config_save(config);
 	config_close(config);
-
-	bfree(config_file_path);
 
 	return OBS_BGREMOVAL_CONFIG_SUCCESS;
 }
