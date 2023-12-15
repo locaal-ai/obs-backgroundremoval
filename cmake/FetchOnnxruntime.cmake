@@ -18,14 +18,14 @@ else()
   endif()
 endif()
 
-set(Onnxruntime_VERSION "1.16.0")
+set(Onnxruntime_VERSION "1.16.3")
 
 if(OS_MACOS)
   if(USE_PREDEFINED_ONNXRUNTIME)
     FetchContent_Declare(
       Onnxruntime
       URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/onnxruntime-osx-universal2-${Onnxruntime_VERSION}.tgz"
-      URL_HASH MD5=6f6adb0ad879999e089ea017ab457382)
+      URL_HASH MD5=645bc827bf41646e6644de674d945528)
   else()
     FetchContent_Declare(
       Onnxruntime
@@ -49,8 +49,8 @@ elseif(OS_WINDOWS)
   if(USE_PREDEFINED_ONNXRUNTIME)
     FetchContent_Declare(
       Onnxruntime
-      URL "https://github.com/umireon/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}-1/onnxruntime-windows-Release.zip"
-      URL_HASH MD5=bcd67774a7dbdc3e6dedcbeb22b8d516)
+      URL "https://github.com/occ-ai/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}-1/onnxruntime-windows-Release.zip"
+      URL_HASH MD5=4e880d7fbf40c18ead4e71f41167e2bf)
   else()
     FetchContent_Declare(
       Onnxruntime
