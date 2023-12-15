@@ -15,6 +15,8 @@
 #include <new>
 #include <mutex>
 
+#include <QString>
+
 #include <plugin-support.h>
 #include "models/ModelSINET.h"
 #include "models/ModelMediapipe.h"
@@ -55,18 +57,49 @@ const char *background_filter_getname(void *unused)
 
 /**                   PROPERTIES                     */
 
+static bool visible_on_bool(obs_properties_t *ppts, obs_data_t *settings,
+			    const char *bool_prop, const char *prop_name)
+{
+	const bool enabled = obs_data_get_bool(settings, bool_prop);
+	obs_property_t *p = obs_properties_get(ppts, prop_name);
+	obs_property_set_visible(p, enabled);
+	return true;
+}
+
 static bool enable_threshold_modified(obs_properties_t *ppts, obs_property_t *p,
 				      obs_data_t *settings)
 {
-	const bool enabled = obs_data_get_bool(settings, "enable_threshold");
-	p = obs_properties_get(ppts, "threshold");
-	obs_property_set_visible(p, enabled);
-	p = obs_properties_get(ppts, "contour_filter");
-	obs_property_set_visible(p, enabled);
-	p = obs_properties_get(ppts, "smooth_contour");
-	obs_property_set_visible(p, enabled);
-	p = obs_properties_get(ppts, "feather");
-	obs_property_set_visible(p, enabled);
+	UNUSED_PARAMETER(p);
+	return visible_on_bool(ppts, settings, "enable_threshold",
+			       "threshold_group");
+}
+
+static bool enable_focal_blur(obs_properties_t *ppts, obs_property_t *p,
+			      obs_data_t *settings)
+{
+	UNUSED_PARAMETER(p);
+	return visible_on_bool(ppts, settings, "enable_focal_blur",
+			       "focal_blur_group");
+}
+
+static bool enable_advanced_settings(obs_properties_t *ppts, obs_property_t *p,
+				     obs_data_t *settings)
+{
+	const bool enabled = obs_data_get_bool(settings, "advanced");
+	p = obs_properties_get(ppts, "blur_background");
+	obs_property_set_visible(p, true);
+
+	for (const char *prop_name :
+	     {"model_select", "useGPU", "mask_every_x_frames", "numThreads",
+	      "enable_focal_blur", "enable_threshold"}) {
+		p = obs_properties_get(ppts, prop_name);
+		obs_property_set_visible(p, enabled);
+	}
+
+	if (enabled) {
+		enable_threshold_modified(ppts, p, settings);
+		enable_focal_blur(ppts, p, settings);
+	}
 
 	return true;
 }
@@ -75,28 +108,41 @@ obs_properties_t *background_filter_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
+	obs_property_t *advanced = obs_properties_add_bool(
+		props, "advanced", obs_module_text("Advanced"));
+
+	// If advanced is selected show the advanced settings, otherwise hide them
+	obs_property_set_modified_callback(advanced, enable_advanced_settings);
+
 	/* Threshold props */
 	obs_property_t *p_enable_threshold = obs_properties_add_bool(
 		props, "enable_threshold", obs_module_text("EnableThreshold"));
 	obs_property_set_modified_callback(p_enable_threshold,
 					   enable_threshold_modified);
 
-	obs_properties_add_float_slider(props, "threshold",
+	// Threshold props group
+	obs_properties_t *threshold_props = obs_properties_create();
+
+	obs_properties_add_float_slider(threshold_props, "threshold",
 					obs_module_text("Threshold"), 0.0, 1.0,
 					0.025);
 
 	obs_properties_add_float_slider(
-		props, "contour_filter",
+		threshold_props, "contour_filter",
 		obs_module_text("ContourFilterPercentOfImage"), 0.0, 1.0,
 		0.025);
 
-	obs_properties_add_float_slider(props, "smooth_contour",
+	obs_properties_add_float_slider(threshold_props, "smooth_contour",
 					obs_module_text("SmoothSilhouette"),
 					0.0, 1.0, 0.05);
 
 	obs_properties_add_float_slider(
-		props, "feather", obs_module_text("FeatherBlendSilhouette"),
-		0.0, 1.0, 0.05);
+		threshold_props, "feather",
+		obs_module_text("FeatherBlendSilhouette"), 0.0, 1.0, 0.05);
+
+	obs_properties_add_group(props, "threshold_group",
+				 obs_module_text("ThresholdGroup"),
+				 OBS_GROUP_NORMAL, threshold_props);
 
 	/* GPU, CPU and performance Props */
 	obs_property_t *p_use_gpu = obs_properties_add_list(
@@ -154,27 +200,29 @@ obs_properties_t *background_filter_properties(void *data)
 
 	obs_property_t *p_enable_focal_blur = obs_properties_add_bool(
 		props, "enable_focal_blur", obs_module_text("EnableFocalBlur"));
-	obs_property_set_modified_callback(
-		p_enable_focal_blur,
-		[](obs_properties_t *ppts, obs_property_t *p,
-		   obs_data_t *settings) {
-			UNUSED_PARAMETER(p);
-			const bool enabled = obs_data_get_bool(
-				settings, "enable_focal_blur");
-			obs_property_t *prop =
-				obs_properties_get(ppts, "blur_focus_point");
-			obs_property_set_visible(prop, enabled);
-			prop = obs_properties_get(ppts, "blur_focus_depth");
-			obs_property_set_visible(prop, enabled);
-			return true;
-		});
+	obs_property_set_modified_callback(p_enable_focal_blur,
+					   enable_focal_blur);
 
-	obs_properties_add_float_slider(props, "blur_focus_point",
+	obs_properties_t *focal_blur_props = obs_properties_create();
+
+	obs_properties_add_float_slider(focal_blur_props, "blur_focus_point",
 					obs_module_text("BlurFocusPoint"), 0.0,
 					1.0, 0.05);
-	obs_properties_add_float_slider(props, "blur_focus_depth",
+	obs_properties_add_float_slider(focal_blur_props, "blur_focus_depth",
 					obs_module_text("BlurFocusDepth"), 0.0,
 					0.3, 0.02);
+
+	obs_properties_add_group(props, "focal_blur_group",
+				 obs_module_text("FocalBlurGroup"),
+				 OBS_GROUP_NORMAL, focal_blur_props);
+
+	// Add a informative text about the plugin
+	obs_properties_add_text(props, "info",
+				QString(PLUGIN_INFO_TEMPLATE)
+					.arg(PLUGIN_VERSION)
+					.toStdString()
+					.c_str(),
+				OBS_TEXT_INFO);
 
 	UNUSED_PARAMETER(data);
 	return props;
@@ -182,6 +230,7 @@ obs_properties_t *background_filter_properties(void *data)
 
 void background_filter_defaults(obs_data_t *settings)
 {
+	obs_data_set_default_bool(settings, "advanced", false);
 	obs_data_set_default_bool(settings, "enable_threshold", true);
 	obs_data_set_default_double(settings, "threshold", 0.5);
 	obs_data_set_default_double(settings, "contour_filter", 0.05);
@@ -208,6 +257,7 @@ void background_filter_update(void *data, obs_data_t *settings)
 {
 	struct background_removal_filter *tf =
 		reinterpret_cast<background_removal_filter *>(data);
+
 	tf->enableThreshold =
 		(float)obs_data_get_bool(settings, "enable_threshold");
 	tf->threshold = (float)obs_data_get_double(settings, "threshold");
@@ -596,19 +646,25 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 		reinterpret_cast<background_removal_filter *>(data);
 
 	if (tf->isDisabled) {
-		obs_source_skip_video_filter(tf->source);
+		if (tf->source) {
+			obs_source_skip_video_filter(tf->source);
+		}
 		return;
 	}
 
 	uint32_t width, height;
 	if (!getRGBAFromStageSurface(tf, width, height)) {
-		obs_source_skip_video_filter(tf->source);
+		if (tf->source) {
+			obs_source_skip_video_filter(tf->source);
+		}
 		return;
 	}
 
 	if (!tf->effect) {
 		// Effect failed to load, skip rendering
-		obs_source_skip_video_filter(tf->source);
+		if (tf->source) {
+			obs_source_skip_video_filter(tf->source);
+		}
 		return;
 	}
 
@@ -620,7 +676,9 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 			1, (const uint8_t **)&tf->backgroundMask.data, 0);
 		if (!alphaTexture) {
 			obs_log(LOG_ERROR, "Failed to create alpha texture");
-			obs_source_skip_video_filter(tf->source);
+			if (tf->source) {
+				obs_source_skip_video_filter(tf->source);
+			}
 			return;
 		}
 	}
@@ -631,7 +689,9 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 
 	if (!obs_source_process_filter_begin(tf->source, GS_RGBA,
 					     OBS_ALLOW_DIRECT_RENDERING)) {
-		obs_source_skip_video_filter(tf->source);
+		if (tf->source) {
+			obs_source_skip_video_filter(tf->source);
+		}
 		gs_texture_destroy(alphaTexture);
 		gs_texture_destroy(blurredTexture);
 		return;

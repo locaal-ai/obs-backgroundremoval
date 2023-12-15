@@ -18,6 +18,7 @@
 !CMakePresets.json
 !LICENSE
 !README.md
+!patch_libobs.diff
 
 # Exclude lock files
 *.lock.json
