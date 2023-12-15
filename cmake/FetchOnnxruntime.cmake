@@ -50,7 +50,7 @@ elseif(OS_WINDOWS)
     FetchContent_Declare(
       Onnxruntime
       URL "https://github.com/occ-ai/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}-1/onnxruntime-windows-Release.zip"
-      URL_HASH MD5=4e880d7fbf40c18ead4e71f41167e2bf)
+      URL_HASH MD5=eea7e84456027c27515fce6f1c0b9d1a)
   else()
     FetchContent_Declare(
       Onnxruntime
@@ -94,7 +94,7 @@ elseif(OS_LINUX)
       FetchContent_Declare(
         Onnxruntime
         URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/onnxruntime-linux-aarch64-${Onnxruntime_VERSION}.tgz"
-        URL_HASH MD5=c2112b66c99f9b85d4d71e5c61712034)
+        URL_HASH MD5=43fcb93c4aa63822ff11be72423f78af)
     else()
       FetchContent_Declare(
         Onnxruntime
@@ -109,7 +109,7 @@ elseif(OS_LINUX)
       FetchContent_Declare(
         Onnxruntime
         URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/onnxruntime-linux-x64-gpu-${Onnxruntime_VERSION}.tgz"
-        URL_HASH MD5=21b3eb42e0bee9e7b51cbf508352f188)
+        URL_HASH MD5=597eb06a0d7a66ef0c29e38bde118364)
     else()
       FetchContent_Declare(
         Onnxruntime
