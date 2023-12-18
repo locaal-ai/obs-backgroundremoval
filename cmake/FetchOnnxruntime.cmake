@@ -18,14 +18,14 @@ else()
   endif()
 endif()
 
-set(Onnxruntime_VERSION "1.16.0")
+set(Onnxruntime_VERSION "1.16.3")
 
 if(OS_MACOS)
   if(USE_PREDEFINED_ONNXRUNTIME)
     FetchContent_Declare(
       Onnxruntime
       URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/onnxruntime-osx-universal2-${Onnxruntime_VERSION}.tgz"
-      URL_HASH MD5=6f6adb0ad879999e089ea017ab457382)
+      URL_HASH SHA256=6428d0f0ff1386e8e8256a708e187c1f8861387c9554bfc9c5f3390ffa0df5cc)
   else()
     FetchContent_Declare(
       Onnxruntime
@@ -49,8 +49,8 @@ elseif(OS_WINDOWS)
   if(USE_PREDEFINED_ONNXRUNTIME)
     FetchContent_Declare(
       Onnxruntime
-      URL "https://github.com/umireon/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}-1/onnxruntime-windows-Release.zip"
-      URL_HASH MD5=bcd67774a7dbdc3e6dedcbeb22b8d516)
+      URL "https://github.com/occ-ai/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}-1/onnxruntime-windows-Release.zip"
+      URL_HASH SHA256=ca7fe4ed8bf888b4ffcc514f39948ded6ca5c3c1e8fc062ceeabf2159e9f09be)
   else()
     FetchContent_Declare(
       Onnxruntime
@@ -94,7 +94,7 @@ elseif(OS_LINUX)
       FetchContent_Declare(
         Onnxruntime
         URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/onnxruntime-linux-aarch64-${Onnxruntime_VERSION}.tgz"
-        URL_HASH MD5=c2112b66c99f9b85d4d71e5c61712034)
+        URL_HASH SHA256=784dbef93b40196aa668d29d78294a81c0d21361d36530b817bb24d87e8730e8)
     else()
       FetchContent_Declare(
         Onnxruntime
@@ -109,7 +109,7 @@ elseif(OS_LINUX)
       FetchContent_Declare(
         Onnxruntime
         URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/onnxruntime-linux-x64-gpu-${Onnxruntime_VERSION}.tgz"
-        URL_HASH MD5=21b3eb42e0bee9e7b51cbf508352f188)
+        URL_HASH SHA256=bbdc33367c056029b3ac0c042cbca2236b8f59a3a53b4daf23432ef1d8bf52de)
     else()
       FetchContent_Declare(
         Onnxruntime
