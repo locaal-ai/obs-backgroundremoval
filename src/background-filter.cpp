@@ -38,6 +38,8 @@ struct background_removal_filter : public filter_data {
 	float feather = 0.0f;
 
 	cv::Mat backgroundMask;
+	cv::Mat lastBackgroundMask;
+	float temporalSmoothFactor = 0.0f;
 	int maskEveryXFrames = 1;
 	int maskEveryXFramesCount = 0;
 	int64_t blurBackground = 0;
@@ -91,7 +93,8 @@ static bool enable_advanced_settings(obs_properties_t *ppts, obs_property_t *p,
 
 	for (const char *prop_name :
 	     {"model_select", "useGPU", "mask_every_x_frames", "numThreads",
-	      "enable_focal_blur", "enable_threshold"}) {
+	      "enable_focal_blur", "enable_threshold", "threshold_group",
+	      "focal_blur_group", "temporal_smooth_factor"}) {
 		p = obs_properties_get(ppts, prop_name);
 		obs_property_set_visible(p, enabled);
 	}
@@ -192,6 +195,10 @@ obs_properties_t *background_filter_properties(void *data)
 				     obs_module_text("TCMonoDepth"),
 				     MODEL_DEPTH_TCMONODEPTH);
 
+	obs_properties_add_float_slider(props, "temporal_smooth_factor",
+					obs_module_text("TemporalSmoothFactor"),
+					0.0, 1.0, 0.01);
+
 	/* Background Blur Props */
 	obs_properties_add_int_slider(
 		props, "blur_background",
@@ -249,6 +256,7 @@ void background_filter_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "blur_background", 0);
 	obs_data_set_default_int(settings, "numThreads", 1);
 	obs_data_set_default_bool(settings, "enable_focal_blur", false);
+	obs_data_set_default_double(settings, "temporal_smooth_factor", 0.75);
 	obs_data_set_default_double(settings, "blur_focus_point", 0.1);
 	obs_data_set_default_double(settings, "blur_focus_depth", 0.0);
 }
@@ -277,6 +285,8 @@ void background_filter_update(void *data, obs_data_t *settings)
 		(float)obs_data_get_double(settings, "blur_focus_point");
 	tf->blurFocusDepth =
 		(float)obs_data_get_double(settings, "blur_focus_depth");
+	tf->temporalSmoothFactor =
+		(float)obs_data_get_double(settings, "temporal_smooth_factor");
 
 	const std::string newUseGpu = obs_data_get_string(settings, "useGPU");
 	const std::string newModel =
@@ -493,6 +503,31 @@ void background_filter_video_tick(void *data, float seconds)
 					"Background mask is empty. This shouldn't happen. Using previous mask.");
 				return;
 			}
+
+			// Temporal smoothing
+			if (tf->temporalSmoothFactor > 0.0 &&
+			    tf->temporalSmoothFactor < 1.0 &&
+			    !tf->lastBackgroundMask.empty() &&
+			    tf->lastBackgroundMask.size() ==
+				    backgroundMask.size()) {
+
+				float temporalSmoothFactor =
+					tf->temporalSmoothFactor;
+				if (tf->enableThreshold) {
+					// The temporal smooth factor can't be smaller than the threshold
+					temporalSmoothFactor =
+						std::max(temporalSmoothFactor,
+							 tf->threshold);
+				}
+
+				cv::addWeighted(backgroundMask,
+						temporalSmoothFactor,
+						tf->lastBackgroundMask,
+						1.0 - temporalSmoothFactor, 0.0,
+						backgroundMask);
+			}
+
+			tf->lastBackgroundMask = backgroundMask.clone();
 
 			// Contour processing
 			// Only applicable if we are thresholding (and get a binary image)
