@@ -21,6 +21,7 @@ Compression=lzma
 SolidCompression=yes
 DirExistsWarning=no
 VersionInfoVersion={#MyAppVersion}
+AppCopyright=Copyright (C) 2023 Roy Shilkrot
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
