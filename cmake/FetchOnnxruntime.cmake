@@ -18,12 +18,12 @@ else()
   endif()
 endif()
 
-
 if(USE_PREDEFINED_OPENCV)
   set(Onnxruntime_VERSION "1.16.3")
   set(Onnxruntime_BASEURL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}")
   set(Onnxruntime_WINDOWS_VERSION "${Onnxruntime_VERSION}-2")
-  set(Onnxruntime_WINDOWS_BASEURL "https://github.com/occ-ai/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}")
+  set(Onnxruntime_WINDOWS_BASEURL
+      "https://github.com/occ-ai/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}")
 
   if(APPLE)
     set(Onnxruntime_URL "${Onnxruntime_BASEURL}/onnxruntime-osx-universal2-${Onnxruntime_VERSION}.tgz")
