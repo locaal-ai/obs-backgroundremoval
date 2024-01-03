@@ -4,38 +4,56 @@ set(CUSTOM_ONNXRUNTIME_URL
     ""
     CACHE STRING "URL of a downloaded ONNX Runtime tarball")
 
-set(CUSTOM_ONNXRUNTIME_MD5
+set(CUSTOM_ONNXRUNTIME_HASH
     ""
-    CACHE STRING "MD5 Hash of a downloaded ONNX Runtime tarball")
+    CACHE STRING "Hash of a downloaded ONNX Runtime tarball")
 
 if(CUSTOM_ONNXRUNTIME_URL STREQUAL "")
   set(USE_PREDEFINED_ONNXRUNTIME ON)
 else()
-  if(CUSTOM_ONNXRUNTIME_MD5 STREQUAL "")
-    message(FATAL_ERROR "Both of CUSTOM_ONNXRUNTIME_URL and CUSTOM_ONNXRUNTIME_MD5 must be present!")
+  if(CUSTOM_ONNXRUNTIME_HASH STREQUAL "")
+    message(FATAL_ERROR "Both of CUSTOM_ONNXRUNTIME_URL and CUSTOM_ONNXRUNTIME_HASH must be present!")
   else()
     set(USE_PREDEFINED_ONNXRUNTIME OFF)
   endif()
 endif()
 
-set(Onnxruntime_VERSION "1.16.3")
 
-if(OS_MACOS)
-  if(USE_PREDEFINED_ONNXRUNTIME)
-    FetchContent_Declare(
-      Onnxruntime
-      URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/onnxruntime-osx-universal2-${Onnxruntime_VERSION}.tgz"
-      URL_HASH SHA256=6428d0f0ff1386e8e8256a708e187c1f8861387c9554bfc9c5f3390ffa0df5cc)
+if(USE_PREDEFINED_OPENCV)
+  set(Onnxruntime_VERSION "1.16.3")
+  set(Onnxruntime_BASEURL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}")
+  set(Onnxruntime_WINDOWS_VERSION "${Onnxruntime_VERSION}-2")
+  set(Onnxruntime_WINDOWS_BASEURL "https://github.com/occ-ai/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}")
+
+  if(APPLE)
+    set(Onnxruntime_URL "${Onnxruntime_BASEURL}/onnxruntime-osx-universal2-${Onnxruntime_VERSION}.tgz")
+    set(Onnxruntime_HASH SHA256=6428d0f0ff1386e8e8256a708e187c1f8861387c9554bfc9c5f3390ffa0df5cc)
+  elseif(MSVC)
+    set(Onnxruntime_URL "${Onnxruntime_WINDOWS_BASEURL}/onnxruntime-windows-${Onnxruntime_WINDOWS_VERSION}-Release.zip")
+    set(OOnnxruntime_HASH SHA256=d545d1040be3c5c173b4f03a58f391f47fb039f1e799c4f2be706c678d8444f4)
   else()
-    FetchContent_Declare(
-      Onnxruntime
-      URL "${CUSTOM_ONNXRUNTIME_URL}"
-      URL_HASH MD5=${CUSTOM_ONNXRUNTIME_MD5})
+    if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+      set(Onnxruntime_URL "${Onnxruntime_BASEURL}/onnxruntime-linux-aarch64-${Onnxruntime_VERSION}.tgz")
+      set(Onnxruntime_HASH SHA256=784dbef93b40196aa668d29d78294a81c0d21361d36530b817bb24d87e8730e8)
+    else()
+      set(Onnxruntime_URL "${Onnxruntime_BASEURL}/onnxruntime-linux-x64-gpu-${Onnxruntime_VERSION}.tgz")
+      set(Onnxruntime_HASH SHA256=bbdc33367c056029b3ac0c042cbca2236b8f59a3a53b4daf23432ef1d8bf52de)
+    endif()
   endif()
-  FetchContent_MakeAvailable(Onnxruntime)
+else()
+  set(OpenCV_URL "${CUSTOM_OPENCV_URL}")
+  set(OpenCV_HASH "${CUSTOM_OPENCV_HASH}")
+endif()
+
+FetchContent_Declare(
+  onnxruntime
+  URL ${OpenCV_URL}
+  URL_HASH ${OpenCV_HASH})
+FetchContent_MakeAvailable(onnxruntime)
+
+if(APPLE)
   set(Onnxruntime_LIB "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime.${Onnxruntime_VERSION}.dylib")
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${Onnxruntime_LIB}")
-  target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM PUBLIC "${onnxruntime_SOURCE_DIR}/include")
   target_sources(${CMAKE_PROJECT_NAME} PRIVATE "${Onnxruntime_LIB}")
   set_property(SOURCE "${Onnxruntime_LIB}" PROPERTY MACOSX_PACKAGE_LOCATION Frameworks)
   source_group("Frameworks" FILES "${Onnxruntime_LIB}")
@@ -45,20 +63,7 @@ if(OS_MACOS)
     COMMAND
       ${CMAKE_INSTALL_NAME_TOOL} -change "@rpath/libonnxruntime.${Onnxruntime_VERSION}.dylib"
       "@loader_path/../Frameworks/libonnxruntime.${Onnxruntime_VERSION}.dylib" $<TARGET_FILE:${CMAKE_PROJECT_NAME}>)
-elseif(OS_WINDOWS)
-  if(USE_PREDEFINED_ONNXRUNTIME)
-    FetchContent_Declare(
-      Onnxruntime
-      URL "https://github.com/occ-ai/onnxruntime-static-win/releases/download/v${Onnxruntime_VERSION}-1/onnxruntime-windows-Release.zip"
-      URL_HASH SHA256=ca7fe4ed8bf888b4ffcc514f39948ded6ca5c3c1e8fc062ceeabf2159e9f09be)
-  else()
-    FetchContent_Declare(
-      Onnxruntime
-      URL "${CUSTOM_ONNXRUNTIME_URL}"
-      URL_HASH MD5=${CUSTOM_ONNXRUNTIME_MD5})
-  endif()
-  FetchContent_MakeAvailable(Onnxruntime)
-
+elseif(MSVC)
   add_library(Ort INTERFACE)
   set(Onnxruntime_LIB_NAMES
       session;providers_shared;providers_dml;optimizer;providers;framework;graph;util;mlas;common;flatbuffers)
@@ -88,35 +93,11 @@ elseif(OS_WINDOWS)
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Ort)
 
   install(IMPORTED_RUNTIME_ARTIFACTS Ort::DirectML DESTINATION "obs-plugins/64bit")
-elseif(OS_LINUX)
+else()
   if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
-    if(USE_PREDEFINED_ONNXRUNTIME)
-      FetchContent_Declare(
-        Onnxruntime
-        URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/onnxruntime-linux-aarch64-${Onnxruntime_VERSION}.tgz"
-        URL_HASH SHA256=784dbef93b40196aa668d29d78294a81c0d21361d36530b817bb24d87e8730e8)
-    else()
-      FetchContent_Declare(
-        Onnxruntime
-        URL "${CUSTOM_ONNXRUNTIME_URL}"
-        URL_HASH MD5=${CUSTOM_ONNXRUNTIME_MD5})
-    endif()
-    FetchContent_MakeAvailable(Onnxruntime)
     set(Onnxruntime_LINK_LIBS "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime.so.${Onnxruntime_VERSION}")
     set(Onnxruntime_INSTALL_LIBS ${Onnxruntime_LINK_LIBS})
   else()
-    if(USE_PREDEFINED_ONNXRUNTIME)
-      FetchContent_Declare(
-        Onnxruntime
-        URL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}/onnxruntime-linux-x64-gpu-${Onnxruntime_VERSION}.tgz"
-        URL_HASH SHA256=bbdc33367c056029b3ac0c042cbca2236b8f59a3a53b4daf23432ef1d8bf52de)
-    else()
-      FetchContent_Declare(
-        Onnxruntime
-        URL "${CUSTOM_ONNXRUNTIME_URL}"
-        URL_HASH MD5=${CUSTOM_ONNXRUNTIME_MD5})
-    endif()
-    FetchContent_MakeAvailable(Onnxruntime)
     set(Onnxruntime_LINK_LIBS "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime.so.${Onnxruntime_VERSION}")
     set(Onnxruntime_INSTALL_LIBS
         ${Onnxruntime_LINK_LIBS} "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_shared.so"
