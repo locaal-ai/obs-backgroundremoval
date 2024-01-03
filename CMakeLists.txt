@@ -79,8 +79,6 @@ elseif(UNIX)
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE CurlClient)
 endif()
 
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE vendor/onnxruntime/include)
-
 target_sources(
   ${CMAKE_PROJECT_NAME}
   PRIVATE src/plugin-main.c
