@@ -41,14 +41,14 @@ if(USE_PREDEFINED_OPENCV)
     endif()
   endif()
 else()
-  set(OpenCV_URL "${CUSTOM_OPENCV_URL}")
-  set(OpenCV_HASH "${CUSTOM_OPENCV_HASH}")
+  set(Onnxruntime_URL "${CUSTOM_ONNXRUNTIME_URL}")
+  set(Onnxruntime_HASH "${CUSTOM_ONNXRUNTIME_HASH}")
 endif()
 
 FetchContent_Declare(
   onnxruntime
-  URL ${OpenCV_URL}
-  URL_HASH ${OpenCV_HASH})
+  URL ${Onnxruntime_URL}
+  URL_HASH ${Onnxruntime_HASH})
 FetchContent_MakeAvailable(onnxruntime)
 
 if(APPLE)
