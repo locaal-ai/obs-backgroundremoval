@@ -68,8 +68,8 @@ add_library(OpenCV INTERFACE)
 if(MSVC)
   target_link_libraries(
     OpenCV
-    INTERFACE ${opencv_SOURCE_DIR}/x64/vc17/staticlib/opencv_imgproc480.lib
-              ${opencv_SOURCE_DIR}/x64/vc17/staticlib/opencv_core480.lib
+    INTERFACE ${opencv_SOURCE_DIR}/x64/vc17/staticlib/opencv_imgproc481.lib
+              ${opencv_SOURCE_DIR}/x64/vc17/staticlib/opencv_core481.lib
               ${opencv_SOURCE_DIR}/x64/vc17/staticlib/zlib.lib)
   target_include_directories(OpenCV SYSTEM INTERFACE ${opencv_SOURCE_DIR}/include)
 else()
