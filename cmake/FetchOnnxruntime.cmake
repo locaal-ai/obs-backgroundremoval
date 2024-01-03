@@ -18,7 +18,7 @@ else()
   endif()
 endif()
 
-if(USE_PREDEFINED_OPENCV)
+if(USE_PREDEFINED_ONNXRUNTIME)
   set(Onnxruntime_VERSION "1.16.3")
   set(Onnxruntime_BASEURL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}")
   set(Onnxruntime_WINDOWS_VERSION "${Onnxruntime_VERSION}-2")
