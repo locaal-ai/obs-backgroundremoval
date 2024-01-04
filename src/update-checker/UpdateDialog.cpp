@@ -12,16 +12,12 @@
 static QString dialogContent =
 	"<h1>Background Removal - Update available! 🚀</h1>"
 	"<p>A new version of the Background Removal plugin (<a "
-	"href=\"https://github.com/obs-ai/obs-backgroundremoval/releases\">v{version}</a>) is "
-	"now available for download. We've made some exciting updates and improvements that we think "
-	"you'll love. To get the latest features and enhancements, please follow the link below:</p>"
-	"<p>Download the latest version from GitHub: <a "
-	"href=\"https://github.com/obs-ai/obs-backgroundremoval/releases\">v{version}</a></p>"
-	"<p>Once you've downloaded the new version, install the update as usual, there's no need to "
-	"uninstall the previous version.</p>"
-	"<p>If you have any questions or need assistance during the update process, feel free to reach out"
-	" to our <a href=\"https://github.com/obs-ai/obs-backgroundremoval/issues\">support team</a>.</p>"
-	"<p>Thank you for using our plugin and we hope you enjoy the latest release! 🙏</p>"
+	"href=\"https://github.com/occ-ai/obs-backgroundremoval/releases\">v{version}</a>) is "
+	"now available for <a "
+	"href=\"https://github.com/occ-ai/obs-backgroundremoval/releases\">download</a>.</p>"
+	"<p>If you have any questions, requests or need assistance, feel free to reach out"
+	" to our <a href=\"https://github.com/occ-ai/obs-backgroundremoval/issues\">support team</a>.</p>"
+	"<p>Thank you for using our plugin - enjoy the latest release! 🙏</p>"
 	"<h2>Changelog</h2>";
 
 UpdateDialog::UpdateDialog(
