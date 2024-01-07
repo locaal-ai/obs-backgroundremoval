@@ -8,6 +8,8 @@ set(CUSTOM_ONNXRUNTIME_HASH
     ""
     CACHE STRING "Hash of a downloaded ONNX Runtime tarball")
 
+set(Onnxruntime_VERSION "1.16.3")
+
 if(CUSTOM_ONNXRUNTIME_URL STREQUAL "")
   set(USE_PREDEFINED_ONNXRUNTIME ON)
 else()
@@ -19,7 +21,6 @@ else()
 endif()
 
 if(USE_PREDEFINED_ONNXRUNTIME)
-  set(Onnxruntime_VERSION "1.16.3")
   set(Onnxruntime_BASEURL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}")
   set(Onnxruntime_WINDOWS_VERSION "v${Onnxruntime_VERSION}-2")
   set(Onnxruntime_WINDOWS_BASEURL
