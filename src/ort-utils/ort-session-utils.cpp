@@ -5,7 +5,8 @@
 #include <coreml_provider_factory.h>
 #endif
 
-#if defined(__linux__) && defined(__x86_64__)
+#if defined(__linux__) && defined(__x86_64__) && \
+	!defined(DISABLE_ONNXRUNTIME_GPU)
 #include <tensorrt_provider_factory.h>
 #endif
 
@@ -62,7 +63,8 @@ int createOrtSession(filter_data *tf)
 #endif
 
 	try {
-#if defined(__linux__) && defined(__x86_64__)
+#if defined(__linux__) && defined(__x86_64__) && \
+	!defined(DISABLE_ONNXRUNTIME_GPU)
 		if (tf->useGPU == USEGPU_TENSORRT) {
 			Ort::ThrowOnError(
 				OrtSessionOptionsAppendExecutionProvider_Tensorrt(
