@@ -13,6 +13,7 @@
 #ifdef _WIN32
 #include <dml_provider_factory.h>
 #include <wchar.h>
+#include <windows.h>
 #endif // _WIN32
 
 #include <obs-module.h>
@@ -51,16 +52,17 @@ int createOrtSession(filter_data *tf)
 	}
 
 	std::string modelFilepath_s(modelFilepath_rawPtr);
-	bfree(modelFilepath_rawPtr);
 
 #if _WIN32
-	std::wstring modelFilepath_ws(modelFilepath_s.size(), L' ');
-	std::copy(modelFilepath_s.begin(), modelFilepath_s.end(),
-		  modelFilepath_ws.begin());
-	tf->modelFilepath = modelFilepath_ws;
+    int outLength = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, modelFilepath_rawPtr, -1, nullptr, 0);
+	wchar_t outWchars[outLength]:
+	MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, modelFilepath_rawPtr, -1, outWchars, outLength);
+	tf->modelFilepath = std::wstring(outWchars, outLength);
 #else
-	tf->modelFilepath = modelFilepath_s;
+	tf->modelFilepath = std::string(modelFilepath_rawPtr);
 #endif
+
+	bfree(modelFilepath_rawPtr);
 
 	try {
 #if defined(__linux__) && defined(__x86_64__) && \
