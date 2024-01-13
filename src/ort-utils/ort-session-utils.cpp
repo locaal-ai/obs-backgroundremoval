@@ -54,9 +54,11 @@ int createOrtSession(filter_data *tf)
 	std::string modelFilepath_s(modelFilepath_rawPtr);
 
 #if _WIN32
-    int outLength = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, modelFilepath_rawPtr, -1, nullptr, 0);
-	wchar_t outWchars[outLength]:
-	MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, modelFilepath_rawPtr, -1, outWchars, outLength);
+	int outLength = MultiByteToWideChar(
+		CP_ACP, MB_PRECOMPOSED, modelFilepath_rawPtr, -1, nullptr, 0);
+	wchar_t outWchars[outLength];
+	MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, modelFilepath_rawPtr, -1,
+			    outWchars, outLength);
 	tf->modelFilepath = std::wstring(outWchars, outLength);
 #else
 	tf->modelFilepath = std::string(modelFilepath_rawPtr);
