@@ -57,9 +57,9 @@ int createOrtSession(filter_data *tf)
 	std::wstring modelFilepath_ws(modelFilepath_s.size(), L' ');
 	std::copy(modelFilepath_s.begin(), modelFilepath_s.end(),
 		  modelFilepath_ws.begin());
-	tf->modelFilepath = modelFilepath_ws.c_str();
+	tf->modelFilepath = modelFilepath_ws;
 #else
-	tf->modelFilepath = modelFilepath_s.c_str();
+	tf->modelFilepath = modelFilepath_s;
 #endif
 
 	try {
@@ -92,7 +92,7 @@ int createOrtSession(filter_data *tf)
 					sessionOptions, coreml_flags));
 		}
 #endif
-		tf->session.reset(new Ort::Session(*tf->env, tf->modelFilepath,
+		tf->session.reset(new Ort::Session(*tf->env, tf->modelFilepath.c_str(),
 						   sessionOptions));
 	} catch (const std::exception &e) {
 		obs_log(LOG_ERROR, "%s", e.what());
