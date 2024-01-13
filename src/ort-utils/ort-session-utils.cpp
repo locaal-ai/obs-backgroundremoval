@@ -92,8 +92,8 @@ int createOrtSession(filter_data *tf)
 					sessionOptions, coreml_flags));
 		}
 #endif
-		tf->session.reset(new Ort::Session(*tf->env, tf->modelFilepath.c_str(),
-						   sessionOptions));
+		tf->session.reset(new Ort::Session(
+			*tf->env, tf->modelFilepath.c_str(), sessionOptions));
 	} catch (const std::exception &e) {
 		obs_log(LOG_ERROR, "%s", e.what());
 		return OBS_BGREMOVAL_ORT_SESSION_ERROR_STARTUP;
