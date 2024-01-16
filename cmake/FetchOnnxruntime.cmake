@@ -8,10 +8,6 @@ set(CUSTOM_ONNXRUNTIME_HASH
     ""
     CACHE STRING "Hash of a downloaded ONNX Runtime tarball")
 
-set(DISABLE_ONNXRUNTIME_GPU
-    OFF
-    CACHE STRING "Disables GPU support of ONNX Runtime (Only valid on Linux)")
-
 set(Onnxruntime_VERSION "1.16.3")
 
 if(CUSTOM_ONNXRUNTIME_URL STREQUAL "")
@@ -109,9 +105,6 @@ else()
         ${Onnxruntime_LINK_LIBS} "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_shared.so"
         "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_cuda.so"
         "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime_providers_tensorrt.so")
-  endif()
-  if(DISABLE_ONNXRUNTIME_GPU)
-    target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE DISABLE_ONNXRUNTIME_GPU)
   endif()
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE ${Onnxruntime_LINK_LIBS})
   target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM PUBLIC "${onnxruntime_SOURCE_DIR}/include")
