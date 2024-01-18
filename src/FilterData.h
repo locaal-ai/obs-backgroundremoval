@@ -30,9 +30,9 @@ struct filter_data : public ORTModelData {
 	std::mutex outputLock;
 
 #if _WIN32
-	const wchar_t *modelFilepath = nullptr;
+	std::wstring modelFilepath;
 #else
-	const char *modelFilepath = nullptr;
+	std::string modelFilepath;
 #endif
 };
 

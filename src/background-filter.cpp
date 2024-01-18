@@ -367,9 +367,9 @@ void background_filter_update(void *data, obs_data_t *settings)
 	obs_log(LOG_INFO, "  Blur Focus Depth: %f", tf->blurFocusDepth);
 	obs_log(LOG_INFO, "  Disabled: %s", tf->isDisabled ? "true" : "false");
 #ifdef _WIN32
-	obs_log(LOG_INFO, "  Model file path: %S", tf->modelFilepath);
+	obs_log(LOG_INFO, "  Model file path: %S", tf->modelFilepath.c_str());
 #else
-	obs_log(LOG_INFO, "  Model file path: %s", tf->modelFilepath);
+	obs_log(LOG_INFO, "  Model file path: %s", tf->modelFilepath.c_str());
 #endif
 }
 
