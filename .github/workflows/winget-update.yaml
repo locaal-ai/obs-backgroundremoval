@@ -15,4 +15,4 @@ jobs:
           iwr https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
           $github = Get-Content '${{ github.event_path }}' | ConvertFrom-Json
           $installerUrl = $github.release.assets | Where-Object -Property name -match 'obs-backgroundremoval-*-windows-x64-Installer.exe' | Select -ExpandProperty browser_download_url -First 1
-          .\wingetcreate.exe update RoyShilkrot.obs-backgroundremoval -s -v $github.release.tag_name -u $installerUrl -t ${{ secrets.UPDATETHIS_PAT }}
+          .\wingetcreate.exe update RoyShilkrot.obs-backgroundremoval -s -v $github.release.tag_name -u $installerUrl -t '${{ secrets.GITHUB_PUBLIC_REPO_PAT }}'
