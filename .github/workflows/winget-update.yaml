@@ -2,7 +2,8 @@ name: Submit package to Windows Package Manager Community Repository
 
 on:
   release:
-    types: [published]
+    types:
+      - published
 
 jobs:
 
