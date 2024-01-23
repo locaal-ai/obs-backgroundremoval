@@ -41,6 +41,13 @@ On Debian, you cannot use our deb package and we only support FlatPak
 installation.
 
 On other Linux distros, use the FlatHub installation of both OBS and this plugin.
+
+```
+flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+flatpak install flathub com.obsproject.Studio
+flatpak install flathub com.obsproject.Studio.Plugin.BackgroundRemoval
+```
+
 If you install OBS in a way other than FlatHub, you have to build this plugin by yourself (see instructions for building [below](#linux)).
 
 ## Code Walkthrough
