@@ -37,6 +37,9 @@ The pre-built binary of this plugin can run Ubuntu 22.04 or later.
 
 On openSUSE, please see [`docs/BUILDING-OPENSUSE.md`](docs/BUILDING-OPENSUSE.md).
 
+On Debian, you cannot use our deb package and we only support FlatPak
+installation.
+
 On other Linux distros, use the FlatHub installation of both OBS and this plugin.
 If you install OBS in a way other than FlatHub, you have to build this plugin by yourself (see instructions for building [below](#linux)).
 
