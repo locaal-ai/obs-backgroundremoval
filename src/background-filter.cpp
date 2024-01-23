@@ -28,6 +28,7 @@
 #include "ort-utils/ort-session-utils.h"
 #include "obs-utils/obs-utils.h"
 #include "consts.h"
+#include "update-checker/update-checker.h"
 
 struct background_removal_filter : public filter_data {
 	bool enableThreshold = true;
@@ -224,11 +225,15 @@ obs_properties_t *background_filter_properties(void *data)
 				 OBS_GROUP_NORMAL, focal_blur_props);
 
 	// Add a informative text about the plugin
-	obs_properties_add_text(props, "info",
-				QString(PLUGIN_INFO_TEMPLATE)
-					.arg(PLUGIN_VERSION)
-					.toStdString()
-					.c_str(),
+	std::string basic_info =
+		QString(PLUGIN_INFO_TEMPLATE).arg(PLUGIN_VERSION).toStdString();
+	// Check for update
+	if (get_latest_version() != nullptr) {
+		basic_info += QString(PLUGIN_INFO_TEMPLATE_UPDATE_AVAILABLE)
+				      .arg(get_latest_version())
+				      .toStdString();
+	}
+	obs_properties_add_text(props, "info", basic_info.c_str(),
 				OBS_TEXT_INFO);
 
 	UNUSED_PARAMETER(data);
