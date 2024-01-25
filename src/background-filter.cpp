@@ -14,8 +14,7 @@
 #include <fstream>
 #include <new>
 #include <mutex>
-
-#include <QString>
+#include <regex>
 
 #include <plugin-support.h>
 #include "models/ModelSINET.h"
@@ -225,13 +224,16 @@ obs_properties_t *background_filter_properties(void *data)
 				 OBS_GROUP_NORMAL, focal_blur_props);
 
 	// Add a informative text about the plugin
+	// replace the placeholder with the current version
+	// use std::regex_replace instead of QString::arg because the latter doesn't work on Linux
 	std::string basic_info =
-		QString(PLUGIN_INFO_TEMPLATE).arg(PLUGIN_VERSION).toStdString();
+		std::regex_replace(PLUGIN_INFO_TEMPLATE, std::regex("%1"),
+				   PLUGIN_VERSION);
 	// Check for update
 	if (get_latest_version() != nullptr) {
-		basic_info += QString(PLUGIN_INFO_TEMPLATE_UPDATE_AVAILABLE)
-				      .arg(get_latest_version())
-				      .toStdString();
+		basic_info += std::regex_replace(
+			PLUGIN_INFO_TEMPLATE_UPDATE_AVAILABLE,
+			std::regex("%1"), get_latest_version());
 	}
 	obs_properties_add_text(props, "info", basic_info.c_str(),
 				OBS_TEXT_INFO);

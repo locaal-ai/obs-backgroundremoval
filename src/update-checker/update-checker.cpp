@@ -1,5 +1,4 @@
 #include "update-checker.h"
-#include "UpdateDialog.hpp"
 #include "github-utils.h"
 #include "obs-utils/obs-config-utils.h"
 
@@ -7,8 +6,6 @@
 #include <obs-module.h>
 
 #include <plugin-support.h>
-
-#include <QTimer>
 
 extern "C" const char *PLUGIN_VERSION;
 

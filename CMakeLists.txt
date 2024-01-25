@@ -80,6 +80,8 @@ endif()
 if(APPLE)
   add_subdirectory(src/update-checker/URLSessionClient)
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE URLSessionClient)
+  # add Foundation framework
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "-framework Foundation")
 elseif(MSVC)
   add_subdirectory(src/update-checker/WinRTHttpClient)
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE WinRTHttpClient)
@@ -96,7 +98,6 @@ target_sources(
           src/obs-utils/obs-config-utils.cpp
           src/update-checker/github-utils.cpp
           src/update-checker/update-checker.cpp
-          src/update-checker/UpdateDialog.cpp
           src/background-filter-info.c
           src/background-filter.cpp
           src/enhance-filter.cpp
