@@ -226,14 +226,13 @@ obs_properties_t *background_filter_properties(void *data)
 	// Add a informative text about the plugin
 	// replace the placeholder with the current version
 	// use std::regex_replace instead of QString::arg because the latter doesn't work on Linux
-	std::string basic_info =
-		std::regex_replace(PLUGIN_INFO_TEMPLATE, std::regex("%1"),
-				   PLUGIN_VERSION);
+	std::string basic_info = std::regex_replace(
+		PLUGIN_INFO_TEMPLATE, std::regex("%1"), PLUGIN_VERSION);
 	// Check for update
 	if (get_latest_version() != nullptr) {
 		basic_info += std::regex_replace(
-			PLUGIN_INFO_TEMPLATE_UPDATE_AVAILABLE,
-			std::regex("%1"), get_latest_version());
+			PLUGIN_INFO_TEMPLATE_UPDATE_AVAILABLE, std::regex("%1"),
+			get_latest_version());
 	}
 	obs_properties_add_text(props, "info", basic_info.c_str(),
 				OBS_TEXT_INFO);
