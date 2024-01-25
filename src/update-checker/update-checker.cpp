@@ -1,5 +1,4 @@
 #include "update-checker.h"
-#include "UpdateDialog.hpp"
 #include "github-utils.h"
 #include "obs-utils/obs-config-utils.h"
 
@@ -8,11 +7,9 @@
 
 #include <plugin-support.h>
 
-#include <QTimer>
-
 extern "C" const char *PLUGIN_VERSION;
 
-UpdateDialog *update_dialog = nullptr;
+static std::string latestVersionForUpdate;
 
 void check_update(void)
 {
@@ -40,26 +37,22 @@ void check_update(void)
 
 		if (info.version == PLUGIN_VERSION) {
 			// No update available, latest version is the same as the current version
+			latestVersionForUpdate.clear();
 			return;
 		}
 
-		try {
-			QTimer::singleShot(2000, [=]() {
-				QWidget *main_window = (QWidget *)
-					obs_frontend_get_main_window();
-				if (main_window == nullptr) {
-					obs_log(LOG_ERROR,
-						"Update Checker failed to get main window");
-					return;
-				}
-				update_dialog =
-					new UpdateDialog(info, main_window);
-				update_dialog->exec();
-			});
-		} catch (...) {
-			obs_log(LOG_ERROR, "Failed to construct UpdateDialog");
-		}
+		latestVersionForUpdate = info.version;
 	};
 
 	github_utils_get_release_information(callback);
+}
+
+const char *get_latest_version(void)
+{
+	obs_log(LOG_INFO, "get_latest_version: %s",
+		latestVersionForUpdate.c_str());
+	if (latestVersionForUpdate.empty()) {
+		return nullptr;
+	}
+	return latestVersionForUpdate.c_str();
 }

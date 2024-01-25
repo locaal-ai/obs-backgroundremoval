@@ -14,8 +14,7 @@
 #include <fstream>
 #include <new>
 #include <mutex>
-
-#include <QString>
+#include <regex>
 
 #include <plugin-support.h>
 #include "consts.h"
@@ -24,6 +23,7 @@
 #include "models/ModelTBEFN.h"
 #include "models/ModelZeroDCE.h"
 #include "models/ModelURetinex.h"
+#include "update-checker/update-checker.h"
 
 struct enhance_filter : public filter_data {
 	cv::Mat outputBGRA;
@@ -77,11 +77,16 @@ obs_properties_t *enhance_filter_properties(void *data)
 #endif
 
 	// Add a informative text about the plugin
-	obs_properties_add_text(props, "info",
-				QString(PLUGIN_INFO_TEMPLATE)
-					.arg(PLUGIN_VERSION)
-					.toStdString()
-					.c_str(),
+	// replace the placeholder with the current version using std::regex_replace
+	std::string basic_info = std::regex_replace(
+		PLUGIN_INFO_TEMPLATE, std::regex("%1"), PLUGIN_VERSION);
+	// Check for update
+	if (get_latest_version() != nullptr) {
+		basic_info += std::regex_replace(
+			PLUGIN_INFO_TEMPLATE_UPDATE_AVAILABLE, std::regex("%1"),
+			get_latest_version());
+	}
+	obs_properties_add_text(props, "info", basic_info.c_str(),
 				OBS_TEXT_INFO);
 
 	return props;

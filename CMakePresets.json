@@ -24,7 +24,7 @@
         "CODESIGN_IDENTITY": "$penv{CODESIGN_IDENT}",
         "CODESIGN_TEAM": "$penv{CODESIGN_TEAM}",
         "ENABLE_FRONTEND_API": true,
-        "ENABLE_QT": true
+        "ENABLE_QT": false
       }
     },
     {
@@ -54,7 +54,7 @@
         "QT_VERSION": "6",
         "CMAKE_SYSTEM_VERSION": "10.0.18363.657",
         "ENABLE_FRONTEND_API": true,
-        "ENABLE_QT": true
+        "ENABLE_QT": false
       }
     },
     {
@@ -83,7 +83,7 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_POSITION_INDEPENDENT_CODE": true,
         "ENABLE_FRONTEND_API": true,
-        "ENABLE_QT": true
+        "ENABLE_QT": false
       }
     },
     {
@@ -113,7 +113,7 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_POSITION_INDEPENDENT_CODE": true,
         "ENABLE_FRONTEND_API": true,
-        "ENABLE_QT": true
+        "ENABLE_QT": false
       }
     },
     {
