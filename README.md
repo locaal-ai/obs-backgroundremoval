@@ -7,6 +7,7 @@
 [![Total downloads](https://img.shields.io/github/downloads/occ-ai/obs-backgroundremoval/total)](https://github.com/occ-ai/obs-backgroundremoval/releases)
 ![Flathub](https://img.shields.io/flathub/downloads/com.obsproject.Studio.Plugin.BackgroundRemoval?label=Flathub%20Installs)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/occ-ai/obs-backgroundremoval)](https://github.com/occ-ai/obs-backgroundremoval/releases)
+[![Discord](https://img.shields.io/discord/1200229425141252116)](https://discord.gg/KbjGU2vvUz)
 
 </div>
 
