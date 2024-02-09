@@ -49,7 +49,7 @@ sudo apt install cmake
 sudo apt install build-essential libstdc++-12-dev
 git clone --recursive https://github.com/microsoft/onnxruntime.git -b v1.16.3
 cd onnxruntime
-./build.sh --config RelWithDebInfo --use_rocm --rocm_home /opt/rocm-5.4.0 --skip_tests --parallel
+./build.sh --config RelWithDebInfo --use_rocm --rocm_home /opt/rocm-5.4.0 --skip_tests --parallel --build_shared_lib
 sudo cmake --install build/Linux/RelWithDebInfo
 cd ..
 ```
