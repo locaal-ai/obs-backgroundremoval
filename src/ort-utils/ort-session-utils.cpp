@@ -6,7 +6,7 @@
 #endif
 
 #if defined(__linux__) && defined(__x86_64__) && \
-	!defined(DISABLE_ONNXRUNTIME_GPU)
+	!defined(DISABLE_ONNXRUNTIME_GPU) && !defined(ENABLE_ROCM)
 #include <tensorrt_provider_factory.h>
 #endif
 
