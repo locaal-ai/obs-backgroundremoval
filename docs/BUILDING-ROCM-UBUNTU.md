@@ -59,7 +59,7 @@ cd ..
 ```
 sudo add-apt-repository ppa:obsproject/obs-studio
 sudo apt update
-sudo apt install obs-studio qt6-base-dev pkg-config
+sudo apt install obs-studio qt6-base-dev pkg-config libcurl4-openssl-dev
 ```
 
 ```
