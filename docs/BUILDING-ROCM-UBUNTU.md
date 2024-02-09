@@ -66,6 +66,7 @@ sudo apt install obs-studio qt6-base-dev pkg-config libcurl4-openssl-dev
 git clone --recursive https://github.com/occ-ai/obs-backgroundremoval.git
 cd obs-backgroundremoval
 cmake . -B build_x86_64 \
+  -DCMAKE_INSTALL_PREFIX=/usr \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
   -DENABLE_FRONTEND_API=ON \
@@ -74,5 +75,5 @@ cmake . -B build_x86_64 \
   -DUSE_SYSTEM_ONNXRUNTIME=ON \
   -DENABLE_ROCM=ON
 cmake --build build_x86_64
-cmake --install build_x86_64
+sudo cmake --install build_x86_64 --prefix /usr
 ```
