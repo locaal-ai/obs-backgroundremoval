@@ -42,8 +42,16 @@ set(DISABLE_ONNXRUNTIME_GPU
     OFF
     CACHE STRING "Disables GPU support of ONNX Runtime (Only valid on Linux)")
 
+set(ENABLE_ROCM
+    OFF
+    CACHE STRING "Enables ROCm support (Only valid on Linux)")
+
 if(DISABLE_ONNXRUNTIME_GPU)
   target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE DISABLE_ONNXRUNTIME_GPU)
+endif()
+
+if(ENABLE_ROCM)
+  target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE ENABLE_ROCM)
 endif()
 
 if(USE_SYSTEM_ONNXRUNTIME)
