@@ -585,7 +585,8 @@ void background_removal_thread(void *data)
 		}
 
 		if (tf->enableImageSimilarity) {
-			if (!lastImageBGRA.empty()) {
+			if (!lastImageBGRA.empty() && !imageBGRA.empty() &&
+			    lastImageBGRA.size() == imageBGRA.size()) {
 				// calculate PSNR
 				double psnr =
 					cv::PSNR(lastImageBGRA, imageBGRA);
