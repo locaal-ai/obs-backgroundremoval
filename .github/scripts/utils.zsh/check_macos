@@ -17,6 +17,6 @@ if (( ! ${+commands[brew]} )) {
   return 2
 }
 
-brew bundle --file ${SCRIPT_HOME}/.Brewfile
+brew bundle --no-upgrade --file ${SCRIPT_HOME}/.Brewfile
 rehash
 log_group
