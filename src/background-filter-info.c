@@ -12,6 +12,5 @@ struct obs_source_info background_removal_filter_info = {
 	.update = background_filter_update,
 	.activate = background_filter_activate,
 	.deactivate = background_filter_deactivate,
-	.video_tick = background_filter_video_tick,
 	.video_render = background_filter_video_render,
 };

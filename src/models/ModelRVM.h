@@ -58,26 +58,29 @@ public:
 			outputDims.push_back(outputTensorInfo.GetShape());
 		}
 
+		const int base_width = 320;
+		const int base_height = 192;
+
 		inputDims[0][0] = 1;
-		inputDims[0][2] = 192;
-		inputDims[0][3] = 192;
+		inputDims[0][2] = base_height;
+		inputDims[0][3] = base_width;
 		for (size_t i = 1; i < 5; i++) {
 			inputDims[i][0] = 1;
 			inputDims[i][1] = (i == 1)   ? 16
 					  : (i == 2) ? 20
 					  : (i == 3) ? 40
 						     : 64;
-			inputDims[i][2] = 192 / (2 << (i - 1));
-			inputDims[i][3] = 192 / (2 << (i - 1));
+			inputDims[i][2] = base_height / (2 << (i - 1));
+			inputDims[i][3] = base_width / (2 << (i - 1));
 		}
 
 		outputDims[0][0] = 1;
-		outputDims[0][2] = 192;
-		outputDims[0][3] = 192;
+		outputDims[0][2] = base_height;
+		outputDims[0][3] = base_width;
 		for (size_t i = 1; i < 5; i++) {
 			outputDims[i][0] = 1;
-			outputDims[i][2] = 192 / (2 << (i - 1));
-			outputDims[i][3] = 192 / (2 << (i - 1));
+			outputDims[i][2] = base_height / (2 << (i - 1));
+			outputDims[i][3] = base_width / (2 << (i - 1));
 		}
 		return true;
 	}
