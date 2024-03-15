@@ -31,13 +31,7 @@
 
 	<pre>makepkg --install</pre>
 
-	<p>Start your OBS</p>
-
-	<p>Add an video capture source</p>
-
-	<p>Open the filters dialog on that source</p>
-
-	<p>Add the Background Removal filter on the Effects filter</p>
+	<p>See the <a href="{base}/usage">usage page</a> for how to use the plugin</p>
 
 	<p>All set!</p>
 

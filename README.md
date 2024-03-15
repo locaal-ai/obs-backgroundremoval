@@ -29,6 +29,8 @@ For other AI plugins from us check out [OCC AI](https://github.com/occ-ai).
 <video src="https://github.com/occ-ai/obs-backgroundremoval/assets/1067855/5ba5aae2-7ea2-4c90-ad45-fba5ccde1a4e" width="320"></video>
 </div>
 
+Check out the [usage guide page](https://occ-ai.github.io/obs-backgroundremoval/usage) for usage walkthrough and recommendations.
+
 Additional tutorial videos:
 
 - Usage tutorial: https://youtu.be/veqNEsMqEE0

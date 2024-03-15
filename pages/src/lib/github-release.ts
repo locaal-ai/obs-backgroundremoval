@@ -19,7 +19,7 @@ function getHeaders(): Record<string, string> {
 }
 
 export async function getLatestReleaseMetadata(
-	owner: string = 'obs-ai',
+	owner: string = 'occ-ai',
 	repo: string = 'obs-backgroundremoval'
 ): Promise<GitHubLatestReleaseResult> {
 	const url = `https://api.github.com/repos/${owner}/${repo}/releases/latest`;

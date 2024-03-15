@@ -6,7 +6,7 @@
 	<title>OBS Background Removal</title>
 	<meta
 		name="description"
-		content="OBS Plugin: Portrait Background Removal / Virtual Green-screen and Low-Light Enhancement"
+		content="OBS Plugin: Background Removal / Virtual Green-screen and Low-Light Enhancement"
 	/>
 </svelte:head>
 
@@ -14,9 +14,11 @@
 	<header>
 		<h1>OBS Background Removal</h1>
 		<h2>
-			OBS Plugin: Portrait Background Removal / Virtual Green-screen and Low-Light Enhancement
+			OBS Plugin: Background Removal / Virtual Green-screen and Low-Light Enhancement
 		</h2>
 	</header>
+
+    <p>See our <a href="{base}/usage">Usage</a> page for instructions on usage in OBS</p>
 
 	<h1>Download and Install (Official)</h1>
 	<a href="{base}/windows"><h2>Windows</h2></a>
