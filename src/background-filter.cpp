@@ -41,6 +41,7 @@ struct background_removal_filter : public filter_data {
 
 	cv::Mat backgroundMask;
 	cv::Mat lastBackgroundMask;
+	cv::Mat lastImageBGRA;
 	float temporalSmoothFactor = 0.0f;
 	float imageSimilarityThreshold = 35.0f;
 	bool enableImageSimilarity = true;
@@ -54,7 +55,6 @@ struct background_removal_filter : public filter_data {
 	gs_effect_t *effect;
 	gs_effect_t *kawaseBlurEffect;
 
-	std::thread backgroundRemovalThread;
 	std::mutex modelMutex;
 };
 
@@ -295,7 +295,7 @@ void background_filter_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "enable_focal_blur", false);
 	obs_data_set_default_double(settings, "temporal_smooth_factor", 0.85);
 	obs_data_set_default_double(settings, "image_similarity_threshold",
-				    39.0);
+				    35.0);
 	obs_data_set_default_bool(settings, "enable_image_similarity", true);
 	obs_data_set_default_double(settings, "blur_focus_point", 0.1);
 	obs_data_set_default_double(settings, "blur_focus_depth", 0.0);
@@ -307,12 +307,7 @@ void background_filter_update(void *data, obs_data_t *settings)
 	struct background_removal_filter *tf =
 		reinterpret_cast<background_removal_filter *>(data);
 
-	// stop the bg thread
-	if (tf->backgroundRemovalThread.joinable()) {
-		tf->isDisabled = true;
-		tf->backgroundRemovalThread.join();
-		tf->backgroundRemovalThread = std::thread();
-	}
+	tf->isDisabled = true;
 
 	tf->enableThreshold =
 		(float)obs_data_get_bool(settings, "enable_threshold");
@@ -435,10 +430,8 @@ void background_filter_update(void *data, obs_data_t *settings)
 	obs_log(LOG_INFO, "  Model file path: %s", tf->modelFilepath.c_str());
 #endif
 
-	// start the thread background_removal_thread
+	// enable
 	tf->isDisabled = false;
-	tf->backgroundRemovalThread =
-		std::thread(background_removal_thread, tf);
 }
 
 void background_filter_activate(void *data)
@@ -447,11 +440,6 @@ void background_filter_activate(void *data)
 	struct background_removal_filter *tf =
 		reinterpret_cast<background_removal_filter *>(data);
 	tf->isDisabled = false;
-	if (!tf->backgroundRemovalThread.joinable()) {
-		// start the thread background_removal_thread if it's not already running
-		tf->backgroundRemovalThread =
-			std::thread(background_removal_thread, tf);
-	}
 }
 
 void background_filter_deactivate(void *data)
@@ -460,10 +448,6 @@ void background_filter_deactivate(void *data)
 	struct background_removal_filter *tf =
 		reinterpret_cast<background_removal_filter *>(data);
 	tf->isDisabled = true;
-	if (tf->backgroundRemovalThread.joinable()) {
-		tf->backgroundRemovalThread.join();
-		tf->backgroundRemovalThread = std::thread();
-	}
 }
 
 /**                   FILTER CORE                     */
@@ -497,9 +481,6 @@ void background_filter_destroy(void *data)
 
 	if (tf) {
 		tf->isDisabled = true;
-		if (tf->backgroundRemovalThread.joinable()) {
-			tf->backgroundRemovalThread.join();
-		}
 
 		obs_enter_graphics();
 		gs_texrender_destroy(tf->texrender);
@@ -512,15 +493,6 @@ void background_filter_destroy(void *data)
 		tf->~background_removal_filter();
 		bfree(tf);
 	}
-}
-
-// video tick - UNUSED
-void background_filter_video_tick(void *data, float seconds)
-{
-	UNUSED_PARAMETER(data);
-	UNUSED_PARAMETER(seconds);
-
-	obs_log(LOG_DEBUG, "video tick");
 }
 
 static void processImageForBackground(struct background_removal_filter *tf,
@@ -544,217 +516,186 @@ static void processImageForBackground(struct background_removal_filter *tf,
 	}
 }
 
-void background_removal_thread(void *data)
+void background_filter_video_tick(void *data, float seconds)
 {
+	UNUSED_PARAMETER(seconds);
+
 	struct background_removal_filter *tf =
 		reinterpret_cast<background_removal_filter *>(data);
 
-	obs_log(LOG_INFO, "Background removal thread started");
+	if (tf->isDisabled) {
+		return;
+	}
 
-	cv::Mat lastImageBGRA;
+	if (!obs_source_enabled(tf->source)) {
+		return;
+	}
 
-	while (!tf->isDisabled) {
-		if (!obs_source_enabled(tf->source)) {
-			std::this_thread::sleep_for(
-				std::chrono::milliseconds(10));
-			continue;
+	if (!tf->model) {
+		obs_log(LOG_ERROR, "Model is not initialized");
+		return;
+	}
+
+	cv::Mat imageBGRA;
+	{
+		std::unique_lock<std::mutex> lock(tf->inputBGRALock,
+						  std::try_to_lock);
+		if (!lock.owns_lock()) {
+			// No data to process
+			return;
 		}
-
-		if (!tf->model) {
-			obs_log(LOG_ERROR, "Model is not initialized");
-			break;
+		if (tf->inputBGRA.empty()) {
+			// No data to process
+			return;
 		}
+		imageBGRA = tf->inputBGRA.clone();
+	}
 
-		cv::Mat imageBGRA;
-		{
-			std::unique_lock<std::mutex> lock(tf->inputBGRALock,
-							  std::try_to_lock);
-			if (!lock.owns_lock()) {
-				// No data to process
-				std::this_thread::sleep_for(
-					std::chrono::milliseconds(10));
-				continue;
-			}
-			if (tf->inputBGRA.empty()) {
-				// No data to process
-				std::this_thread::sleep_for(
-					std::chrono::milliseconds(10));
-				continue;
-			}
-			imageBGRA = tf->inputBGRA.clone();
-		}
+	if (tf->enableImageSimilarity) {
+		if (!tf->lastImageBGRA.empty() && !imageBGRA.empty() &&
+		    tf->lastImageBGRA.size() == imageBGRA.size()) {
+			// calculate PSNR
+			double psnr = cv::PSNR(tf->lastImageBGRA, imageBGRA);
 
-		if (tf->enableImageSimilarity) {
-			if (!lastImageBGRA.empty() && !imageBGRA.empty() &&
-			    lastImageBGRA.size() == imageBGRA.size()) {
-				// calculate PSNR
-				double psnr =
-					cv::PSNR(lastImageBGRA, imageBGRA);
-				lastImageBGRA = imageBGRA.clone();
-
-				if (psnr > tf->imageSimilarityThreshold) {
-					// The image is almost the same as the previous one. Skip processing.
-					std::this_thread::sleep_for(
-						std::chrono::milliseconds(10));
-					continue;
-				}
-			} else {
-				lastImageBGRA = imageBGRA.clone();
+			if (psnr > tf->imageSimilarityThreshold) {
+				// The image is almost the same as the previous one. Skip processing.
+				return;
 			}
 		}
+		tf->lastImageBGRA = imageBGRA.clone();
+	}
 
-		if (tf->backgroundMask.empty()) {
-			// First frame. Initialize the background mask.
-			tf->backgroundMask = cv::Mat(imageBGRA.size(), CV_8UC1,
-						     cv::Scalar(255));
-		}
+	if (tf->backgroundMask.empty()) {
+		// First frame. Initialize the background mask.
+		tf->backgroundMask =
+			cv::Mat(imageBGRA.size(), CV_8UC1, cv::Scalar(255));
+	}
 
-		tf->maskEveryXFramesCount++;
-		tf->maskEveryXFramesCount %= tf->maskEveryXFrames;
+	tf->maskEveryXFramesCount++;
+	tf->maskEveryXFramesCount %= tf->maskEveryXFrames;
 
-		try {
-			if (tf->maskEveryXFramesCount != 0 &&
-			    !tf->backgroundMask.empty()) {
-				// We are skipping processing of the mask for this frame.
-				// Get the background mask previously generated.
-				; // Do nothing
-			} else {
-				cv::Mat backgroundMask;
+	try {
+		if (tf->maskEveryXFramesCount != 0 &&
+		    !tf->backgroundMask.empty()) {
+			// We are skipping processing of the mask for this frame.
+			// Get the background mask previously generated.
+			; // Do nothing
+		} else {
+			cv::Mat backgroundMask;
 
-				{
-					std::unique_lock<std::mutex> lock(
-						tf->modelMutex);
-					// Process the image to find the mask.
-					processImageForBackground(
-						tf, imageBGRA, backgroundMask);
+			{
+				std::unique_lock<std::mutex> lock(
+					tf->modelMutex);
+				// Process the image to find the mask.
+				processImageForBackground(tf, imageBGRA,
+							  backgroundMask);
+			}
+
+			if (backgroundMask.empty()) {
+				// Something went wrong. Just use the previous mask.
+				obs_log(LOG_WARNING,
+					"Background mask is empty. This shouldn't happen. Using previous mask.");
+				return;
+			}
+
+			// Temporal smoothing
+			if (tf->temporalSmoothFactor > 0.0 &&
+			    tf->temporalSmoothFactor < 1.0 &&
+			    !tf->lastBackgroundMask.empty() &&
+			    tf->lastBackgroundMask.size() ==
+				    backgroundMask.size()) {
+
+				float temporalSmoothFactor =
+					tf->temporalSmoothFactor;
+				if (tf->enableThreshold) {
+					// The temporal smooth factor can't be smaller than the threshold
+					temporalSmoothFactor =
+						std::max(temporalSmoothFactor,
+							 tf->threshold);
 				}
 
-				if (backgroundMask.empty()) {
-					// Something went wrong. Just use the previous mask.
-					obs_log(LOG_WARNING,
-						"Background mask is empty. This shouldn't happen. Using previous mask.");
-					continue;
-				}
-
-				// Temporal smoothing
-				if (tf->temporalSmoothFactor > 0.0 &&
-				    tf->temporalSmoothFactor < 1.0 &&
-				    !tf->lastBackgroundMask.empty() &&
-				    tf->lastBackgroundMask.size() ==
-					    backgroundMask.size()) {
-
-					float temporalSmoothFactor =
-						tf->temporalSmoothFactor;
-					if (tf->enableThreshold) {
-						// The temporal smooth factor can't be smaller than the threshold
-						temporalSmoothFactor = std::max(
-							temporalSmoothFactor,
-							tf->threshold);
-					}
-
-					cv::addWeighted(
-						backgroundMask,
+				cv::addWeighted(backgroundMask,
 						temporalSmoothFactor,
 						tf->lastBackgroundMask,
 						1.0 - temporalSmoothFactor, 0.0,
 						backgroundMask);
-				}
-
-				tf->lastBackgroundMask = backgroundMask.clone();
-
-				// Contour processing
-				// Only applicable if we are thresholding (and get a binary image)
-				if (tf->enableThreshold) {
-					if (tf->contourFilter > 0.0 &&
-					    tf->contourFilter < 1.0) {
-						std::vector<
-							std::vector<cv::Point>>
-							contours;
-						findContours(
-							backgroundMask,
-							contours,
-							cv::RETR_EXTERNAL,
-							cv::CHAIN_APPROX_SIMPLE);
-						std::vector<
-							std::vector<cv::Point>>
-							filteredContours;
-						const double contourSizeThreshold =
-							(double)(backgroundMask
-									 .total()) *
-							tf->contourFilter;
-						for (auto &contour : contours) {
-							if (cv::contourArea(
-								    contour) >
-							    (double)contourSizeThreshold) {
-								filteredContours.push_back(
-									contour);
-							}
-						}
-						backgroundMask.setTo(0);
-						drawContours(backgroundMask,
-							     filteredContours,
-							     -1,
-							     cv::Scalar(255),
-							     -1);
-					}
-
-					if (tf->smoothContour > 0.0) {
-						int k_size =
-							(int)(3 +
-							      11 * tf->smoothContour);
-						k_size += k_size % 2 == 0 ? 1
-									  : 0;
-						cv::stackBlur(backgroundMask,
-							      backgroundMask,
-							      cv::Size(k_size,
-								       k_size));
-					}
-
-					// Resize the size of the mask back to the size of the original input.
-					cv::resize(backgroundMask,
-						   backgroundMask,
-						   imageBGRA.size());
-
-					// Additional contour processing at full resolution
-					if (tf->smoothContour > 0.0) {
-						// If the mask was smoothed, apply a threshold to get a binary mask
-						backgroundMask =
-							backgroundMask > 128;
-					}
-
-					if (tf->feather > 0.0) {
-						// Feather (blur) the mask
-						int k_size =
-							(int)(40 * tf->feather);
-						k_size += k_size % 2 == 0 ? 1
-									  : 0;
-						cv::dilate(backgroundMask,
-							   backgroundMask,
-							   cv::Mat(),
-							   cv::Point(-1, -1),
-							   k_size / 3);
-						cv::boxFilter(backgroundMask,
-							      backgroundMask,
-							      tf->backgroundMask
-								      .depth(),
-							      cv::Size(k_size,
-								       k_size));
-					}
-				}
-
-				// Save the mask for the next frame
-				backgroundMask.copyTo(tf->backgroundMask);
 			}
-		} catch (const Ort::Exception &e) {
-			obs_log(LOG_ERROR, "ONNXRuntime Exception: %s",
-				e.what());
-			// TODO: Fall back to CPU if it makes sense
-		} catch (const std::exception &e) {
-			obs_log(LOG_ERROR, "%s", e.what());
-		}
-	}
 
-	obs_log(LOG_INFO, "Background removal thread stopped");
+			tf->lastBackgroundMask = backgroundMask.clone();
+
+			// Contour processing
+			// Only applicable if we are thresholding (and get a binary image)
+			if (tf->enableThreshold) {
+				if (tf->contourFilter > 0.0 &&
+				    tf->contourFilter < 1.0) {
+					std::vector<std::vector<cv::Point>>
+						contours;
+					findContours(backgroundMask, contours,
+						     cv::RETR_EXTERNAL,
+						     cv::CHAIN_APPROX_SIMPLE);
+					std::vector<std::vector<cv::Point>>
+						filteredContours;
+					const double contourSizeThreshold =
+						(double)(backgroundMask.total()) *
+						tf->contourFilter;
+					for (auto &contour : contours) {
+						if (cv::contourArea(contour) >
+						    (double)contourSizeThreshold) {
+							filteredContours
+								.push_back(
+									contour);
+						}
+					}
+					backgroundMask.setTo(0);
+					drawContours(backgroundMask,
+						     filteredContours, -1,
+						     cv::Scalar(255), -1);
+				}
+
+				if (tf->smoothContour > 0.0) {
+					int k_size =
+						(int)(3 +
+						      11 * tf->smoothContour);
+					k_size += k_size % 2 == 0 ? 1 : 0;
+					cv::stackBlur(backgroundMask,
+						      backgroundMask,
+						      cv::Size(k_size, k_size));
+				}
+
+				// Resize the size of the mask back to the size of the original input.
+				cv::resize(backgroundMask, backgroundMask,
+					   imageBGRA.size());
+
+				// Additional contour processing at full resolution
+				if (tf->smoothContour > 0.0) {
+					// If the mask was smoothed, apply a threshold to get a binary mask
+					backgroundMask = backgroundMask > 128;
+				}
+
+				if (tf->feather > 0.0) {
+					// Feather (blur) the mask
+					int k_size = (int)(40 * tf->feather);
+					k_size += k_size % 2 == 0 ? 1 : 0;
+					cv::dilate(backgroundMask,
+						   backgroundMask, cv::Mat(),
+						   cv::Point(-1, -1),
+						   k_size / 3);
+					cv::boxFilter(
+						backgroundMask, backgroundMask,
+						tf->backgroundMask.depth(),
+						cv::Size(k_size, k_size));
+				}
+			}
+
+			// Save the mask for the next frame
+			backgroundMask.copyTo(tf->backgroundMask);
+		}
+	} catch (const Ort::Exception &e) {
+		obs_log(LOG_ERROR, "ONNXRuntime Exception: %s", e.what());
+		// TODO: Fall back to CPU if it makes sense
+	} catch (const std::exception &e) {
+		obs_log(LOG_ERROR, "%s", e.what());
+	}
 }
 
 static gs_texture_t *blur_background(struct background_removal_filter *tf,
