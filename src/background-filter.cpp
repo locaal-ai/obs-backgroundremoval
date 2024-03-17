@@ -295,7 +295,7 @@ void background_filter_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "enable_focal_blur", false);
 	obs_data_set_default_double(settings, "temporal_smooth_factor", 0.85);
 	obs_data_set_default_double(settings, "image_similarity_threshold",
-				    39.0);
+				    35.0);
 	obs_data_set_default_bool(settings, "enable_image_similarity", true);
 	obs_data_set_default_double(settings, "blur_focus_point", 0.1);
 	obs_data_set_default_double(settings, "blur_focus_depth", 0.0);
