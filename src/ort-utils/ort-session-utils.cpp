@@ -6,7 +6,7 @@
 #endif
 
 #if defined(__linux__) && defined(__x86_64__) && \
-	!defined(DISABLE_ONNXRUNTIME_GPU)
+	!defined(DISABLE_ONNXRUNTIME_GPU) && !defined(ENABLE_ROCM)
 #include <tensorrt_provider_factory.h>
 #endif
 
@@ -66,7 +66,13 @@ int createOrtSession(filter_data *tf)
 	bfree(modelFilepath_rawPtr);
 
 	try {
-#if defined(__linux__) && defined(__x86_64__) && \
+#ifdef ENABLE_ROCM
+		if (tf->useGPU == USEGPU_TENSORRT) {
+			Ort::ThrowOnError(
+				OrtSessionOptionsAppendExecutionProvider_ROCM(
+					sessionOptions, 0));
+		}
+#elif defined(__linux__) && defined(__x86_64__) && \
 	!defined(DISABLE_ONNXRUNTIME_GPU)
 		if (tf->useGPU == USEGPU_TENSORRT) {
 			Ort::ThrowOnError(

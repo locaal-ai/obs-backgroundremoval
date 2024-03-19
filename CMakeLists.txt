@@ -42,18 +42,32 @@ set(DISABLE_ONNXRUNTIME_GPU
     OFF
     CACHE STRING "Disables GPU support of ONNX Runtime (Only valid on Linux)")
 
+set(ENABLE_ROCM
+    OFF
+    CACHE STRING "Enables ROCm support (Only valid on Linux)")
+
 if(DISABLE_ONNXRUNTIME_GPU)
   target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE DISABLE_ONNXRUNTIME_GPU)
 endif()
 
+if(ENABLE_ROCM)
+  target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE ENABLE_ROCM)
+endif()
+
 if(USE_SYSTEM_ONNXRUNTIME)
   if(OS_LINUX)
-    find_package(Onnxruntime 1.16.3 REQUIRED)
-    set(Onnxruntime_INCLUDE_PATH
-        ${Onnxruntime_INCLUDE_DIR} ${Onnxruntime_INCLUDE_DIR}/onnxruntime
-        ${Onnxruntime_INCLUDE_DIR}/onnxruntime/core/session ${Onnxruntime_INCLUDE_DIR}/onnxruntime/core/providers/cpu)
-    target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${Onnxruntime_LIBRARIES}")
-    target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM PUBLIC "${Onnxruntime_INCLUDE_PATH}")
+    find_package(Onnxruntime 1.16.3)
+    if(Onnxruntime_FOUND)
+      set(Onnxruntime_INCLUDE_PATH
+          ${Onnxruntime_INCLUDE_DIR} ${Onnxruntime_INCLUDE_DIR}/onnxruntime
+          ${Onnxruntime_INCLUDE_DIR}/onnxruntime/core/session ${Onnxruntime_INCLUDE_DIR}/onnxruntime/core/providers/cpu)
+      target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${Onnxruntime_LIBRARIES}")
+      target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM PUBLIC "${Onnxruntime_INCLUDE_PATH}")
+    else()
+      find_package(PkgConfig REQUIRED)
+      pkg_check_modules(Onnxruntime REQUIRED IMPORTED_TARGET libonnxruntime)
+      target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE PkgConfig::Onnxruntime)
+    endif()
   else()
     message(FATAL_ERROR "System ONNX Runtime is only supported on Linux!")
   endif()
