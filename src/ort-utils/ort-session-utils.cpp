@@ -5,11 +5,6 @@
 #include <coreml_provider_factory.h>
 #endif
 
-#if defined(__linux__) && defined(__x86_64__) && \
-	!defined(DISABLE_ONNXRUNTIME_GPU)
-#include <tensorrt_provider_factory.h>
-#endif
-
 #ifdef _WIN32
 #include <dml_provider_factory.h>
 #include <wchar.h>

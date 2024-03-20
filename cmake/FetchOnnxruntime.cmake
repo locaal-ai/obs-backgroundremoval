@@ -8,7 +8,7 @@ set(CUSTOM_ONNXRUNTIME_HASH
     ""
     CACHE STRING "Hash of a downloaded ONNX Runtime tarball")
 
-set(Onnxruntime_VERSION "1.16.3")
+set(Onnxruntime_VERSION "1.17.1")
 
 if(CUSTOM_ONNXRUNTIME_URL STREQUAL "")
   set(USE_PREDEFINED_ONNXRUNTIME ON)
@@ -22,23 +22,23 @@ endif()
 
 if(USE_PREDEFINED_ONNXRUNTIME)
   set(Onnxruntime_BASEURL "https://github.com/microsoft/onnxruntime/releases/download/v${Onnxruntime_VERSION}")
-  set(Onnxruntime_WINDOWS_VERSION "v${Onnxruntime_VERSION}-2")
+  set(Onnxruntime_WINDOWS_VERSION "v${Onnxruntime_VERSION}-1")
   set(Onnxruntime_WINDOWS_BASEURL
-      "https://github.com/occ-ai/onnxruntime-static-win/releases/download/${Onnxruntime_WINDOWS_VERSION}")
+      "https://github.com/occ-ai/occ-ai-dep-onnxruntime-static-win/releases/download/${Onnxruntime_WINDOWS_VERSION}")
 
   if(APPLE)
     set(Onnxruntime_URL "${Onnxruntime_BASEURL}/onnxruntime-osx-universal2-${Onnxruntime_VERSION}.tgz")
-    set(Onnxruntime_HASH SHA256=6428d0f0ff1386e8e8256a708e187c1f8861387c9554bfc9c5f3390ffa0df5cc)
+    set(Onnxruntime_HASH SHA256=9FA57FA6F202A373599377EF75064AE568FDA8DA838632B26A86024C7378D306)
   elseif(MSVC)
     set(Onnxruntime_URL "${Onnxruntime_WINDOWS_BASEURL}/onnxruntime-windows-${Onnxruntime_WINDOWS_VERSION}-Release.zip")
-    set(OOnnxruntime_HASH SHA256=d545d1040be3c5c173b4f03a58f391f47fb039f1e799c4f2be706c678d8444f4)
+    set(OOnnxruntime_HASH SHA256=39E63850D9762810161AE1B4DEAE5E3C02363521273E4B894A9D9707AB626C38)
   else()
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
       set(Onnxruntime_URL "${Onnxruntime_BASEURL}/onnxruntime-linux-aarch64-${Onnxruntime_VERSION}.tgz")
-      set(Onnxruntime_HASH SHA256=784dbef93b40196aa668d29d78294a81c0d21361d36530b817bb24d87e8730e8)
+      set(Onnxruntime_HASH SHA256=70B6F536BB7AB5961D128E9DBD192368AC1513BFFB74FE92F97AAC342FBD0AC1)
     else()
       set(Onnxruntime_URL "${Onnxruntime_BASEURL}/onnxruntime-linux-x64-gpu-${Onnxruntime_VERSION}.tgz")
-      set(Onnxruntime_HASH SHA256=bbdc33367c056029b3ac0c042cbca2236b8f59a3a53b4daf23432ef1d8bf52de)
+      set(Onnxruntime_HASH SHA256=613C53745EA4960ED368F6B3AB673558BB8561C84A8FA781B4EA7FB4A4340BE4)
     endif()
   endif()
 else()
@@ -90,7 +90,7 @@ elseif(MSVC)
   set_target_properties(Ort::DirectML PROPERTIES IMPORTED_LOCATION ${onnxruntime_SOURCE_DIR}/bin/DirectML.dll)
   set_target_properties(Ort::DirectML PROPERTIES IMPORTED_IMPLIB ${onnxruntime_SOURCE_DIR}/bin/DirectML.lib)
 
-  target_link_libraries(Ort INTERFACE Ort::DirectML d3d12.lib dxgi.lib dxguid.lib)
+  target_link_libraries(Ort INTERFACE Ort::DirectML d3d12.lib dxgi.lib dxguid.lib Dxcore.lib)
 
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Ort)
 
