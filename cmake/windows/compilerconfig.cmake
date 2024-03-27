@@ -31,6 +31,7 @@ endif()
 add_compile_options(
   /W3
   /utf-8
+  /IGNORE:4099
   "$<$<COMPILE_LANG_AND_ID:C,MSVC>:/MP>"
   "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/MP>"
   "$<$<COMPILE_LANG_AND_ID:C,Clang>:${_obs_clang_c_options}>"
@@ -44,6 +45,7 @@ add_compile_definitions(UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO
 add_link_options($<$<NOT:$<CONFIG:Debug>>:/OPT:REF>
                  $<$<NOT:$<CONFIG:Debug>>:/OPT:ICF>
                  $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO>
+                 /IGNORE:4099
                  /DEBUG
                  /Brepro)
 # cmake-format: on
