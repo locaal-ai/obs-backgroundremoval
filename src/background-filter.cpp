@@ -388,11 +388,13 @@ void background_filter_update(void *data, obs_data_t *settings)
 	obs_enter_graphics();
 
 	char *effect_path = obs_module_file(EFFECT_PATH);
+	obs_log(LOG_INFO, "Effect path: %s", effect_path);
 	gs_effect_destroy(tf->effect);
 	tf->effect = gs_effect_create_from_file(effect_path, NULL);
 	bfree(effect_path);
 
 	char *kawaseBlurEffectPath = obs_module_file(KAWASE_BLUR_EFFECT_PATH);
+	obs_log(LOG_INFO, "Kawase Blur Effect path: %s", kawaseBlurEffectPath);
 	gs_effect_destroy(tf->kawaseBlurEffect);
 	tf->kawaseBlurEffect =
 		gs_effect_create_from_file(kawaseBlurEffectPath, NULL);
