@@ -37,6 +37,7 @@
         }
     },
     "name": "obs-backgroundremoval",
+    "displayName": "OBS Background Removal",
     "version": "1.1.13",
     "author": "Roy Shilkrot",
     "website": "https://github.com/royshil/obs-backgroundremoval",
