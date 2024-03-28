@@ -9,7 +9,6 @@
 !/docs
 !/pages
 !/src
-!/vendor
 !.clang-format
 !.cmake-format.json
 !.gitignore
@@ -18,7 +17,6 @@
 !CMakePresets.json
 !LICENSE
 !README.md
-!patch_libobs.diff
 
 # Exclude lock files
 *.lock.json
