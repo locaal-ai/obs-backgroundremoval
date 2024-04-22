@@ -1,5 +1,6 @@
 #include <onnxruntime_cxx_api.h>
 #include <cpu_provider_factory.h>
+#include <filesystem>
 
 #if defined(__APPLE__)
 #include <coreml_provider_factory.h>
@@ -24,6 +25,7 @@ int createOrtSession(filter_data *tf)
 		return OBS_BGREMOVAL_ORT_SESSION_ERROR_INVALID_MODEL;
 	}
 
+	const auto &api = Ort::GetApi();
 	Ort::SessionOptions sessionOptions;
 
 	sessionOptions.SetGraphOptimizationLevel(
@@ -64,9 +66,43 @@ int createOrtSession(filter_data *tf)
 #if defined(__linux__) && defined(__x86_64__) && \
 	!defined(DISABLE_ONNXRUNTIME_GPU)
 		if (tf->useGPU == USEGPU_TENSORRT) {
-			Ort::ThrowOnError(
-				OrtSessionOptionsAppendExecutionProvider_Tensorrt(
-					sessionOptions, 0));
+
+			// Folder in which TensorRT will place its cache
+			const char *tensorrt_cache_path = "~/.cache/obs-backgroundremoval/tensorrt";
+
+			// Initialize TensorRT provider options
+			OrtTensorRTProviderOptionsV2 *tensorrt_options;
+			Ort::ThrowOnError(api.CreateTensorRTProviderOptions(&tensorrt_options));
+			
+			// Create cache folder if it does not exist
+			std::filesystem::path cache_folder(tensorrt_cache_path);
+			if (!std::filesystem::exists(cache_folder)) {
+				std::filesystem::create_directories(cache_folder);
+			}
+			
+			// Define TensorRT provider options
+			std::vector<const char*> option_keys = {
+				"device_id",
+				"trt_engine_cache_enable",
+				"trt_engine_cache_path",
+				"trt_timing_cache_enable",
+				"trt_timing_cache_path",
+			};
+
+			std::vector<const char*> option_values = {
+				"0", 										// Device ID 0
+				"1", 										// Enable engine cache
+				tensorrt_cache_path, 		// Engine cache path
+				"1", 										// Enable timing cache
+				tensorrt_cache_path, 		// Timing cache path
+			};
+
+			// Update provider options
+			Ort::ThrowOnError(api.UpdateTensorRTProviderOptions(tensorrt_options,
+				option_keys.data(), option_values.data(), option_keys.size()));
+
+			// Append execution provider
+			sessionOptions.AppendExecutionProvider_TensorRT_V2(*tensorrt_options);
 		} else if (tf->useGPU == USEGPU_CUDA) {
 			Ort::ThrowOnError(
 				OrtSessionOptionsAppendExecutionProvider_CUDA(
