@@ -68,20 +68,23 @@ int createOrtSession(filter_data *tf)
 		if (tf->useGPU == USEGPU_TENSORRT) {
 
 			// Folder in which TensorRT will place its cache
-			const char *tensorrt_cache_path = "~/.cache/obs-backgroundremoval/tensorrt";
+			const char *tensorrt_cache_path =
+				"~/.cache/obs-backgroundremoval/tensorrt";
 
 			// Initialize TensorRT provider options
 			OrtTensorRTProviderOptionsV2 *tensorrt_options;
-			Ort::ThrowOnError(api.CreateTensorRTProviderOptions(&tensorrt_options));
-			
+			Ort::ThrowOnError(api.CreateTensorRTProviderOptions(
+				&tensorrt_options));
+
 			// Create cache folder if it does not exist
 			std::filesystem::path cache_folder(tensorrt_cache_path);
 			if (!std::filesystem::exists(cache_folder)) {
-				std::filesystem::create_directories(cache_folder);
+				std::filesystem::create_directories(
+					cache_folder);
 			}
-			
+
 			// Define TensorRT provider options
-			std::vector<const char*> option_keys = {
+			std::vector<const char *> option_keys = {
 				"device_id",
 				"trt_engine_cache_enable",
 				"trt_engine_cache_path",
@@ -89,20 +92,22 @@ int createOrtSession(filter_data *tf)
 				"trt_timing_cache_path",
 			};
 
-			std::vector<const char*> option_values = {
-				"0", 										// Device ID 0
-				"1", 										// Enable engine cache
-				tensorrt_cache_path, 		// Engine cache path
-				"1", 										// Enable timing cache
-				tensorrt_cache_path, 		// Timing cache path
+			std::vector<const char *> option_values = {
+				"0",                 // Device ID 0
+				"1",                 // Enable engine cache
+				tensorrt_cache_path, // Engine cache path
+				"1",                 // Enable timing cache
+				tensorrt_cache_path, // Timing cache path
 			};
 
 			// Update provider options
-			Ort::ThrowOnError(api.UpdateTensorRTProviderOptions(tensorrt_options,
-				option_keys.data(), option_values.data(), option_keys.size()));
+			Ort::ThrowOnError(api.UpdateTensorRTProviderOptions(
+				tensorrt_options, option_keys.data(),
+				option_values.data(), option_keys.size()));
 
 			// Append execution provider
-			sessionOptions.AppendExecutionProvider_TensorRT_V2(*tensorrt_options);
+			sessionOptions.AppendExecutionProvider_TensorRT_V2(
+				*tensorrt_options);
 		} else if (tf->useGPU == USEGPU_CUDA) {
 			Ort::ThrowOnError(
 				OrtSessionOptionsAppendExecutionProvider_CUDA(
