@@ -25,7 +25,6 @@ int createOrtSession(filter_data *tf)
 		return OBS_BGREMOVAL_ORT_SESSION_ERROR_INVALID_MODEL;
 	}
 
-	const auto &api = Ort::GetApi();
 	Ort::SessionOptions sessionOptions;
 
 	sessionOptions.SetGraphOptimizationLevel(
@@ -66,6 +65,7 @@ int createOrtSession(filter_data *tf)
 #if defined(__linux__) && defined(__x86_64__) && \
 	!defined(DISABLE_ONNXRUNTIME_GPU)
 		if (tf->useGPU == USEGPU_TENSORRT) {
+			const auto &api = Ort::GetApi();
 
 			// Folder in which TensorRT will place its cache
 			const char *tensorrt_cache_path =
