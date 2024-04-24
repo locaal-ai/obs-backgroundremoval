@@ -176,6 +176,8 @@ obs_properties_t *background_filter_properties(void *data)
 #if defined(__linux__) && defined(__x86_64__)
 	obs_property_list_add_string(p_use_gpu, obs_module_text("GPUTensorRT"),
 				     USEGPU_TENSORRT);
+	obs_property_list_add_string(p_use_gpu, obs_module_text("GPUCUDA"),
+				     USEGPU_CUDA);
 #endif
 #if _WIN32
 	obs_property_list_add_string(p_use_gpu, obs_module_text("GPUDirectML"),

@@ -66,6 +66,8 @@ obs_properties_t *enhance_filter_properties(void *data)
 #ifdef __linux__
 	obs_property_list_add_string(p_use_gpu, obs_module_text("GPUTensorRT"),
 				     USEGPU_TENSORRT);
+	obs_property_list_add_string(p_use_gpu, obs_module_text("GPUCUDA"),
+				     USEGPU_CUDA);
 #endif
 #if _WIN32
 	obs_property_list_add_string(p_use_gpu, obs_module_text("GPUDirectML"),
