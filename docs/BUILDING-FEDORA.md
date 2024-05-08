@@ -30,6 +30,7 @@ cmake -B build_x86_64 \
   -DENABLE_FRONTEND_API=ON \
   -DENABLE_QT=OFF \
   -DUSE_SYSTEM_OPENCV=ON
+cmake --build build_x86_64
 ```
 
 Finally, install the necessary files into the system directories, by issuing this command:
