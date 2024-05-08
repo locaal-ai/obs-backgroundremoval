@@ -21,13 +21,6 @@ sudo dnf install \
   opencv-devel
 ```
 
-Clone the repository:
-
-```
-git clone https://github.com/obs-ai/obs-backgroundremoval.git
-cd obs-backgroundremoval
-```
-
 Run the following command to compile the plugin:  
 
 ```
