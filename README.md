@@ -2,11 +2,11 @@
 
 <div align="center">
 
-[![GitHub](https://img.shields.io/github/license/occ-ai/obs-backgroundremoval)](https://github.com/occ-ai/obs-backgroundremoval/blob/main/LICENSE)
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/occ-ai/obs-backgroundremoval/push.yaml)](https://github.com/occ-ai/obs-backgroundremoval/actions/workflows/push.yaml)
-[![Total downloads](https://img.shields.io/github/downloads/occ-ai/obs-backgroundremoval/total)](https://github.com/occ-ai/obs-backgroundremoval/releases)
+[![GitHub](https://img.shields.io/github/license/locaal-ai/obs-backgroundremoval)](https://github.com/locaal-ai/obs-backgroundremoval/blob/main/LICENSE)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/locaal-ai/obs-backgroundremoval/push.yaml)](https://github.com/locaal-ai/obs-backgroundremoval/actions/workflows/push.yaml)
+[![Total downloads](https://img.shields.io/github/downloads/locaal-ai/obs-backgroundremoval/total)](https://github.com/locaal-ai/obs-backgroundremoval/releases)
 ![Flathub](https://img.shields.io/flathub/downloads/com.obsproject.Studio.Plugin.BackgroundRemoval?label=Flathub%20Installs)
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/occ-ai/obs-backgroundremoval)](https://github.com/occ-ai/obs-backgroundremoval/releases)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/locaal-ai/obs-backgroundremoval)](https://github.com/locaal-ai/obs-backgroundremoval/releases)
 [![Discord](https://img.shields.io/discord/1200229425141252116)](https://discord.gg/KbjGU2vvUz)
 
 </div>
@@ -21,15 +21,15 @@ A plugin for [OBS Studio](https://obsproject.com/) that allows you to replace th
   - [Linux (Ubuntu, Arch, openSUSE, Fedora)](#linux)
   - [Windows](#windows)
 
-For other AI plugins from us check out [OCC AI](https://github.com/occ-ai).
+For other AI plugins from us check out [locaal AI](https://github.com/locaal-ai).
 
 ## Usage
 
 <div align="center">
-<video src="https://github.com/occ-ai/obs-backgroundremoval/assets/1067855/5ba5aae2-7ea2-4c90-ad45-fba5ccde1a4e" width="320"></video>
+<video src="https://github.com/locaal-ai/obs-backgroundremoval/assets/1067855/5ba5aae2-7ea2-4c90-ad45-fba5ccde1a4e" width="320"></video>
 </div>
 
-Check out the [usage guide page](https://occ-ai.github.io/obs-backgroundremoval/usage) for usage walkthrough and recommendations.
+Check out the [usage guide page](https://locaal-ai.github.io/obs-backgroundremoval/usage) for usage walkthrough and recommendations.
 
 Additional tutorial videos:
 
@@ -40,13 +40,13 @@ Additional tutorial videos:
 
 ## Download
 
-Check out the [guide page](https://occ-ai.github.io/obs-backgroundremoval) for downloads and install instructions for **Windows** and **MacOS**.
+Check out the [guide page](https://locaal-ai.github.io/obs-backgroundremoval) for downloads and install instructions for **Windows** and **MacOS**.
 
 ### Linux Installation
 
 On Ubuntu, there are two ways to install OBS and you have to use the corresponding method to install this plugin.
 
-- If you installed OBS via the official PPA, download the deb package from the [releases](https://github.com/occ-ai/obs-backgroundremoval/releases) page and install it directly.
+- If you installed OBS via the official PPA, download the deb package from the [releases](https://github.com/locaal-ai/obs-backgroundremoval/releases) page and install it directly.
 - If you installed OBS via FlatHub, run the following command: `flatpak install com.obsproject.Studio.Plugin.BackgroundRemoval`
 
 The pre-built binary of this plugin can run Ubuntu 22.04 or later.
@@ -89,7 +89,7 @@ If you like this work, which is given to you completely free of charge, please c
 
 Reach out to us on [Discord](https://discord.gg/3EUBUjpCD3) or the [OBS Plugins forum](https://obsproject.com/forum/resources/background-removal-portrait-segmentation.1260/) for online / immediate help.
 
-If you found a bug or want to suggest a feature or improvement please open an [issue](https://github.com/occ-ai/obs-backgroundremoval/issues).
+If you found a bug or want to suggest a feature or improvement please open an [issue](https://github.com/locaal-ai/obs-backgroundremoval/issues).
 
 If you are looking for hands-on help or private consultation please select a [sponsorship tier](https://github.com/sponsors/royshil?frequency=one-time).
 
@@ -197,7 +197,7 @@ Use the CI scripts again, for example:
 The build should exist in the `./release` folder off the root. You can manually install the files in the OBS directory.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=occ-ai/obs-backgroundremoval&type=Date&theme=dark" />
-  <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=occ-ai/obs-backgroundremoval&type=Date" />
-  <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=occ-ai/obs-backgroundremoval&type=Date" />
+  <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=locaal-ai/obs-backgroundremoval&type=Date&theme=dark" />
+  <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=locaal-ai/obs-backgroundremoval&type=Date" />
+  <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=locaal-ai/obs-backgroundremoval&type=Date" />
 </picture>
