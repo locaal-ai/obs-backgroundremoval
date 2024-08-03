@@ -155,7 +155,6 @@ void enhance_filter_update(void *data, obs_data_t *settings)
 		obs_enter_graphics();
 
 		char *effect_path = obs_module_file(BLEND_EFFECT_PATH);
-		gs_effect_destroy(tf->blendEffect);
 		tf->blendEffect = gs_effect_create_from_file(effect_path, NULL);
 		bfree(effect_path);
 
@@ -190,6 +189,7 @@ void enhance_filter_destroy(void *data)
 		if (tf->stagesurface) {
 			gs_stagesurface_destroy(tf->stagesurface);
 		}
+		gs_effect_destroy(tf->blendEffect);
 		obs_leave_graphics();
 		tf->~enhance_filter();
 		bfree(tf);

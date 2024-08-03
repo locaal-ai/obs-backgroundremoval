@@ -40,9 +40,11 @@ int getConfig(config_t **config)
 	if (ret != CONFIG_SUCCESS) {
 		obs_log(LOG_INFO, "Failed to open config file %s",
 			config_file_path);
+		bfree(config_file_path);
 		return OBS_BGREMOVAL_CONFIG_FAIL;
 	}
 
+	bfree(config_file_path);
 	return OBS_BGREMOVAL_CONFIG_SUCCESS;
 }
 
