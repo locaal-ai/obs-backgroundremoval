@@ -1,5 +1,8 @@
 #include "background-filter.h"
-
+#include <cstdint>
+#include <libobs/obs-data.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <libobs/graphics/graphics.h>
 #include <onnxruntime_cxx_api.h>
 
 #ifdef _WIN32
@@ -8,14 +11,10 @@
 
 #include <opencv2/imgproc.hpp>
 
-#include <numeric>
 #include <memory>
 #include <exception>
-#include <fstream>
-#include <new>
 #include <mutex>
 #include <regex>
-#include <thread>
 
 #include <plugin-support.h>
 #include "models/ModelSINET.h"
@@ -27,6 +26,7 @@
 #include "models/ModelRMBG.h"
 #include "FilterData.h"
 #include "ort-utils/ort-session-utils.h"
+#include "stb_image.h"
 #include "obs-utils/obs-utils.h"
 #include "consts.h"
 #include "update-checker/update-checker.h"
@@ -42,6 +42,7 @@ struct background_removal_filter : public filter_data {
 	cv::Mat backgroundMask;
 	cv::Mat lastBackgroundMask;
 	cv::Mat lastImageBGRA;
+	gs_texture_t *bg_img = nullptr;
 	float temporalSmoothFactor = 0.0f;
 	float imageSimilarityThreshold = 35.0f;
 	bool enableImageSimilarity = true;
@@ -51,6 +52,8 @@ struct background_removal_filter : public filter_data {
 	bool enableFocalBlur = false;
 	float blurFocusPoint = 0.1f;
 	float blurFocusDepth = 0.1f;
+	std::string bgImagePath = nullptr;
+	std::string currentImagePath = nullptr;
 
 	gs_effect_t *effect;
 	gs_effect_t *kawaseBlurEffect;
@@ -141,6 +144,13 @@ obs_properties_t *background_filter_properties(void *data)
 		props, "enable_threshold", obs_module_text("EnableThreshold"));
 	obs_property_set_modified_callback(p_enable_threshold,
 					   enable_threshold_modified);
+	
+	obs_properties_add_path(
+        props, "bg_image_path",
+        obs_module_text("BG Image"),
+        OBS_PATH_FILE,
+        "Image Files (*.png *.jpg *.jpeg *.bmp *.tga);;All Files (*.*)",
+    NULL);
 
 	// Threshold props group
 	obs_properties_t *threshold_props = obs_properties_create();
@@ -311,8 +321,7 @@ void background_filter_update(void *data, obs_data_t *settings)
 
 	tf->isDisabled = true;
 
-	tf->enableThreshold =
-		(float)obs_data_get_bool(settings, "enable_threshold");
+	tf->enableThreshold = obs_data_get_bool(settings, "enable_threshold");
 	tf->threshold = (float)obs_data_get_double(settings, "threshold");
 
 	tf->contourFilter =
@@ -324,8 +333,9 @@ void background_filter_update(void *data, obs_data_t *settings)
 		(int)obs_data_get_int(settings, "mask_every_x_frames");
 	tf->maskEveryXFramesCount = (int)(0);
 	tf->blurBackground = obs_data_get_int(settings, "blur_background");
+	tf->blurBackground = obs_data_get_int(settings, "blur_background");
 	tf->enableFocalBlur =
-		(float)obs_data_get_bool(settings, "enable_focal_blur");
+		(bool)obs_data_get_bool(settings, "enable_focal_blur");
 	tf->blurFocusPoint =
 		(float)obs_data_get_double(settings, "blur_focus_point");
 	tf->blurFocusDepth =
@@ -335,7 +345,13 @@ void background_filter_update(void *data, obs_data_t *settings)
 	tf->imageSimilarityThreshold = (float)obs_data_get_double(
 		settings, "image_similarity_threshold");
 	tf->enableImageSimilarity =
-		(float)obs_data_get_bool(settings, "enable_image_similarity");
+		(bool)obs_data_get_bool(settings, "enable_image_similarity");
+	const char* bgImagePathRaw = obs_data_get_string(settings, "image_path");
+	if (bgImagePathRaw) {
+            tf->bgImagePath = bgImagePathRaw; 
+    } else {
+            tf->bgImagePath.clear();
+    }
 
 	const std::string newUseGpu = obs_data_get_string(settings, "useGPU");
 	const std::string newModel =
@@ -767,6 +783,59 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf,
 	return blurredTexture;
 }
 
+gs_texture_t* load_image_as_texture(const char* file_path, uint32_t texture_width, uint32_t texture_height)
+{
+    int width, height, channels;
+    unsigned char* image_data = stbi_load(file_path, &width, &height, &channels, STBI_rgb_alpha);
+    
+    if (!image_data) {
+        blog(LOG_ERROR, "Failed to load image: %s", file_path);
+        return NULL;
+    }
+
+    gs_texture_t* texture = gs_texture_create(texture_width, texture_height, GS_RGBA, 1, (const uint8_t**)&image_data, 0);
+
+    stbi_image_free(image_data);
+
+    if (!texture) {
+        blog(LOG_ERROR, "Failed to create texture from image: %s", file_path);
+    }
+
+    return texture;
+}
+
+static gs_texture_t *get_bg_img(struct background_removal_filter *tf,
+                                uint32_t width, uint32_t height)
+{
+    // Check if the path has changed
+    if (tf->currentImagePath != tf->bgImagePath) {
+        // Path has changed, clean up old texture if it exists
+        if (tf->bg_img) {
+            gs_texture_destroy(tf->bg_img);
+            tf->bg_img = nullptr;
+        }
+        // Update the current path
+        tf->currentImagePath = tf->bgImagePath;
+    }
+
+    // If the texture is already loaded, return it
+    if (tf->bg_img) {
+        return tf->bg_img;
+    }
+
+    // Check if the path is valid (not empty and contains non-whitespace characters)
+    if (!tf->currentImagePath.empty() && 
+        std::any_of(tf->currentImagePath.begin(), tf->currentImagePath.end(), 
+                    [](unsigned char ch) { return !std::isspace(ch); })) {
+        // Load the texture
+        tf->bg_img = load_image_as_texture(tf->currentImagePath.c_str(), width, height);
+        return tf->bg_img;
+    }
+
+    // If we get here, either the path was invalid or loading failed
+    return nullptr;
+}
+
 void background_filter_video_render(void *data, gs_effect_t *_effect)
 {
 	UNUSED_PARAMETER(_effect);
@@ -801,7 +870,8 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 	{
 		std::lock_guard<std::mutex> lock(tf->outputLock);
 		alphaTexture = gs_texture_create(
-			tf->backgroundMask.cols, tf->backgroundMask.rows, GS_R8,
+			static_cast<uint32_t>(tf->backgroundMask.cols),
+			static_cast<uint32_t>(tf->backgroundMask.rows), GS_R8,
 			1, (const uint8_t **)&tf->backgroundMask.data, 0);
 		if (!alphaTexture) {
 			obs_log(LOG_ERROR, "Failed to create alpha texture");
@@ -825,11 +895,14 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 		gs_texture_destroy(blurredTexture);
 		return;
 	}
+	gs_texture_t *bgimage = get_bg_img(tf, width, height);
 
 	gs_eparam_t *alphamask =
 		gs_effect_get_param_by_name(tf->effect, "alphamask");
 	gs_eparam_t *blurredBackground =
 		gs_effect_get_param_by_name(tf->effect, "blurredBackground");
+	gs_eparam_t *bgimageParam =
+		gs_effect_get_param_by_name(tf->effect, "bgImage");
 
 	gs_effect_set_texture(alphamask, alphaTexture);
 
@@ -837,10 +910,17 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 		gs_effect_set_texture(blurredBackground, blurredTexture);
 	}
 
+	if (!tf->bgImagePath.empty()) {
+		gs_effect_set_texture(bgimageParam, bgimage);
+	}
+
 	gs_blend_state_push();
 	gs_reset_blend_state();
 
 	const char *techName;
+	if (!tf->bgImagePath.empty()) {
+		techName = "DrawWithBGImage";
+	}
 	if (tf->blurBackground > 0) {
 		if (tf->enableFocalBlur)
 			techName = "DrawWithFocalBlur";
@@ -857,4 +937,5 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 
 	gs_texture_destroy(alphaTexture);
 	gs_texture_destroy(blurredTexture);
+	gs_texture_destroy(bgimage);
 }

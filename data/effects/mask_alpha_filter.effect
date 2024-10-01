@@ -3,6 +3,7 @@ uniform float4x4 ViewProj;
 uniform texture2d image;     // input RGBA
 uniform texture2d alphamask; // alpha mask
 uniform texture2d blurredBackground; // input RGBA
+uniform texture2d bgImage;   // background image texture
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -58,6 +59,26 @@ float4 PSAlphaMaskRGBAWithoutBlur(VertDataOut v_in) : TARGET
 	return outputRGBA;
 }
 
+float4 PSAlphaMaskRGBAWithBGImage(VertDataOut v_in) : TARGET
+{
+    float4 inputRGBA = image.Sample(textureSampler, v_in.uv);
+    inputRGBA.rgb = max(float3(0.0, 0.0, 0.0), inputRGBA.rgb / inputRGBA.a);
+
+    float4 bgImageRGBA = bgImage.Sample(textureSampler, v_in.uv);
+    float4 originalBgRGBA = blurredBackground.Sample(textureSampler, v_in.uv);
+
+    float maskAlpha = 1.0 - alphamask.Sample(textureSampler, v_in.uv).r;
+    float foregroundAlpha = maskAlpha * inputRGBA.a;
+
+    float4 outputRGBA;
+    outputRGBA.rgb = inputRGBA.rgb * foregroundAlpha + 
+                     bgImageRGBA.rgb * (1.0 - foregroundAlpha) * maskAlpha +
+                     originalBgRGBA.rgb * (1.0 - maskAlpha);
+    outputRGBA.a = 1.0;
+
+    return outputRGBA;
+}
+
 technique DrawWithBlur
 {
 	pass
@@ -83,4 +104,13 @@ technique DrawWithoutBlur
 		vertex_shader = VSDefault(v_in);
 		pixel_shader  = PSAlphaMaskRGBAWithoutBlur(v_in);
 	}
+}
+
+technique DrawWithBGImage
+{
+    pass
+    {
+        vertex_shader = VSDefault(v_in);
+        pixel_shader  = PSAlphaMaskRGBAWithBGImage(v_in);
+    }
 }
