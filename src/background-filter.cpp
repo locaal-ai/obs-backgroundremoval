@@ -934,8 +934,7 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 					   techName);
 
 	gs_blend_state_pop();
-
+	//don't destroy bgimage, it will be reused
 	gs_texture_destroy(alphaTexture);
 	gs_texture_destroy(blurredTexture);
-	gs_texture_destroy(bgimage);
 }
