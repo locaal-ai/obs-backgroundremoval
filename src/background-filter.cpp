@@ -1,8 +1,6 @@
 #include "background-filter.h"
 #include <cstdint>
-#include <libobs/obs-data.h>
 #define STB_IMAGE_IMPLEMENTATION
-#include <libobs/graphics/graphics.h>
 #include <onnxruntime_cxx_api.h>
 
 #ifdef _WIN32
@@ -52,8 +50,8 @@ struct background_removal_filter : public filter_data {
 	bool enableFocalBlur = false;
 	float blurFocusPoint = 0.1f;
 	float blurFocusDepth = 0.1f;
-	std::string bgImagePath = nullptr;
-	std::string currentImagePath = nullptr;
+	std::string bgImagePath;
+	std::string currentImagePath;
 
 	gs_effect_t *effect;
 	gs_effect_t *kawaseBlurEffect;
@@ -346,7 +344,7 @@ void background_filter_update(void *data, obs_data_t *settings)
 		settings, "image_similarity_threshold");
 	tf->enableImageSimilarity =
 		(bool)obs_data_get_bool(settings, "enable_image_similarity");
-	const char* bgImagePathRaw = obs_data_get_string(settings, "image_path");
+	const char* bgImagePathRaw = obs_data_get_string(settings, "bg_image_path");
 	if (bgImagePathRaw) {
             tf->bgImagePath = bgImagePathRaw; 
     } else {
@@ -425,6 +423,7 @@ void background_filter_update(void *data, obs_data_t *settings)
 	obs_log(LOG_INFO, "  Model: %s", tf->modelSelection.c_str());
 	obs_log(LOG_INFO, "  Inference Device: %s", tf->useGPU.c_str());
 	obs_log(LOG_INFO, "  Num Threads: %d", tf->numThreads);
+	obs_log(LOG_INFO, "  Image Path %s", tf->bgImagePath.c_str());
 	obs_log(LOG_INFO, "  Enable Threshold: %s",
 		tf->enableThreshold ? "true" : "false");
 	obs_log(LOG_INFO, "  Threshold: %f", tf->threshold);
@@ -783,32 +782,131 @@ static gs_texture_t *blur_background(struct background_removal_filter *tf,
 	return blurredTexture;
 }
 
+// Helper function
+static uint32_t next_power_of_two(uint32_t v)
+{
+    v--;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v++;
+    return v;
+}
+//TODO: Improve this logic, atm it just makes it go into a small window
+gs_texture_t* create_texture_with_fallback(uint32_t img_width, uint32_t img_height, uint32_t texture_width, uint32_t texture_height, enum gs_color_format format, uint32_t levels, const uint8_t **data, uint32_t flags)
+{
+    obs_log(LOG_INFO, "Attempting to create texture: Image(%dx%d), Desired(%dx%d), format: %d", 
+            img_width, img_height, texture_width, texture_height, format);
+
+    gs_texture_t* texture = nullptr;
+
+    // Try creating the texture with desired dimensions
+    try {
+        texture = gs_texture_create(texture_width, texture_height, format, levels, nullptr, flags);
+        if (texture) {
+            obs_log(LOG_INFO, "Texture created successfully with desired dimensions");
+            // Resize the image data to fit the new texture
+            gs_copy_texture_region(
+                texture, 0, 0,
+                gs_texture_create(img_width, img_height, format, levels, data, flags), 0, 0,
+                img_width, img_height
+            );
+            return texture;
+        }
+    } catch (const std::exception& e) {
+        obs_log(LOG_WARNING, "Exception caught while creating texture with desired dimensions: %s", e.what());
+    }
+
+    // Try creating the texture with original image dimensions
+    try {
+        texture = gs_texture_create(img_width, img_height, format, levels, data, flags);
+        if (texture) {
+            obs_log(LOG_INFO, "Texture created successfully with original image dimensions");
+            return texture;
+        }
+    } catch (const std::exception& e) {
+        obs_log(LOG_WARNING, "Exception caught while creating texture with original dimensions: %s", e.what());
+    }
+
+    // Fallback options (if both above attempts fail)
+    uint32_t fallback_widths[] = {
+        next_power_of_two(texture_width),
+        texture_width / 2,
+        next_power_of_two(img_width),
+        img_width / 2,
+        1
+    };
+    uint32_t fallback_heights[] = {
+        next_power_of_two(texture_height),
+        texture_height / 2,
+        next_power_of_two(img_height),
+        img_height / 2,
+        1
+    };
+
+    for (size_t i = 0; i < sizeof(fallback_widths) / sizeof(fallback_widths[0]); ++i) {
+        try {
+            texture = gs_texture_create(fallback_widths[i], fallback_heights[i], format, levels, nullptr, flags);
+            if (texture) {
+                obs_log(LOG_INFO, "Texture created successfully with fallback dimensions: %dx%d", 
+                        fallback_widths[i], fallback_heights[i]);
+                // Resize the image data to fit the new texture
+                gs_copy_texture_region(
+                    texture, 0, 0,
+                    gs_texture_create(img_width, img_height, format, levels, data, flags), 0, 0,
+                    std::min(img_width, fallback_widths[i]),
+                    std::min(img_height, fallback_heights[i])
+                );
+                return texture;
+            }
+        } catch (const std::exception& e) {
+            obs_log(LOG_WARNING, "Exception caught while creating texture with fallback dimensions: %s", e.what());
+        }
+    }
+
+    obs_log(LOG_ERROR, "All texture creation attempts failed.");
+    return nullptr;
+}
+
 gs_texture_t* load_image_as_texture(const char* file_path, uint32_t texture_width, uint32_t texture_height)
 {
+    obs_log(LOG_INFO, "Attempting to load image as texture: %s", file_path);
+
     int width, height, channels;
     unsigned char* image_data = stbi_load(file_path, &width, &height, &channels, STBI_rgb_alpha);
     
     if (!image_data) {
-        blog(LOG_ERROR, "Failed to load image: %s", file_path);
-        return NULL;
+        obs_log(LOG_ERROR, "Failed to load image: %s", file_path);
+        return nullptr;
     }
 
-    gs_texture_t* texture = gs_texture_create(texture_width, texture_height, GS_RGBA, 1, (const uint8_t**)&image_data, 0);
+    obs_log(LOG_INFO, "Image loaded successfully. Dimensions: %dx%d, Channels: %d", width, height, channels);
+
+    gs_texture_t* texture = create_texture_with_fallback(width, height, texture_width, texture_height, GS_RGBA, 1, (const uint8_t**)&image_data, 0);
 
     stbi_image_free(image_data);
 
     if (!texture) {
-        blog(LOG_ERROR, "Failed to create texture from image: %s", file_path);
+        obs_log(LOG_ERROR, "Failed to create texture from image: %s", file_path);
+        return nullptr;
     }
+
+    obs_log(LOG_INFO, "Texture created successfully. Dimensions: %dx%d", gs_texture_get_width(texture), gs_texture_get_height(texture));
 
     return texture;
 }
+
+
+
 
 static gs_texture_t *get_bg_img(struct background_removal_filter *tf,
                                 uint32_t width, uint32_t height)
 {
     // Check if the path has changed
     if (tf->currentImagePath != tf->bgImagePath) {
+		obs_log(LOG_INFO, "New texture being made");
         // Path has changed, clean up old texture if it exists
         if (tf->bg_img) {
             gs_texture_destroy(tf->bg_img);
@@ -820,6 +918,7 @@ static gs_texture_t *get_bg_img(struct background_removal_filter *tf,
 
     // If the texture is already loaded, return it
     if (tf->bg_img) {
+		obs_log(LOG_INFO, "Texture already loaded");
         return tf->bg_img;
     }
 
@@ -827,10 +926,25 @@ static gs_texture_t *get_bg_img(struct background_removal_filter *tf,
     if (!tf->currentImagePath.empty() && 
         std::any_of(tf->currentImagePath.begin(), tf->currentImagePath.end(), 
                     [](unsigned char ch) { return !std::isspace(ch); })) {
-        // Load the texture
-        tf->bg_img = load_image_as_texture(tf->currentImagePath.c_str(), width, height);
-        return tf->bg_img;
+        obs_log(LOG_INFO, "Loading new texture from: %s", tf->currentImagePath.c_str());
+        try {
+            gs_texture_t* loaded_texture = load_image_as_texture(tf->currentImagePath.c_str(), width, height);
+            if (loaded_texture) {
+                // If we had a previous texture, destroy it
+                if (tf->bg_img) {
+                    gs_texture_destroy(tf->bg_img);
+                }
+                tf->bg_img = loaded_texture;
+                obs_log(LOG_INFO, "Texture loaded successfully");
+                return tf->bg_img;
+            } else {
+                obs_log(LOG_ERROR, "Failed to load texture");
+            }
+        } catch (const std::exception& e) {
+            obs_log(LOG_ERROR, "Exception while loading texture: %s", e.what());
+        }
     }
+	obs_log(LOG_ERROR, "Texture failed to load");
 
     // If we get here, either the path was invalid or loading failed
     return nullptr;
@@ -882,6 +996,8 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 		}
 	}
 
+	gs_texture_t *bgimage = get_bg_img(tf, width, height);
+
 	// Output the masked image
 	gs_texture_t *blurredTexture =
 		blur_background(tf, width, height, alphaTexture);
@@ -895,7 +1011,6 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 		gs_texture_destroy(blurredTexture);
 		return;
 	}
-	gs_texture_t *bgimage = get_bg_img(tf, width, height);
 
 	gs_eparam_t *alphamask =
 		gs_effect_get_param_by_name(tf->effect, "alphamask");
@@ -920,8 +1035,7 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 	const char *techName;
 	if (!tf->bgImagePath.empty()) {
 		techName = "DrawWithBGImage";
-	}
-	if (tf->blurBackground > 0) {
+	} else if (tf->blurBackground > 0) {
 		if (tf->enableFocalBlur)
 			techName = "DrawWithFocalBlur";
 		else
@@ -929,6 +1043,7 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 	} else {
 		techName = "DrawWithoutBlur";
 	}
+	obs_log(LOG_INFO, "Techname %s", techName);
 
 	obs_source_process_filter_tech_end(tf->source, tf->effect, 0, 0,
 					   techName);

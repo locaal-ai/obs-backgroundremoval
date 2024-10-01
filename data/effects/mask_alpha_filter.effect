@@ -62,18 +62,19 @@ float4 PSAlphaMaskRGBAWithoutBlur(VertDataOut v_in) : TARGET
 float4 PSAlphaMaskRGBAWithBGImage(VertDataOut v_in) : TARGET
 {
     float4 inputRGBA = image.Sample(textureSampler, v_in.uv);
-    inputRGBA.rgb = max(float3(0.0, 0.0, 0.0), inputRGBA.rgb / inputRGBA.a);
-
     float4 bgImageRGBA = bgImage.Sample(textureSampler, v_in.uv);
-    float4 originalBgRGBA = blurredBackground.Sample(textureSampler, v_in.uv);
 
     float maskAlpha = 1.0 - alphamask.Sample(textureSampler, v_in.uv).r;
-    float foregroundAlpha = maskAlpha * inputRGBA.a;
 
     float4 outputRGBA;
-    outputRGBA.rgb = inputRGBA.rgb * foregroundAlpha + 
-                     bgImageRGBA.rgb * (1.0 - foregroundAlpha) * maskAlpha +
-                     originalBgRGBA.rgb * (1.0 - maskAlpha);
+    
+    // Blend the foreground (person) with the background image
+    float3 blendedRGB = lerp(bgImageRGBA.rgb, inputRGBA.rgb, maskAlpha);
+    
+    // If the background image is transparent, show the original background
+    outputRGBA.rgb = lerp(inputRGBA.rgb, blendedRGB, bgImageRGBA.a);
+    
+    // Set alpha to 1 for full opacity
     outputRGBA.a = 1.0;
 
     return outputRGBA;
