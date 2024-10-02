@@ -907,7 +907,8 @@ gs_texture_t* load_image_as_texture(const char* file_path, uint32_t texture_widt
 
     obs_log(LOG_INFO, "Image loaded successfully. Dimensions: %dx%d, Channels: %d", width, height, channels);
 
-    gs_texture_t* texture = create_texture_with_fallback(width, height, texture_width, texture_height, GS_RGBA, 1, (const uint8_t**)&image_data, 0);
+	//For now just using the image dimensions as the texture dimensions - the actaul dimensions are not that important now I have scaling in place
+    gs_texture_t* texture = create_texture_with_fallback(width, height, width, height, GS_RGBA, 1, (const uint8_t**)&image_data, 0);
 
     stbi_image_free(image_data);
 
