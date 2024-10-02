@@ -8,6 +8,7 @@
 #endif // _WIN32
 
 #include <opencv2/imgproc.hpp>
+#include <graphics/vec2.h>
 
 #include <memory>
 #include <exception>
@@ -52,6 +53,10 @@ struct background_removal_filter : public filter_data {
 	float blurFocusDepth = 0.1f;
 	std::string bgImagePath;
 	std::string currentImagePath;
+	float bg_offset_x = 0.0f;
+    float bg_offset_y = 0.0f;
+    float bg_scale_x = 1.0f;
+    float bg_scale_y = 1.0f;
 
 	gs_effect_t *effect;
 	gs_effect_t *kawaseBlurEffect;
@@ -150,6 +155,12 @@ obs_properties_t *background_filter_properties(void *data)
         "Image Files (*.png *.jpg *.jpeg *.bmp *.tga);;All Files (*.*)",
     NULL);
 
+	obs_properties_add_float_slider(props, "bg_offset_x", "Background Offset X", -1.0, 1.0, 0.01);
+    obs_properties_add_float_slider(props, "bg_offset_y", "Background Offset Y", -1.0, 1.0, 0.01);
+    obs_properties_add_float_slider(props, "bg_scale_x", "Background Scale X", 0.1, 5.0, 0.1);
+    obs_properties_add_float_slider(props, "bg_scale_y", "Background Scale Y", 0.1, 5.0, 0.1);
+
+
 	// Threshold props group
 	obs_properties_t *threshold_props = obs_properties_create();
 
@@ -201,6 +212,7 @@ obs_properties_t *background_filter_properties(void *data)
 			       300, 1);
 	obs_properties_add_int_slider(props, "numThreads",
 				      obs_module_text("NumThreads"), 0, 8, 1);
+
 
 	/* Model selection Props */
 	obs_property_t *p_model_select = obs_properties_add_list(
@@ -286,6 +298,12 @@ void background_filter_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, "advanced", false);
 	obs_data_set_default_bool(settings, "enable_threshold", true);
+
+	obs_data_set_default_double(settings, "bg_offset_x", 0.0);
+    obs_data_set_default_double(settings, "bg_offset_y", 0.0);
+    obs_data_set_default_double(settings, "bg_scale_x", 1.0);
+    obs_data_set_default_double(settings, "bg_scale_y", 1.0);
+	
 	obs_data_set_default_double(settings, "threshold", 0.5);
 	obs_data_set_default_double(settings, "contour_filter", 0.05);
 	obs_data_set_default_double(settings, "smooth_contour", 0.5);
@@ -321,6 +339,11 @@ void background_filter_update(void *data, obs_data_t *settings)
 
 	tf->enableThreshold = obs_data_get_bool(settings, "enable_threshold");
 	tf->threshold = (float)obs_data_get_double(settings, "threshold");
+
+	tf->bg_offset_x = (float)obs_data_get_double(settings, "bg_offset_x");
+    tf->bg_offset_y = (float)obs_data_get_double(settings, "bg_offset_y");
+    tf->bg_scale_x = (float)obs_data_get_double(settings, "bg_scale_x");
+    tf->bg_scale_y = (float)obs_data_get_double(settings, "bg_scale_y");
 
 	tf->contourFilter =
 		(float)obs_data_get_double(settings, "contour_filter");
@@ -1029,11 +1052,20 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 		gs_effect_set_texture(bgimageParam, bgimage);
 	}
 
+    
+    vec2 bgImageOffset;
+    vec2_set(&bgImageOffset, tf->bg_offset_x, tf->bg_offset_y);
+    gs_effect_set_vec2(gs_effect_get_param_by_name(tf->effect, "bgImageOffset"), &bgImageOffset);
+
+    vec2 bgImageScale;
+    vec2_set(&bgImageScale, tf->bg_scale_x, tf->bg_scale_y);
+    gs_effect_set_vec2(gs_effect_get_param_by_name(tf->effect, "bgImageScale"), &bgImageScale);
+
 	gs_blend_state_push();
 	gs_reset_blend_state();
 
 	const char *techName;
-	if (!tf->bgImagePath.empty()) {
+	if (!tf->bgImagePath.empty() && bgimage) {
 		techName = "DrawWithBGImage";
 	} else if (tf->blurBackground > 0) {
 		if (tf->enableFocalBlur)

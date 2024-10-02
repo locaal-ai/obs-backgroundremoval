@@ -4,6 +4,8 @@ uniform texture2d image;     // input RGBA
 uniform texture2d alphamask; // alpha mask
 uniform texture2d blurredBackground; // input RGBA
 uniform texture2d bgImage;   // background image texture
+uniform float2 bgImageOffset; // x for horizontal, y for vertical offset
+uniform float2 bgImageScale;  // x for horizontal, y for vertical scale
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -62,7 +64,10 @@ float4 PSAlphaMaskRGBAWithoutBlur(VertDataOut v_in) : TARGET
 float4 PSAlphaMaskRGBAWithBGImage(VertDataOut v_in) : TARGET
 {
     float4 inputRGBA = image.Sample(textureSampler, v_in.uv);
-    float4 bgImageRGBA = bgImage.Sample(textureSampler, v_in.uv);
+    
+    // Apply offset and scale to the background image UV coordinates
+    float2 bgUV = (v_in.uv - 0.5) / bgImageScale + 0.5 - bgImageOffset;
+    float4 bgImageRGBA = bgImage.Sample(textureSampler, bgUV);
 
     float maskAlpha = 1.0 - alphamask.Sample(textureSampler, v_in.uv).r;
 
@@ -71,8 +76,9 @@ float4 PSAlphaMaskRGBAWithBGImage(VertDataOut v_in) : TARGET
     // Blend the foreground (person) with the background image
     float3 blendedRGB = lerp(bgImageRGBA.rgb, inputRGBA.rgb, maskAlpha);
     
-    // If the background image is transparent, show the original background
-    outputRGBA.rgb = lerp(inputRGBA.rgb, blendedRGB, bgImageRGBA.a);
+    // If the background image is transparent or out of bounds, show the original background
+    float bgAlpha = bgImageRGBA.a * (bgUV.x >= 0 && bgUV.x <= 1 && bgUV.y >= 0 && bgUV.y <= 1);
+    outputRGBA.rgb = lerp(inputRGBA.rgb, blendedRGB, bgAlpha);
     
     // Set alpha to 1 for full opacity
     outputRGBA.a = 1.0;
