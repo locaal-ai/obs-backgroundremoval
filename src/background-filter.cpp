@@ -157,8 +157,8 @@ obs_properties_t *background_filter_properties(void *data)
 
 	obs_properties_add_float_slider(props, "bg_offset_x", "Background Offset X", -1.0, 1.0, 0.01);
     obs_properties_add_float_slider(props, "bg_offset_y", "Background Offset Y", -1.0, 1.0, 0.01);
-    obs_properties_add_float_slider(props, "bg_scale_x", "Background Scale X", 0.1, 5.0, 0.1);
-    obs_properties_add_float_slider(props, "bg_scale_y", "Background Scale Y", 0.1, 5.0, 0.1);
+    obs_properties_add_float_slider(props, "bg_scale_x", "Background Scale X", 0.1, 5.0, 0.01);
+    obs_properties_add_float_slider(props, "bg_scale_y", "Background Scale Y", 0.1, 5.0, 0.01);
 
 
 	// Threshold props group
