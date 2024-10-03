@@ -77,7 +77,7 @@ float4 PSAlphaMaskRGBAWithBGImage(VertDataOut v_in) : TARGET
     float3 blendedRGB = lerp(bgImageRGBA.rgb, inputRGBA.rgb, maskAlpha);
     
     // If the background image is transparent or out of bounds, show the original background
-    float bgAlpha = bgImageRGBA.a * (bgUV.x >= 0 && bgUV.x <= 1 && bgUV.y >= 0 && bgUV.y <= 1);
+	float bgAlpha = bgImageRGBA.a * step(0.0, bgUV.x) * step(bgUV.x, 1.0) * step(0.0, bgUV.y) * step(bgUV.y, 1.0);
     outputRGBA.rgb = lerp(inputRGBA.rgb, blendedRGB, bgAlpha);
     
     // Set alpha to 1 for full opacity

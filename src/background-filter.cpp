@@ -1,5 +1,6 @@
 #include "background-filter.h"
 #include <cstdint>
+#include <libobs/util/c99defs.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <onnxruntime_cxx_api.h>
 
@@ -895,6 +896,8 @@ gs_texture_t* create_texture_with_fallback(uint32_t img_width, uint32_t img_heig
 
 gs_texture_t* load_image_as_texture(const char* file_path, uint32_t texture_width, uint32_t texture_height)
 {
+	UNUSED_PARAMETER(texture_width);
+	UNUSED_PARAMETER(texture_height);
     obs_log(LOG_INFO, "Attempting to load image as texture: %s", file_path);
 
     int width, height, channels;
@@ -908,7 +911,7 @@ gs_texture_t* load_image_as_texture(const char* file_path, uint32_t texture_widt
     obs_log(LOG_INFO, "Image loaded successfully. Dimensions: %dx%d, Channels: %d", width, height, channels);
 
 	//For now just using the image dimensions as the texture dimensions - the actaul dimensions are not that important now I have scaling in place
-    gs_texture_t* texture = create_texture_with_fallback(width, height, width, height, GS_RGBA, 1, (const uint8_t**)&image_data, 0);
+	gs_texture_t* texture = create_texture_with_fallback(static_cast<uint32_t>(width), static_cast<uint32_t>(height), static_cast<uint32_t>(width), static_cast<uint32_t>(height), GS_RGBA, 1, (const uint8_t**)&image_data, 0);
 
     stbi_image_free(image_data);
 
