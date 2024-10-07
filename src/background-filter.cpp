@@ -1,6 +1,5 @@
 #include "background-filter.h"
 #include <cstdint>
-#include <libobs/util/c99defs.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <onnxruntime_cxx_api.h>
 
@@ -42,7 +41,6 @@ struct background_removal_filter : public filter_data {
 	cv::Mat backgroundMask;
 	cv::Mat lastBackgroundMask;
 	cv::Mat lastImageBGRA;
-	gs_texture_t *bg_img = nullptr;
 	float temporalSmoothFactor = 0.0f;
 	float imageSimilarityThreshold = 35.0f;
 	bool enableImageSimilarity = true;
@@ -52,7 +50,11 @@ struct background_removal_filter : public filter_data {
 	bool enableFocalBlur = false;
 	float blurFocusPoint = 0.1f;
 	float blurFocusDepth = 0.1f;
-	std::string bgImagePath;
+    std::string bgPath;
+	gs_texture_t *bg_img = nullptr;
+    obs_source_t *mediaSource;
+    gs_texrender_t *videoTexrender;
+    bool isVideo;
 	std::string currentImagePath;
 	float bg_offset_x = 0.0f;
     float bg_offset_y = 0.0f;
@@ -64,6 +66,58 @@ struct background_removal_filter : public filter_data {
 
 	std::mutex modelMutex;
 };
+
+
+/*  UTIL FUNCTIONS   */
+static bool is_video_file(const std::string &path)
+{
+    const char *video_extensions[] = {".mp4", ".mov", ".avi", ".mkv", ".webm", ".flv", ".wmv"};
+    std::string lower_path = path;
+    std::transform(lower_path.begin(), lower_path.end(), lower_path.begin(), ::tolower);
+
+    for (const char *ext : video_extensions) {
+        if (lower_path.find(ext) != std::string::npos) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static void create_media_source(struct background_removal_filter *tf)
+{
+    obs_log(LOG_INFO, "Entering create_media_source");
+
+    if (tf->mediaSource) {
+        obs_log(LOG_INFO, "Removing previous media source");
+        obs_source_remove_active_child(tf->source, tf->mediaSource);
+        obs_source_release(tf->mediaSource);
+        tf->mediaSource = nullptr;
+    }
+
+    if (!tf->bgPath.empty() && tf->isVideo) {
+        obs_log(LOG_INFO, "Creating new media source for: %s", tf->bgPath.c_str());
+        obs_data_t *settings = obs_data_create();
+        obs_data_set_string(settings, "local_file", tf->bgPath.c_str());
+        obs_data_set_bool(settings, "looping", true);
+        obs_data_set_bool(settings, "restart_on_activate", false);
+
+        tf->mediaSource = obs_source_create_private("ffmpeg_source", "Background Video", settings);
+        obs_data_release(settings);
+
+        if (tf->mediaSource) {
+            obs_log(LOG_INFO, "Media source created successfully: %p", (void*)tf->mediaSource);
+            obs_source_add_active_child(tf->source, tf->mediaSource);
+        } else {
+            obs_log(LOG_ERROR, "Failed to create media source");
+        }
+    } else {
+        obs_log(LOG_INFO, "No video background set or not a video file");
+    }
+}
+
+
+/********************** */
+
 
 void background_removal_thread(void *data); // Forward declaration
 
@@ -150,10 +204,10 @@ obs_properties_t *background_filter_properties(void *data)
 					   enable_threshold_modified);
 	
 	obs_properties_add_path(
-        props, "bg_image_path",
+        props, "bg_path",
         obs_module_text("BG Image"),
         OBS_PATH_FILE,
-        "Image Files (*.png *.jpg *.jpeg *.bmp *.tga);;All Files (*.*)",
+        "Image/Video Files (*.png *.jpg *.jpeg *.bmp *.tga *.mp4 *.mov *.avi *.mkv);;All Files (*.*)",
     NULL);
 
 	obs_properties_add_float_slider(props, "bg_offset_x", "Background Offset X", -1.0, 1.0, 0.01);
@@ -368,11 +422,31 @@ void background_filter_update(void *data, obs_data_t *settings)
 		settings, "image_similarity_threshold");
 	tf->enableImageSimilarity =
 		(bool)obs_data_get_bool(settings, "enable_image_similarity");
-	const char* bgImagePathRaw = obs_data_get_string(settings, "bg_image_path");
-	if (bgImagePathRaw) {
-            tf->bgImagePath = bgImagePathRaw; 
-    } else {
-            tf->bgImagePath.clear();
+    const char* bgPathRaw = obs_data_get_string(settings, "bg_path");
+    obs_log(LOG_INFO, "Background path: %s", bgPathRaw);
+    if (bgPathRaw && tf->bgPath != bgPathRaw) {
+        tf->bgPath = bgPathRaw;
+        tf->isVideo = is_video_file(tf->bgPath);
+        obs_log(LOG_INFO, "Background type updated. isVideo: %d", tf->isVideo);
+        
+        if (tf->isVideo) {
+            obs_log(LOG_INFO, "Creating media source for video");
+            create_media_source(tf);
+            obs_log(LOG_INFO, "Media source created: %p", (void*)tf->mediaSource);
+        } else {
+            // Clean up video resources if switching to an image
+            if (tf->mediaSource) {
+                obs_log(LOG_INFO, "Cleaning up previous media source");
+                obs_source_remove_active_child(tf->source, tf->mediaSource);
+                obs_source_release(tf->mediaSource);
+                tf->mediaSource = nullptr;
+            }
+            if (tf->videoTexrender) {
+                obs_log(LOG_INFO, "Destroying previous video texrender");
+                gs_texrender_destroy(tf->videoTexrender);
+                tf->videoTexrender = nullptr;
+            }
+        }
     }
 
 	const std::string newUseGpu = obs_data_get_string(settings, "useGPU");
@@ -447,7 +521,7 @@ void background_filter_update(void *data, obs_data_t *settings)
 	obs_log(LOG_INFO, "  Model: %s", tf->modelSelection.c_str());
 	obs_log(LOG_INFO, "  Inference Device: %s", tf->useGPU.c_str());
 	obs_log(LOG_INFO, "  Num Threads: %d", tf->numThreads);
-	obs_log(LOG_INFO, "  Image Path %s", tf->bgImagePath.c_str());
+	obs_log(LOG_INFO, "  Image Path %s", tf->bgPath.c_str());
 	obs_log(LOG_INFO, "  Enable Threshold: %s",
 		tf->enableThreshold ? "true" : "false");
 	obs_log(LOG_INFO, "  Threshold: %f", tf->threshold);
@@ -507,8 +581,14 @@ void *background_filter_create(obs_data_t *settings, obs_source_t *source)
 	tf->env.reset(new Ort::Env(OrtLoggingLevel::ORT_LOGGING_LEVEL_ERROR,
 				   instanceName.c_str()));
 
+	tf->mediaSource = nullptr;
+    tf->videoTexrender = nullptr;
+    tf->isVideo = false;
+
 	tf->modelSelection = MODEL_MEDIAPIPE;
 	background_filter_update(tf, settings);
+
+	
 
 	return tf;
 }
@@ -528,6 +608,18 @@ void background_filter_destroy(void *data)
 		if (tf->stagesurface) {
 			gs_stagesurface_destroy(tf->stagesurface);
 		}
+		if (tf->bg_img) {
+			gs_texture_destroy(tf->bg_img);
+		}
+		if (tf->mediaSource) {
+            obs_source_remove_active_child(tf->source, tf->mediaSource);
+            obs_source_release(tf->mediaSource);
+        }
+
+        if (tf->videoTexrender) {
+            gs_texrender_destroy(tf->videoTexrender);
+        }
+
 		gs_effect_destroy(tf->effect);
 		gs_effect_destroy(tf->kawaseBlurEffect);
 		obs_leave_graphics();
@@ -925,14 +1017,11 @@ gs_texture_t* load_image_as_texture(const char* file_path, uint32_t texture_widt
     return texture;
 }
 
-
-
-
 static gs_texture_t *get_bg_img(struct background_removal_filter *tf,
                                 uint32_t width, uint32_t height)
 {
     // Check if the path has changed
-    if (tf->currentImagePath != tf->bgImagePath) {
+    if (tf->currentImagePath != tf->bgPath) {
 		obs_log(LOG_INFO, "New texture being made");
         // Path has changed, clean up old texture if it exists
         if (tf->bg_img) {
@@ -940,7 +1029,7 @@ static gs_texture_t *get_bg_img(struct background_removal_filter *tf,
             tf->bg_img = nullptr;
         }
         // Update the current path
-        tf->currentImagePath = tf->bgImagePath;
+        tf->currentImagePath = tf->bgPath;
     }
 
     // If the texture is already loaded, return it
@@ -974,6 +1063,62 @@ static gs_texture_t *get_bg_img(struct background_removal_filter *tf,
 	obs_log(LOG_ERROR, "Texture failed to load");
 
     // If we get here, either the path was invalid or loading failed
+    return nullptr;
+}
+
+
+static gs_texture_t *get_bg_texture(struct background_removal_filter *tf, uint32_t width, uint32_t height)
+{
+    obs_log(LOG_INFO, "Entering get_bg_texture. isVideo: %d, mediaSource: %p", tf->isVideo, (void*)tf->mediaSource);
+
+    if (tf->isVideo && tf->mediaSource) {
+        obs_log(LOG_INFO, "Processing video source");
+
+        if (!tf->videoTexrender) {
+            tf->videoTexrender = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+            obs_log(LOG_INFO, "Created new videoTexrender: %p", (void*)tf->videoTexrender);
+        }
+
+        uint32_t source_cx = obs_source_get_width(tf->mediaSource);
+        uint32_t source_cy = obs_source_get_height(tf->mediaSource);
+
+        obs_log(LOG_INFO, "Source dimensions: %ux%u", source_cx, source_cy);
+
+        if (source_cx == 0 || source_cy == 0) {
+            obs_log(LOG_ERROR, "Invalid source dimensions");
+            return nullptr;
+        }
+
+        gs_texrender_reset(tf->videoTexrender);
+        obs_log(LOG_INFO, "Attempting to begin texrender");
+        if (gs_texrender_begin(tf->videoTexrender, source_cx, source_cy)) {
+            obs_log(LOG_INFO, "Texrender begin successful");
+
+            struct vec4 background;
+            vec4_zero(&background);
+
+            gs_clear(GS_CLEAR_COLOR, &background, 0.0f, 0);
+            gs_ortho(0.0f, (float)source_cx, 0.0f, (float)source_cy, -100.0f, 100.0f);
+
+            gs_blend_state_push();
+            gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
+
+            obs_source_video_render(tf->mediaSource);
+
+            gs_blend_state_pop();
+            gs_texrender_end(tf->videoTexrender);
+
+            obs_log(LOG_INFO, "Video rendered successfully");
+            return gs_texrender_get_texture(tf->videoTexrender);
+        } else {
+            obs_log(LOG_ERROR, "Failed to begin texrender");
+        }
+    } else if (!tf->isVideo) {
+        obs_log(LOG_INFO, "Processing static image");
+        return get_bg_img(tf, width, height);
+    }
+
+    obs_log(LOG_ERROR, "Failed to get background texture");
     return nullptr;
 }
 
@@ -1023,7 +1168,10 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 		}
 	}
 
-	gs_texture_t *bgimage = get_bg_img(tf, width, height);
+    gs_texture_t *bgTexture = nullptr;
+    if (!tf->bgPath.empty()) {
+        bgTexture = get_bg_texture(tf, width, height);
+    }
 
 	// Output the masked image
 	gs_texture_t *blurredTexture =
@@ -1052,8 +1200,8 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 		gs_effect_set_texture(blurredBackground, blurredTexture);
 	}
 
-	if (!tf->bgImagePath.empty()) {
-		gs_effect_set_texture(bgimageParam, bgimage);
+	if (bgTexture) {
+		gs_effect_set_texture(bgimageParam, bgTexture);
 	}
 
     
@@ -1069,7 +1217,7 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 	gs_reset_blend_state();
 
 	const char *techName;
-	if (!tf->bgImagePath.empty() && bgimage) {
+	if (bgTexture) {
 		techName = "DrawWithBGImage";
 	} else if (tf->blurBackground > 0) {
 		if (tf->enableFocalBlur)
@@ -1079,7 +1227,6 @@ void background_filter_video_render(void *data, gs_effect_t *_effect)
 	} else {
 		techName = "DrawWithoutBlur";
 	}
-	obs_log(LOG_INFO, "Techname %s", techName);
 
 	obs_source_process_filter_tech_end(tf->source, tf->effect, 0, 0,
 					   techName);
