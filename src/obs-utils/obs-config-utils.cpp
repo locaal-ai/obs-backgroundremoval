@@ -4,29 +4,17 @@
 #include <obs-module.h>
 #include <util/config-file.h>
 #include <filesystem>
+#include <util/platform.h>
 
 void create_config_folder()
 {
-	char *config_folder_path = obs_module_config_path("");
-	if (config_folder_path == nullptr) {
+	char *config_folder_path = obs_module_config_path(NULL);
+	if (!config_folder_path) {
 		obs_log(LOG_ERROR, "Failed to get config folder path");
 		return;
 	}
-	std::filesystem::path config_folder_std_path(config_folder_path);
+	os_mkdirs(config_folder_path);
 	bfree(config_folder_path);
-
-	// create the folder if it doesn't exist
-	if (!std::filesystem::exists(config_folder_std_path)) {
-#ifdef _WIN32
-		obs_log(LOG_INFO, "Config folder does not exist, creating: %S",
-			config_folder_std_path.c_str());
-#else
-		obs_log(LOG_INFO, "Config folder does not exist, creating: %s",
-			config_folder_std_path.c_str());
-#endif
-		// Create the config folder
-		std::filesystem::create_directories(config_folder_std_path);
-	}
 }
 
 int getConfig(config_t **config)
