@@ -48,12 +48,11 @@ endif()
 
 if(USE_SYSTEM_ONNXRUNTIME)
   if(OS_LINUX)
-    find_package(Onnxruntime 1.16.3 REQUIRED)
-    set(Onnxruntime_INCLUDE_PATH
-        ${Onnxruntime_INCLUDE_DIR} ${Onnxruntime_INCLUDE_DIR}/onnxruntime
-        ${Onnxruntime_INCLUDE_DIR}/onnxruntime/core/session ${Onnxruntime_INCLUDE_DIR}/onnxruntime/core/providers/cpu)
-    target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${Onnxruntime_LIBRARIES}")
-    target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM PUBLIC "${Onnxruntime_INCLUDE_PATH}")
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(ONNX REQUIRED libonnxruntime)
+    target_link_options(${CMAKE_PROJECT_NAME} PRIVATE "${ONNX_LDFLAGS}")
+    target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE "${ONNX_LIBRARIES}")
+    target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM PUBLIC "${ONNX_INCLUDE_DIRS}")
   else()
     message(FATAL_ERROR "System ONNX Runtime is only supported on Linux!")
   endif()
