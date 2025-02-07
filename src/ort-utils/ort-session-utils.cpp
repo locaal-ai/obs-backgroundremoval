@@ -112,6 +112,10 @@ int createOrtSession(filter_data *tf)
 			Ort::ThrowOnError(
 				OrtSessionOptionsAppendExecutionProvider_CUDA(
 					sessionOptions, 0));
+		} else if (tf->useGPU == USEGPU_ROCM) {
+			Ort::ThrowOnError(
+				OrtSessionOptionsAppendExecutionProvider_ROCM(
+					sessionOptions, 0));
 		}
 #endif
 #ifdef _WIN32
