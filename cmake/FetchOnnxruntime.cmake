@@ -8,6 +8,10 @@ set(CUSTOM_ONNXRUNTIME_HASH
     ""
     CACHE STRING "Hash of a downloaded ONNX Runtime tarball")
 
+set(CUSTOM_ONNXRUNTIME_VERSION
+    ""
+    CACHE STRING "Major.Minor.Patch of ONNX Runtime tarball")
+
 set(Onnxruntime_VERSION "1.17.1")
 
 if(CUSTOM_ONNXRUNTIME_URL STREQUAL "")
@@ -17,6 +21,11 @@ else()
     message(FATAL_ERROR "Both of CUSTOM_ONNXRUNTIME_URL and CUSTOM_ONNXRUNTIME_HASH must be present!")
   else()
     set(USE_PREDEFINED_ONNXRUNTIME OFF)
+  endif()
+  if(CUSTOM_ONNXRUNTIME_VERSION STREQUAL "")
+    message(FATAL_ERROR "CUSTOM_ONNXRUNTIME_VERSION must be set!")
+  else()
+    set(Onnxruntime_VERSION ${CUSTOM_ONNXRUNTIME_VERSION})
   endif()
 endif()
 
@@ -109,5 +118,16 @@ else()
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE ${Onnxruntime_LINK_LIBS})
   target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM PUBLIC "${onnxruntime_SOURCE_DIR}/include")
   install(FILES ${Onnxruntime_INSTALL_LIBS} DESTINATION "${CMAKE_INSTALL_LIBDIR}/obs-plugins/${CMAKE_PROJECT_NAME}")
+  
+  # Create a symlink libonnxruntime.so.1 in the install folder
+  if(NOT EXISTS "${CMAKE_BINARY_DIR}/libonnxruntime.so.1")
+    file(CREATE_LINK "libonnxruntime.so.${Onnxruntime_VERSION}" 
+        "${CMAKE_BINARY_DIR}/libonnxruntime.so.1" 
+        SYMBOLIC)
+  endif()
+
+  install(FILES "${CMAKE_BINARY_DIR}/libonnxruntime.so.1"
+          DESTINATION "${CMAKE_INSTALL_LIBDIR}/obs-plugins/${CMAKE_PROJECT_NAME}")
+          
   set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/${CMAKE_PROJECT_NAME}")
 endif()
