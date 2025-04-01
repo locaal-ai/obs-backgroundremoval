@@ -33,6 +33,7 @@
 
 struct background_removal_filter : public filter_data {
 	bool enableThreshold = true;
+	bool keepalive = false;
 	float threshold = 0.5f;
 	cv::Scalar backgroundColor{0, 0, 0, 0};
 	float contourFilter = 0.05f;
@@ -132,6 +133,9 @@ obs_properties_t *background_filter_properties(void *data)
 
 	obs_property_t *advanced = obs_properties_add_bool(
 		props, "advanced", obs_module_text("Advanced"));
+
+	obs_properties_add_bool(
+		props, "keepalive", obs_module_text("Keep Alive"));
 
 	// If advanced is selected show the advanced settings, otherwise hide them
 	obs_property_set_modified_callback(advanced, enable_advanced_settings);
@@ -277,6 +281,7 @@ obs_properties_t *background_filter_properties(void *data)
 void background_filter_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, "advanced", false);
+	obs_data_set_default_bool(settings, "keepalive", false);
 	obs_data_set_default_bool(settings, "enable_threshold", true);
 	obs_data_set_default_double(settings, "threshold", 0.5);
 	obs_data_set_default_double(settings, "contour_filter", 0.05);
@@ -310,6 +315,8 @@ void background_filter_update(void *data, obs_data_t *settings)
 		reinterpret_cast<background_removal_filter *>(data);
 
 	tf->isDisabled = true;
+
+	tf->keepalive = obs_data_get_bool(settings, "keepalive");
 
 	tf->enableThreshold =
 		(float)obs_data_get_bool(settings, "enable_threshold");
@@ -438,17 +445,29 @@ void background_filter_update(void *data, obs_data_t *settings)
 
 void background_filter_activate(void *data)
 {
-	obs_log(LOG_INFO, "Background filter activated");
 	struct background_removal_filter *tf =
 		reinterpret_cast<background_removal_filter *>(data);
+
+	if (tf->keepalive) {
+		return;
+	}
+
+	obs_log(LOG_INFO, "Background filter activated");
 	tf->isDisabled = false;
 }
 
 void background_filter_deactivate(void *data)
 {
-	obs_log(LOG_INFO, "Background filter deactivated");
 	struct background_removal_filter *tf =
 		reinterpret_cast<background_removal_filter *>(data);
+
+	if (tf->keepalive) {
+		obs_log(LOG_INFO, "Background filter keepalive");
+		return;
+	}
+
+	obs_log(LOG_INFO, "Background filter deactivated");
+
 	tf->isDisabled = true;
 }
 
