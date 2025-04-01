@@ -7,7 +7,7 @@ Please follow the steps to install obs-backgroundremoval plugin on Fedora.
 First, you have to install the development tools:
 
 ```
-sudo dnf groupinstall "Development Tools"
+sudo dnf group install development-tools
 ```
 
 Then, make sure you have the dependencies of this plugin installed:
